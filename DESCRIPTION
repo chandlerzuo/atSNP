@@ -1,0 +1,10 @@
+Package: MotifAnalysis
+Type: Package
+Title: Motif Analysis for SNP data.
+Version: 1.0
+Date: 2014-10-21
+Author: Chandler Zuo
+Maintainer: Chandler Zuo<zuo@stat.wisc.edu>
+Description: Motif analysis.
+License: GPL-2
+LinkingTo: Rcpp
