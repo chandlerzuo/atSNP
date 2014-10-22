@@ -12,7 +12,7 @@ LoadMotifLibrary(filename)
 A list object of two components:
 \tabular{ll}{
 matrix \tab A list of position weight matrices.\cr
-motif \tab A list of the motif names.\cr}
+motif \tab A vector of the motif names.\cr}
 }
 \description{
 Load the file for position weight matrices for motifs.

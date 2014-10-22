@@ -6,7 +6,7 @@
 #' @return A list object of two components:
 #' \tabular{ll}{
 #' matrix \tab A list of position weight matrices.\cr
-#' motif \tab A list of the motif names.\cr}
+#' motif \tab A vector of the motif names.\cr}
 #' @author Chandler Zuo \email{zuo@@stat.wisc.edu}
 #' @examples
 #' \dontrun{
@@ -155,7 +155,7 @@ ComputeMotifScore <- function(motif.lib, snp.info, ncores = 1) {
   }
   for(i in seq_along(motif_scores)) {
     rownames(motif_scores[[i]]) <- colnames(snp.info$sequence_matrix)
-    colnames(motif_scores[[i]]) <- rownames(motif.lib$motif)
+    colnames(motif_scores[[i]]) <- motif.lib$motif
   }
   return(motif_scores)
   
