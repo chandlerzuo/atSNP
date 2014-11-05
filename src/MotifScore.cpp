@@ -32,8 +32,19 @@ SEXP motif_score(SEXP _motif_library, SEXP _snpinfo) {
 	NumericMatrix log_lik_ratio(n_snps, n_motifs);
 	IntegerMatrix match_a1(n_snps, n_motifs);
 	IntegerMatrix match_a2(n_snps, n_motifs);
+	NumericMatrix log_lik_a1(n_snps, n_motifs);
+	NumericMatrix log_lik_a2(n_snps, n_motifs);
 
 	double tol = 1e-10;
+
+	// change all inputs to 0 indexed
+	for(int snp_id = 0; snp_id < n_snps; snp_id ++) {
+		for(int i = 0; i < sequence_matrix.nrow(); i ++) {
+			sequence_matrix(i, snp_id) --;
+		}
+		a1_codes[snp_id] --;
+		a2_codes[snp_id] --;
+	}
 
 	//for each snp
 	for(int snp_id = 0; snp_id < n_snps; snp_id ++) {
@@ -43,16 +54,20 @@ SEXP motif_score(SEXP _motif_library, SEXP _snpinfo) {
 		snp_sequence[snp_sequence.size() / 2] = a1_codes[snp_id];
 		IntegerVector rev_sequence(sequence_matrix.nrow());
 		for(int i = 0; i < rev_sequence.size(); i ++) {
-			rev_sequence[i] = 5 - snp_sequence[snp_sequence.size() - 1 - i];
+			rev_sequence[i] = 3 - snp_sequence[snp_sequence.size() - 1 - i];
 		}
 		IntegerVector snp_sequence_a2(clone(snp_sequence));
 		IntegerVector rev_sequence_a2(clone(rev_sequence));
 		snp_sequence_a2[snp_sequence.size() / 2] = a2_codes[snp_id];
-		rev_sequence_a2[snp_sequence.size() / 2] = 5 - a2_codes[snp_id];
+		rev_sequence_a2[snp_sequence.size() / 2] = 3 - a2_codes[snp_id];
 		// for each motif
 		for(int motif_id = 0; motif_id < n_motifs; motif_id ++) {
 			SEXP _pwm(pwms[motif_id]);
 			NumericMatrix pwm(_pwm);
+			for(int i = 0; i < pwm.nrow(); i ++)
+				for(int j = 0; j < pwm.ncol(); j ++)
+					if(pwm(i, j) < tol)
+						pwm(i, j) = tol;
 			// find maximum on the positive strand, a1
 			int match_pos_a1 = find_best_match(pwm, snp_sequence);
 			double log_prob_pos_a1 = pwm_log_prob(pwm, snp_sequence, match_pos_a1);
@@ -70,31 +85,33 @@ SEXP motif_score(SEXP _motif_library, SEXP _snpinfo) {
 			if(log_prob_pos_a1 > log_prob_rev_a1) {
 				log_prob_a1 = log_prob_pos_a1;
 				int snp_pos_in_pwm = snp_sequence.size() / 2 - match_pos_a1;
-				off_odds(snp_id, motif_id) = log(pwm(snp_pos_in_pwm, a1_codes[snp_id] - 1) + tol) - 
-					log(pwm(snp_pos_in_pwm, a2_codes[snp_id] - 1) + tol); 
+				off_odds(snp_id, motif_id) = log(pwm(snp_pos_in_pwm, a1_codes[snp_id])) - 
+					log(pwm(snp_pos_in_pwm, a2_codes[snp_id])); 
 				match_a1(snp_id, motif_id) = match_pos_a1;
 			} else {
 				log_prob_a1 = log_prob_rev_a1;
 				int snp_pos_in_pwm = rev_sequence.size() / 2 - match_rev_a1;
-				off_odds(snp_id, motif_id) = log(pwm(snp_pos_in_pwm, 4 - a1_codes[snp_id]) + tol) - 
-					log(pwm(snp_pos_in_pwm, 4 - a2_codes[snp_id]) + tol); 
+				off_odds(snp_id, motif_id) = log(pwm(snp_pos_in_pwm, 3 - a1_codes[snp_id])) - 
+					log(pwm(snp_pos_in_pwm, 3 - a2_codes[snp_id])); 
 				match_a1(snp_id, motif_id) = -match_rev_a1;
 			}
+			log_lik_a1(snp_id, motif_id) = log_prob_a1;
 			// computing for a2
 			double log_prob_a2 = 0;
 			if(log_prob_pos_a2 > log_prob_rev_a2) {
 				log_prob_a2 = log_prob_pos_a2;
 				int snp_pos_in_pwm = snp_sequence.size() / 2 - match_pos_a2;
-				on_odds(snp_id, motif_id) = log(pwm(snp_pos_in_pwm, a2_codes[snp_id] - 1) + tol) - 
-					log(pwm(snp_pos_in_pwm, a1_codes[snp_id] - 1) + tol); 
+				on_odds(snp_id, motif_id) = log(pwm(snp_pos_in_pwm, a2_codes[snp_id])) - 
+					log(pwm(snp_pos_in_pwm, a1_codes[snp_id])); 
 				match_a2(snp_id, motif_id) = match_pos_a2;
 			} else {
 				log_prob_a2 = log_prob_rev_a2;
 				int snp_pos_in_pwm = rev_sequence.size() / 2 - match_rev_a2;
-				on_odds(snp_id, motif_id) = log(pwm(snp_pos_in_pwm, 4 - a2_codes[snp_id]) + tol) - 
-					log(pwm(snp_pos_in_pwm, 4 - a1_codes[snp_id]) + tol); 
+				on_odds(snp_id, motif_id) = log(pwm(snp_pos_in_pwm, 3 - a2_codes[snp_id])) - 
+					log(pwm(snp_pos_in_pwm, 3 - a1_codes[snp_id])); 
 				match_a2(snp_id, motif_id) = -match_rev_a2;
 			}
+			log_lik_a2(snp_id, motif_id) = log_prob_a2;
 			// log likelihood ratio
 			log_lik_ratio(snp_id, motif_id) = log_prob_a1 - log_prob_a2;
 		}
@@ -105,7 +122,9 @@ SEXP motif_score(SEXP _motif_library, SEXP _snpinfo) {
 				  Rcpp::Named("off_odds") = off_odds,
 				  Rcpp::Named("match_a1") = match_a1,
 				  Rcpp::Named("match_a2") = match_a2,
-				  Rcpp::Named("log_lik_ratio") = log_lik_ratio);
+				  Rcpp::Named("log_lik_ratio") = log_lik_ratio,
+				  Rcpp::Named("log_lik_a1") = log_lik_a1,
+				  Rcpp::Named("log_lik_a2") = log_lik_a2);
 }
 
 /*
@@ -143,9 +162,33 @@ Compute the log likelihood corresponding to a position weight matrix ("pwm") for
 double pwm_log_prob(NumericMatrix pwm, IntegerVector sequence, int start_pos) {
 	double tol = 1e-10;
 	double log_prob = 0;
+	for(int i = 0; i < pwm.nrow(); i ++)
+		for(int j = 0; j < pwm.ncol(); j ++)
+			if(pwm(i, j) < tol)
+				pwm(i, j) = tol;
 	for(int pos = start_pos; pos < start_pos + pwm.nrow(); pos ++) {
 		//printf("pwm(%d-%d,%d)=%3.3f\n", pos, start_pos, sequence[pos] - 1, pwm(pos - start_pos, sequence[pos] - 1));
-		log_prob += log(pwm(pos - start_pos, sequence[pos] - 1) + tol);
+		log_prob += log(pwm(pos - start_pos, sequence[pos]) );
 	}
 	return(log_prob);
+}
+
+SEXP test_max_log_prob(SEXP _pwm, SEXP _sequence) {
+	NumericMatrix pwm(_pwm);
+	IntegerVector sequence(_sequence);
+	return(wrap(pwm_log_prob(pwm, sequence, find_best_match(pwm, sequence))));
+}
+
+/*
+Compute the first order Markovian transition matrix.
+*/
+SEXP transition_matrix(SEXP _sequence_matrix) {
+	IntegerMatrix sequence_matrix(_sequence_matrix);
+	NumericMatrix transition_matrix(4, 4);
+	for(int i = 0; i < sequence_matrix.nrow() - 1; i ++) {
+		for(int j = 0; j < sequence_matrix.ncol(); j ++) {
+			transition_matrix(sequence_matrix(i, j) - 1, sequence_matrix(i + 1, j) - 1) ++;
+		}
+	}
+	return(wrap(transition_matrix));
 }

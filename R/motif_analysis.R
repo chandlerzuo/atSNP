@@ -6,7 +6,7 @@
 #' @return A list object of two components:
 #' \tabular{ll}{
 #' matrix \tab A list of position weight matrices.\cr
-#' motif \tab A vector of the motif names.\cr}
+#' prior \tab A vector of the prior distribution for ACGT.\cr}
 #' @author Chandler Zuo \email{zuo@@stat.wisc.edu}
 #' @examples
 #' \dontrun{
@@ -16,6 +16,8 @@
 #' @export
 LoadMotifLibrary <- function(filename) {
     lines <- readLines(filename)
+    bkngLineNum <- grep("Background letter frequencies", lines) + 1
+    priorProb <- as.numeric(strsplit(lines[bkngLineNum], " ")[[1]][seq(4) * 2])
     motifLineNums <- grep("MOTIF", lines)
     motifnames <-
         sapply(strsplit(lines[motifLineNums], " "), function(x) x[2])
@@ -29,9 +31,10 @@ LoadMotifLibrary <- function(filename) {
         ## pwm <- read.table(filename, skip = motifLineNum + 1, nrows = nrows)
         allmats[[matrixId]] <- pwm
     }
+    names(allmats) <- motifnames
     return(
         list(matrix = allmats,
-             motif = motifnames))
+             prior = priorProb))
 }
 
 
@@ -62,10 +65,10 @@ LoadMotifLibrary <- function(filename) {
 #' @useDynLib MotifAnalysis
 #' @export
 LoadSNPData <- function(filename, genome.lib = "BSgenome.Hsapiens.UCSC.hg19",
-                        half.window.size = 30) {
+                        half.window.size = 30, ...) {
   ## load the corresponding genome version
   library(package = genome.lib, character.only = TRUE)
-  tbl <- read.table(filename, header = TRUE, stringsAsFactors = FALSE)
+  tbl <- read.table(filename, header = TRUE, stringsAsFactors = FALSE, ...)
   ## check if the input file has the required information
   if(sum(!c("snp", "chr", "a1", "a2", "snpid") %in% names(tbl)) > 0) {
     stop("Error: 'filename' must be a table containing 'snp' and 'chr' columns.")
@@ -83,10 +86,18 @@ LoadSNPData <- function(filename, genome.lib = "BSgenome.Hsapiens.UCSC.hg19",
   a1 <- codes[tbl$a1]
   a2 <- codes[tbl$a2]
   names(a1) <- names(a2) <- NULL
+  transition <- .Call("transition_matrix", sequences, package = "MotifAnalysis")
+  prior <- apply(transition, 1, sum)
+  prior <- prior / sum(prior)
+  transition <- transition / apply(transition, 1, sum)
+  names(prior) <- colnames(transition) <- rownames(transition) <- c("A", "C", "G", "T")
   return(list(
               sequence_matrix= sequences,
               a1 = a1,
-              a2 = a2))
+              a2 = a2,
+              transition = transition,
+              prior = prior
+              ))
 }
 
 #' @name ComputeMotifScore
@@ -111,14 +122,11 @@ LoadSNPData <- function(filename, genome.lib = "BSgenome.Hsapiens.UCSC.hg19",
 #' @export
 ComputeMotifScore <- function(motif.lib, snp.info, ncores = 1) {
   ## check arguments
-  if(sum(!c("motif", "matrix") %in% names(motif.lib)) > 0) {
-    stop("Error: 'motif.lib' must contain both 'matrix' and'motif'.")
+  if(sum(!c("prior", "matrix") %in% names(motif.lib)) > 0) {
+    stop("Error: 'motif.lib' must contain both 'matrix' and'prior'.")
   }
   if(sum(!unlist(sapply(motif.lib$matrix, is.matrix))) > 0 | sum(unlist(sapply(motif.lib$matrix, ncol)) != 4) > 0) {
     stop("Error: 'motif.lib$matrix' must be a list of numeric matrices each with 4 columns.")
-  }
-  if(!CheckSameLength(motif.lib)) {
-    stop("Error: components of 'motif.lib' must have the same lengths.")
   }
   if(sum(!c("sequence_matrix", "a1", "a2") %in% names(snp.info)) > 0) {
     stop("Error: 'snp.info' must contain three components: 'a1', 'a2', 'sequence_matrix'.")
@@ -155,7 +163,7 @@ ComputeMotifScore <- function(motif.lib, snp.info, ncores = 1) {
   }
   for(i in seq_along(motif_scores)) {
     rownames(motif_scores[[i]]) <- colnames(snp.info$sequence_matrix)
-    colnames(motif_scores[[i]]) <- motif.lib$motif
+    colnames(motif_scores[[i]]) <- names(motif.lib$matrix)
   }
   return(motif_scores)
   
