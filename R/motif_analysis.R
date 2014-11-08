@@ -28,7 +28,11 @@ LoadMotifLibrary <- function(filename) {
         nrows <- as.integer(strsplit(lines[motifLineNum + 1], " ")[[1]][6])
         pwm <-
           t(matrix(as.numeric(unlist(strsplit(lines[seq(nrows) + motifLineNum + 1], " "))), nrow = 4))
-        ## pwm <- read.table(filename, skip = motifLineNum + 1, nrows = nrows)
+        pwm <- t(apply(pwm, 1,
+                     function(x) {
+                     x[x < 1e-10] <- 1e-10 / (1 - 1e-10 * sum(x < 1e-10)) * sum(x)
+                     return(x / sum(x))
+                   }))
         allmats[[matrixId]] <- pwm
     }
     names(allmats) <- motifnames
@@ -91,10 +95,17 @@ LoadSNPData <- function(filename, genome.lib = "BSgenome.Hsapiens.UCSC.hg19",
   prior <- prior / sum(prior)
   transition <- transition / apply(transition, 1, sum)
   names(prior) <- colnames(transition) <- rownames(transition) <- c("A", "C", "G", "T")
+  a1.ref.base.id <- which(a1 == sequences[half.window.size + 1, ])
+  a2.ref.base.id <- which(a2 == sequences[half.window.size + 1, ])
+  ## store SNPs that have the same base in SNP and REF alleles only once
+  a2.ref.base.id <- a2.ref.base.id[!a2.ref.base.id %in% a1.ref.base.id]
+  sequences <- sequences[, c(a1.ref.base.id, a2.ref.base.id)]
+  ref.base <- c(a1[a1.ref.base.id], a2[a2.ref.base.id])
+  snp.base <- c(a2[a1.ref.base.id], a1[a2.ref.base.id])
   return(list(
               sequence_matrix= sequences,
-              a1 = a1,
-              a2 = a2,
+              ref_base = ref.base,
+              snp_base = snp.base,
               transition = transition,
               prior = prior
               ))
@@ -107,7 +118,7 @@ LoadSNPData <- function(filename, genome.lib = "BSgenome.Hsapiens.UCSC.hg19",
 #' @param snp.info A list object with the output format of function 'LoadSNPData'.
 #' @param ncores An integer for the number of parallel process. Default: 1.
 #' @details TODO.
-#' @return A list object with the following components:
+#' @return A data.table containing:
 #' \tabular{ll}{
 #' log_lik_ratio \tab The log-likelihood ratio.\cr
 #' on_odds \tab Enhanced log-odds for motif binding by SNP.\cr
@@ -119,6 +130,7 @@ LoadSNPData <- function(filename, genome.lib = "BSgenome.Hsapiens.UCSC.hg19",
 #' @author Chandler Zuo\email{zuo@@stat.wisc.edu}
 #' @examples \dontrun{}
 #' @useDynLib MotifAnalysis
+#' @import data.table doMC
 #' @export
 ComputeMotifScore <- function(motif.lib, snp.info, ncores = 1) {
   ## check arguments
@@ -128,44 +140,121 @@ ComputeMotifScore <- function(motif.lib, snp.info, ncores = 1) {
   if(sum(!unlist(sapply(motif.lib$matrix, is.matrix))) > 0 | sum(unlist(sapply(motif.lib$matrix, ncol)) != 4) > 0) {
     stop("Error: 'motif.lib$matrix' must be a list of numeric matrices each with 4 columns.")
   }
-  if(sum(!c("sequence_matrix", "a1", "a2") %in% names(snp.info)) > 0) {
-    stop("Error: 'snp.info' must contain three components: 'a1', 'a2', 'sequence_matrix'.")
+  if(sum(!c("sequence_matrix", "snp_base", "ref_base") %in% names(snp.info)) > 0) {
+    stop("Error: 'snp.info' must contain three components: 'ref_base', 'snp_base', 'sequence_matrix'.")
   }
-  if(ncol(snp.info$sequence_matrix) != length(snp.info$a1) | length(snp.info$a1) != length(snp.info$a2)) {
-    stop("Error: the number of columns of 'snp.info$sequence_matrix', the length of 'snp.info$a1' and the length of 'snp.info$a2' must be the same.")
+  if(ncol(snp.info$sequence_matrix) != length(snp.info$ref_base) | length(snp.info$ref_base) != length(snp.info$snp_base)) {
+    stop("Error: the number of columns of 'snp.info$sequence_matrix', the length of 'snp.info$ref_base' and the length of 'snp.info$snp_base' must be the same.")
   }
-  if(sum(sort(unique(c(c(snp.info$sequence_matrix), snp.info$a1, snp.info$a2))) != seq(4)) > 0) {
-    stop("Error: 'snp.info$sequence_matrix', 'snp.info$a1', 'snp.info$a2' can only contain entries in 1, 2, 3, 4.")
+  if(sum(sort(unique(c(c(snp.info$sequence_matrix), snp.info$ref_base, snp.info$snp_base))) != seq(4)) > 0) {
+    stop("Error: 'snp.info$sequence_matrix', 'snp.info$ref_base', 'snp.info$snp_base' can only contain entries in 1, 2, 3, 4.")
+  }
+  if(nrow(snp.info$sequence_matrix) / 2 == as.integer(nrow(snp.info$sequence_matrix) / 2)) {
+    stop("Error: 'snp.info$sequence_matrix' must have an odd number of rows so that the central row refers to the SNP nucleotide.")
   }
   
-  library(doMC)
   registerDoMC(ncores)
 
   motif_score_par <- foreach(i = seq(ncores)) %dopar% {
-    k <- as.integer(length(snp.info$a1) / ncores)
+    k <- as.integer(length(snp.info$ref_base) / ncores)
     if(i < ncores) {
       ids <- seq(k) + k * (i - 1)
     } else {
-      ids <- (k * (ncores - 1) + 1):length(snp.info$a1) 
+      ids <- (k * (ncores - 1) + 1):length(snp.info$ref_base) 
     }
     this.snp.info <- list(sequence_matrix = snp.info$sequence_matrix[, ids],
-                          a1 = snp.info$a1[ids], a2 = snp.info$a2[ids])
+                          ref_base = snp.info$ref_base[ids], snp_base = snp.info$snp_base[ids])
     .Call("motif_score", motif.lib, this.snp.info, package = "MotifAnalysis")
   }
 
-  motif_scores <- motif_score_par[[1]]
+  motif.scores <- motif_score_par[[1]]
   if(ncores > 1) {
     for(i in 2:ncores) {
-      for(j in seq_along(motif_scores)) {
-        motif_scores[[j]] <- rbind(motif_scores[[j]], motif_score_par[[i]][[j]])
+      for(j in seq_along(motif.scores)) {
+        motif.scores[[j]] <- rbind(motif.scores[[j]], motif_score_par[[i]][[j]])
       }
     }
   }
-  for(i in seq_along(motif_scores)) {
-    rownames(motif_scores[[i]]) <- colnames(snp.info$sequence_matrix)
-    colnames(motif_scores[[i]]) <- names(motif.lib$matrix)
+
+  motifs <- names(motif.lib$matrix)
+  snpids <- colnames(snp.info$sequence_matrix)
+  nsnps <- ncol(snp.info$sequence_matrix)
+  nmotifs <- length(motif.lib$matrix)
+  for(i in seq_along(motif.scores)) {
+    rownames(motif.scores[[i]]) <- snpids
+    colnames(motif.scores[[i]]) <- motifs
   }
-  return(motif_scores)
+
+
+  motif_tbl <- data.table(motif = motifs,
+                          motif_len = sapply(motif.lib$matrix, nrow))
+
+  ## sequences on the reference genome
+  ref_seqs <- apply(snp.info$sequence_matrix, 2, function(x) paste(c("A", "C", "G", "T")[x], collapse = ""))
+  ref_seqs_rev <- apply(snp.info$sequence_matrix, 2, function(x) paste(c("A", "C", "G", "T")[5 - rev(x)], collapse = ""))
+  ## sequences on the snp allele
+  id1 <- seq(as.integer(nrow(snp.info$sequence_matrix) / 2))
+  id2 <- id1 + (nrow(snp.info$sequence_matrix) + 1) / 2
+  snp_seqs <- apply(rbind(snp.info$sequence_matrix, snp.info$snp_base), 2,
+                    function(x)
+                    paste(c("A", "C", "G", "T")[x[c(id1, length(x), id2)]],
+                          collapse = "")
+                    )
+  snp_seqs_rev <- apply(rbind(snp.info$sequence_matrix, snp.info$snp_base), 2,
+                    function(x)
+                    paste(c("A", "C", "G", "T")[5 - rev(x[c(id1, length(x), id2)])],
+                          collapse = "")
+                    )
+
+  snp_tbl <- data.table(snpid = snpids,
+                        ref_seq = ref_seqs,
+                        snp_seq = snp_seqs,
+                        ref_seq_rev = ref_seqs_rev,
+                        snp_seq_rev = snp_seqs_rev)
+
+  len_seq <- nrow(snp.info$sequence_matrix)
+  strand_ref <- (motif.scores$match_ref_base > 0)
+  ref_start <- motif.scores$match_ref_base
+  ref_start[!strand_ref] <- len_seq + motif.scores$match_ref_base[!strand_ref] + 1
+
+  strand_snp <- (motif.scores$match_snp_base > 0)
+  snp_start <- motif.scores$match_snp_base
+  snp_start[!strand_snp] <- len_seq + motif.scores$match_snp_base[!strand_snp] + 1
+
+  motif_score_tbl <- data.table(snpid = rep(snpids, nmotifs),
+                                 motif = rep(motifs, each = nsnps),
+                                 log_lik_ref = c(motif.scores$log_lik_ref),
+                                 log_lik_snp = c(motif.scores$log_lik_snp),
+                                 log_lik_ratio = c(motif.scores$log_lik_ratio),
+                                 log_enhance_odds = c(motif.scores$log_enhance_odds),
+                                 log_reduce_odds = c(motif.scores$log_reduce_odds),
+                                 ref_start = c(ref_start),
+                                 snp_start = c(snp_start),
+                                 ref_strand = c("-", "+")[1 + as.integer(strand_ref)],
+                                 snp_strand = c("-", "+")[1 + as.integer(strand_snp)]
+                                 )
+
+  setkey(motif_score_tbl, motif)
+  setkey(motif_tbl, motif)
+  motif_score_tbl <- motif_tbl[motif_score_tbl]
+  motif_score_tbl[ref_strand == "-", ref_start := ref_start - motif_len + 1]
+  motif_score_tbl[, ref_end := ref_start + motif_len - 1]
+  motif_score_tbl[snp_strand == "-", snp_start := snp_start - motif_len + 1]
+  motif_score_tbl[, snp_end := snp_start + motif_len - 1]
+
+  setkey(motif_score_tbl, snpid)
+  setkey(snp_tbl, snpid)
+  motif_score_tbl <- snp_tbl[motif_score_tbl]
+  motif_score_tbl[ref_strand == "+", ref_match_seq := substr(ref_seq, ref_start, ref_end)]
+  motif_score_tbl[ref_strand == "-", ref_match_seq := substr(ref_seq_rev, len_seq - ref_end + 1, len_seq - ref_start + 1)]
+  motif_score_tbl[snp_strand == "+", snp_match_seq := substr(snp_seq, snp_start, snp_end)]
+  motif_score_tbl[snp_strand == "-", snp_match_seq := substr(snp_seq_rev, len_seq - snp_end + 1, len_seq - snp_start + 1)]
+  motif_score_tbl[ref_strand == "+", snp_seq_ref_match := substr(snp_seq, ref_start, ref_end)]
+  motif_score_tbl[ref_strand == "-", snp_seq_ref_match := substr(snp_seq_rev, len_seq - ref_end + 1, len_seq - ref_start + 1)]
+  motif_score_tbl[snp_strand == "+", ref_seq_snp_match := substr(ref_seq, snp_start, snp_end)]
+  motif_score_tbl[snp_strand == "-", ref_seq_snp_match := substr(ref_seq_rev, len_seq - snp_end + 1, len_seq - snp_start + 1)]
+  
+  return(motif_score_tbl)
   
 }
 
@@ -174,4 +263,56 @@ CheckSameLength <- function(x) {
     return(TRUE)
   }
   return(var(unlist(sapply(x, length))) == 0)
+}
+
+#' @name ComputePValues
+#' @title Compute p values.
+#' @description TODO.
+#' @param motif.lib A list object with the output format of function 'LoadMotifLibrary'.
+#' @param snp.info A list object with the output format of function 'LoadSNPData'.
+#' @param motif.scores Log likelihood scores.
+#' @param ncores An integer for the number of parallel process. Default: 1.
+#' @details TODO.
+#' @return A data.table with the following columns:
+#' \tabular{ll}{
+#' pval \tab P values.\cr
+#' motif \tab Motif names.\cr
+#' type \tab Type of the test, "a1", "a2", or "diff".}
+#' @author Chandler Zuo\email{zuo@@stat.wisc.edu}
+#' @examples \dontrun{}
+#' @import doMC Rcpp data.table
+#' @useDynLib MotifAnalysis
+#' @export
+ComputePValues <- function(motif.lib, snp.info, motif.scores, ncores) {
+  library(doMC)
+  registerDoMC(ncores)
+  results <- foreach(i = seq_along(motif.lib$matrix)) %dopar% {
+    scores <- cbind(motif.scores$log_lik_a1[, i],
+                    motif.scores$log_lik_a2[, i])
+    pwm <- motif.lib$matrix[[i]]
+    pwm[pwm < 1e-10] <- 1e-10
+    wei.mat <- pwm
+    for(i in seq(nrow(wei.mat))) {
+      for(j in seq(ncol(wei.mat))) {
+        wei.mat[i, j] <- exp(mean(log((pwm[i, -j]) / pwm[i, j])))
+      }
+    }
+    pval_a <- .Call("test_p_value", pwm, snp.info$prior,
+                    snp.info$transition, scores, 0.01,
+                    package = "MotifAnalysis")
+    pval_diff <- .Call("test_p_value_diff", pwm,
+                         wei.mat, snp.info$prior,
+                         snp.info$transition, scores,
+                         0.1, package = "MotifAnalysis")
+    message("Finished testing the ", i, "th motif")
+    data.table(
+               pval = c(pval_a[, 1:2], pval_diff),
+               motif = names(motif.lib$matrix)[i],
+               type = rep(c("a1", "a2", "diff"), each = nrow(scores)))
+  }
+  ret <- results[[1]]
+  for(i in seq_along(results)[-1]) {
+    ret <- rbind(ret, results[[i]])
+  }
+  return(ret)
 }

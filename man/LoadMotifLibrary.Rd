@@ -12,7 +12,7 @@ LoadMotifLibrary(filename)
 A list object of two components:
 \tabular{ll}{
 matrix \tab A list of position weight matrices.\cr
-motif \tab A vector of the motif names.\cr}
+prior \tab A vector of the prior distribution for ACGT.\cr}
 }
 \description{
 Load the file for position weight matrices for motifs.

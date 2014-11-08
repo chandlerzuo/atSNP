@@ -1,27 +1,10 @@
 library(MotifAnalysis)
-library(Rcpp)
 library(testthat)
-motif_file <- "/p/keles/ENCODE-CHARGE/volume1/ENCODE-Motifs/encode_motifs_for_fimo.txt"
+data(example)
 
-if(FALSE) {
-  # construct the test data set
-  if(!file.exists("/p/keles/ENCODE-CHARGE/volume2/SNP/motif_scores.Rda")) {
-    system.time(motif_library <- LoadMotifLibrary(motif_file))
-    system.time(snpInfo <- LoadSNPData("/p/keles/ENCODE-CHARGE/volume2/SNP/hg19_allinfo.bed"))
-    motif_library$matrix <- motif_library$matrix
-    motif_library$motif <- motif_library$motif
-    system.time(motif_scores <- ComputeMotifScore(motif_library, snpInfo, ncores = 20))
-    system.time(save(motif_library, snpInfo, motif_scores, file = "/p/keles/ENCODE-CHARGE/volume2/SNP/motif_scores.Rda"))
-  } else {
-    system.time(load("/p/keles/ENCODE-CHARGE/volume2/SNP/motif_scores.Rda"))
-  }
-  trans_mat <- matrix(rep(snpInfo$prior, each = 4), nrow = 4)
-  test_pwm <- motif_library$matrix[[1]]
-  scores <- cbind(motif_scores$log_lik_a1[, 1], motif_scores$log_lik_a2[, 1])
-  save(trans_mat, test_pwm, scores, snpInfo, file = "~/MotifAnalysis_git/MotifAnalysis/data/test_is.Rda")
-}
-
-data(test_is)
+trans_mat <- matrix(rep(snpInfo$prior, each = 4), nrow = 4)
+test_pwm <- motif_library$matrix[[1]]
+scores <- as.matrix(motif_scores[motif == names(motif_library$matrix)[1], list(log_lik_ref, log_lik_snp)])
 
 test_score <- test_pwm
 for(i in seq(nrow(test_score))) {
@@ -89,6 +72,16 @@ test_that("Error: the scores for samples are not equivalent.", {
     sample <- drawonesample(theta)
     sample_score <- .Call("test_compute_sample_score_diff", test_pwm, test_score, sample[seq(19)] - 1, sample[20] - 1, package = "MotifAnalysis")
     expect_equal(sample[21], exp(sample_score[1]))
+
+    sample1 <- sample2 <- sample3 <- sample
+    sample1[10] <- seq(4)[-sample[10]][1]
+    sample2[10] <- seq(4)[-sample[10]][2]
+    sample3[10] <- seq(4)[-sample[10]][3]
+    sample_score_r <- log(maxjointprob(sample[seq(19)])) -
+      log(c(maxjointprob(sample1[seq(19)]),
+            maxjointprob(sample2[seq(19)]),
+            maxjointprob(sample3[seq(19)])))
+    expect_equal(-sample_score_r, sample_score[-1])
   }
   
   ## Use C code to generate a random sample
@@ -125,7 +118,6 @@ test_that("Error: compute the normalizing constant.", {
 
 test_that("Error: sample distributions are not expected.", {
   
-  library(doMC)
   ## parameters
   p <- 0.1
   delta <- .Call("test_find_percentile_diff", scores, p, package = "MotifAnalysis")
@@ -159,7 +151,8 @@ test_that("Error: sample distributions are not expected.", {
     
     sample2 <- sapply(rep(theta, 1000), drawonesample)
     emp_freq2 <- get_freq(sample2 - 1)
-    
+
+    print(rbind(emp_freq1[10, ], emp_freq2[10, ], target_freq[10, ]))
     max(abs(emp_freq1 - target_freq)) > max(abs(emp_freq2 - target_freq))
     
   }
@@ -193,8 +186,8 @@ if(FALSE) {
     delta <- .Call("test_find_percentile_diff", scores, x, package = "MotifAnalysis")
     theta <- .Call("test_find_theta_diff", test_score, snpInfo$prior, trans_mat, delta, package = "MotifAnalysis")
     const <- sum(snpInfo$prior * t(test_score) ^ theta) / 10
-    print(const)
-    sample <- sapply(rep(theta, 10000), drawonesample)
+    message("Constant value: ", const)
+    sample <- sapply(rep(theta, 1000), drawonesample)
     pr <- apply(sample[1:19, ], 2, maxjointprob)
     sample1 <- sample2 <- sample3 <- sample
     sample1[10, ] <- sapply(sample1[10, ], function(x) seq(4)[-x][1])
@@ -204,28 +197,49 @@ if(FALSE) {
     pr2 <- apply(sample2[1:19, ], 2, maxjointprob)
     pr3 <- apply(sample3[1:19, ], 2, maxjointprob)
 
-    log_diff <- log(c(pr1, pr2, pr3)) - log(pr)
+    log_diff <- log(pr) - log(c(pr1, pr2, pr3)) 
     
     wei <- rep(const / sample[21, ] ^ theta, 3)
-    message("target score: ", mean(log(sample[21, ])))
-    message("mean diff score: ", mean(log_diff))
-    message("mean weight: ", mean(wei))
-    pval <- sapply(score_diff, function(x) sum(wei[log_diff > x]) / length(log_diff))
+    message("Mean weight: ", mean(wei))
+    message("Mean diff score: ", mean(log_diff))
+    message("Target score: ", mean(log(sample[21, ])))
+    pval <- sapply(score_diff, function(x) sum(rep(wei, each = 3)[log_diff >= x]) / length(log_diff))
     return(pval)
   }
 
+  pval_test1 <- function(x) {
+    delta <- .Call("test_find_percentile_diff", scores, x, package = "MotifAnalysis")
+    theta <- .Call("test_find_theta_diff", test_score, snpInfo$prior, trans_mat, delta, package = "MotifAnalysis")
+    const <- sum(snpInfo$prior * t(test_score) ^ theta) / 10
+    log_diff <- rep(0, 30000)
+    wei <- rep(0, 10000)
+    for(i in seq(10000)) {
+      sample <- drawonesample(theta)
+      sample_score <- .Call("test_compute_sample_score_diff", test_pwm, test_score, sample[seq(19)] - 1, sample[20] - 1, package = "MotifAnalysis")
+      log_diff[seq(3) + 3 * (i - 1)] <- sample_score[-1]
+      wei[i] <- const / exp(sample_score[1] * theta)
+    }
+    pval <- sapply(score_diff, function(x) sum(rep(wei, each = 3)[log_diff >= x]) / length(log_diff))
+    return(pval)
+  }
+
+
   pval_8 <- pval_test(0.2)
   pval_9 <- pval_test(0.1)
-  
-  rbind(quantile(pval_9, seq(10) / 200),
-        quantile(p_values_9[, 1], seq(10) / 200),
-        quantile(pval_99, seq(10) / 200),
-        quantile(p_values_99[, 1], seq(10) / 200))
+
+  pval1_8 <- pval_test1(0.2)
+  pval1_9 <- pval_test1(0.1)
   
   plot(log(pval_8), log(p_values_8))
   abline(0,1)
   
+  plot(log(pval1_8), log(p_values_8))
+  abline(0,1)
+  
   plot(log(pval_9), log(p_values_9))
+  abline(0,1)
+
+  plot(log(pval1_9), log(p_values_9))
   abline(0,1)
 
 }

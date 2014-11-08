@@ -1,27 +1,10 @@
 library(MotifAnalysis)
-library(Rcpp)
 library(testthat)
-motif_file <- "/p/keles/ENCODE-CHARGE/volume1/ENCODE-Motifs/encode_motifs_for_fimo.txt"
 
-if(FALSE) {
-  # construct the test data set
-  if(!file.exists("/p/keles/ENCODE-CHARGE/volume2/SNP/motif_scores.Rda")) {
-    system.time(motif_library <- LoadMotifLibrary(motif_file))
-    system.time(snpInfo <- LoadSNPData("/p/keles/ENCODE-CHARGE/volume2/SNP/hg19_allinfo.bed"))
-    motif_library$matrix <- motif_library$matrix
-    motif_library$motif <- motif_library$motif
-    system.time(motif_scores <- ComputeMotifScore(motif_library, snpInfo, ncores = 20))
-    system.time(save(motif_library, snpInfo, motif_scores, file = "/p/keles/ENCODE-CHARGE/volume2/SNP/motif_scores.Rda"))
-  } else {
-    system.time(load("/p/keles/ENCODE-CHARGE/volume2/SNP/motif_scores.Rda"))
-  }
-  trans_mat <- matrix(rep(snpInfo$prior, each = 4), nrow = 4)
-  test_pwm <- motif_library$matrix[[1]]
-  scores <- cbind(motif_scores$log_lik_a1[, 1], motif_scores$log_lik_a2[, 1])
-  save(trans_mat, test_pwm, scores, snpInfo, file = "~/MotifAnalysis_git/MotifAnalysis/data/test_is.Rda")
-}
-
-data(test_is)
+data(example)
+trans_mat <- matrix(rep(snpInfo$prior, each = 4), nrow = 4)
+test_pwm <- motif_library$matrix[[1]]
+scores <- as.matrix(motif_scores[motif == names(motif_library$matrix)[1], list(log_lik_ref, log_lik_snp)])
 
 ## these are functions for this test only
 drawonesample <- function(theta) {
@@ -101,32 +84,26 @@ test_that("Error: the scores for samples are not equivalent.", {
 })
 
 test_that("Error: compute the normalizing constant.", {
-  
   ## parameters
   p <- 0.01
   delta <- .Call("test_find_percentile", scores, p, package = "MotifAnalysis")
   theta <- .Call("test_find_theta", test_pwm, snpInfo$prior, snpInfo$transition, delta, package = "MotifAnalysis")
-  
   ##
   const <- .Call("test_func_delta", test_pwm, snpInfo$prior, trans_mat, theta, package = "MotifAnalysis")
   const.r <- prod(apply(snpInfo$prior * t(test_pwm) ^ theta, 2, sum))
-  expect_equal(const, const.r)
-    
+  expect_equal(abs(const - const.r) / const < 1e-5, TRUE)
 })
 
 test_that("Error: sample distributions are not expected.", {
-  library(doMC)
   ## parameters
   p <- 0.1
   delta <- .Call("test_find_percentile", scores, p, package = "MotifAnalysis")
-  theta <- .Call("test_find_theta", test_pwm, snpInfo$prior, snpInfo$transition, delta, package = "MotifAnalysis")
+  theta <- .Call("test_find_theta", test_pwm, snpInfo$prior, trans_mat, delta, package = "MotifAnalysis")
   delta <- t(test_pwm ^ theta)
   delta <- cbind(matrix(
                         sum(snpInfo$prior * delta[, 1]),
                         nrow = 4, ncol = 9), delta)
-  
   registerDoMC(4)
-  
   results <- foreach(i = seq(20)) %dopar% {
     ## generate 1000 samples
     sample <- sapply(seq(1000), function(x)
@@ -135,19 +112,19 @@ test_that("Error: sample distributions are not expected.", {
     emp_freq1 <- get_freq(sample)
     target_freq <- test_pwm ^ theta * snpInfo$prior
     target_freq <- target_freq / apply(target_freq, 1, sum)
-    
+    ## generate samples in R
     sample <- sapply(rep(theta, 1000), drawonesample)
     emp_freq2 <- get_freq(sample[seq(20), ] - 1)
     max(abs(emp_freq1 - target_freq)) > max(abs(emp_freq2 - target_freq))
   }
   sum(unlist(results))
-
   pbinom(sum(unlist(results)), size = 20, prob = 0.5)
-  
 })
 
 ## Visual checks
 if(FALSE) {
+
+  library(ggplot2)
   
   plot(log(y <- sapply(seq(200) / 100 - 1, function(x)
             .Call("test_func_delta", test_pwm, snpInfo$prior, snpInfo$transition, x, package = "MotifAnalysis"))))
@@ -171,16 +148,16 @@ if(FALSE) {
     delta <- .Call("test_find_percentile", scores, x, package = "MotifAnalysis")
     theta <- .Call("test_find_theta", test_pwm, snpInfo$prior, trans_mat, delta, package = "MotifAnalysis")
     const <- prod(apply(snpInfo$prior * t(test_pwm) ^ theta, 2, sum))
-  print(const)
-  sample <- sapply(rep(theta, 10000), drawonesample)
-  pr <- apply(sample[1:19, ], 2, maxjointprob)
-  wei <- const / sample[21, ] ^ theta
-  print(mean(log(sample[21, ])))
-  print(mean(log(pr)))
-  print(mean(wei))
-  pval <- sapply(scores[,1], function(x) sum(wei[log(pr) > x]) / length(pr))
-  return(pval)
-}
+    print(const)
+    sample <- sapply(rep(theta, 10000), drawonesample)
+    pr <- apply(sample[1:19, ], 2, maxjointprob)
+    wei <- const / sample[21, ] ^ theta
+    print(mean(log(sample[21, ])))
+    print(mean(log(pr)))
+    print(mean(wei))
+    pval <- sapply(scores[,1], function(x) sum(wei[log(pr) > x]) / length(pr))
+    return(pval)
+  }
 
   pval_99 <- pval_test(0.01)
   pval_9 <- pval_test(0.1)

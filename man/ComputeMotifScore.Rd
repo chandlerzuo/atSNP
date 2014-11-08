@@ -13,7 +13,7 @@ ComputeMotifScore(motif.lib, snp.info, ncores = 1)
 \item{ncores}{An integer for the number of parallel process. Default: 1.}
 }
 \value{
-A list object with the following components:
+A data.table containing:
 \tabular{ll}{
 log_lik_ratio \tab The log-likelihood ratio.\cr
 on_odds \tab Enhanced log-odds for motif binding by SNP.\cr

@@ -7,4 +7,8 @@ Author: Chandler Zuo
 Maintainer: Chandler Zuo<zuo@stat.wisc.edu>
 Description: Motif analysis.
 License: GPL-2
-LinkingTo: Rcpp
+LinkingTo: Rcpp, data.table, doMC
+Depends:
+    Rcpp,
+    data.table,
+    doMC

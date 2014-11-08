@@ -4,7 +4,7 @@
 \title{Load the SNP information and code the genome sequences around the SNP locations.}
 \usage{
 LoadSNPData(filename, genome.lib = "BSgenome.Hsapiens.UCSC.hg19",
-  half.window.size = 30)
+  half.window.size = 30, ...)
 }
 \arguments{
 \item{filename}{A table containing the SNP information. Must contain at least four columns:

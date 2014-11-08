@@ -94,7 +94,7 @@ NumericVector p_value_diff(NumericMatrix pwm, NumericMatrix wei_mat, NumericVect
 				if(j == 0) {
 					mean_diff += sample_score[k];
 				}
-				if(sample_score[k] <= scores(j, 1) - scores(j, 0) && sample_score[k] <= scores(j, 0) - scores(j, 1))
+				if(sample_score[k] >= scores(j, 1) - scores(j, 0) && sample_score[k] >= scores(j, 0) - scores(j, 1))
 					p_values[j] += wei;
 			}
 		}
@@ -274,7 +274,7 @@ NumericVector compute_sample_score_diff(NumericMatrix pwm, NumericMatrix wei_mat
 		rnd_score_rev_copy = pwm_log_prob(pwm, rev_sample_vec_copy, find_best_match(pwm, rev_sample_vec_copy));
 		if(rnd_score_rev_copy > rnd_score_copy)
 			rnd_score_copy = rnd_score_rev_copy;
-		snp_score[snp_id] = rnd_score_copy - rnd_score;
+		snp_score[snp_id] = rnd_score - rnd_score_copy;
 		snp_id ++;
 	}
 	if(snp_id != 3) {
@@ -403,4 +403,3 @@ SEXP test_compute_sample_score_diff(SEXP _pwm, SEXP _wei_mat, SEXP _sample_vec, 
 	int start_pos = as<int>(_start_pos);
 	return(wrap(compute_sample_score_diff(pwm, wei_mat, sample_vec, start_pos)));
 }
-
