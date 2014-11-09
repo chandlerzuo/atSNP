@@ -222,7 +222,6 @@ if(FALSE) {
     }
     message("Mean weight: ", mean(wei))
     message("Mean diff score: ", mean(log_diff))
-    message("Target score: ", mean(log(sample[21, ])))
 
     pval <- sapply(score_diff, function(x) sum(rep(wei, each = 3)[log_diff >= x]) / length(log_diff))
     return(pval)
@@ -231,6 +230,11 @@ if(FALSE) {
 
   pval_8 <- pval_test(0.2)
   pval1_8 <- pval_test1(0.2)
+
+  min(pval_8)
+  min(pval1_8)
+
+  p_values_8 <- 
   
   pval1_9 <- pval_test1(0.1)
   
