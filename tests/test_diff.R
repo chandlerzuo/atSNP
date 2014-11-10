@@ -9,9 +9,11 @@ scores <- as.matrix(motif_scores[motif == names(motif_library$matrix)[1], list(l
 test_score <- test_pwm
 for(i in seq(nrow(test_score))) {
   for(j in seq(ncol(test_score))) {
-    test_score[i, j] <- exp(mean(log((test_pwm[i, -j]) / test_pwm[i, j])))
+    test_score[i, j] <- exp(mean(log(test_pwm[i, j] / test_pwm[i, -j])))
   }
 }
+
+adj_mat <- test_pwm ^ 0.05
 
 ## these are functions for this test only
 drawonesample <- function(theta) {
@@ -170,8 +172,8 @@ if(FALSE) {
 
 ## test the theta
 
-  p_values_9 <- .Call("test_p_value_diff", test_pwm, test_score, snpInfo$prior, snpInfo$transition, scores, 0.1, package = "MotifAnalysis")
-  p_values_8 <- .Call("test_p_value_diff", test_pwm, test_score, snpInfo$prior, snpInfo$transition, scores, 0.2, package = "MotifAnalysis")
+  p_values_9 <- .Call("test_p_value_diff", test_pwm, test_score, adj_mat, snpInfo$prior, snpInfo$transition, scores, 0.1, package = "MotifAnalysis")
+  p_values_8 <- .Call("test_p_value_diff", test_pwm, test_score, adj_mat, snpInfo$prior, snpInfo$transition, scores, 0.2, package = "MotifAnalysis")
 
   score_diff <- apply(scores, 1, function(x) abs(diff(x)))
   
@@ -187,45 +189,59 @@ if(FALSE) {
     theta <- .Call("test_find_theta_diff", test_score, snpInfo$prior, trans_mat, delta, package = "MotifAnalysis")
     const <- sum(snpInfo$prior * t(test_score) ^ theta) / 10
     message("Constant value: ", const)
+    set.seed(0)
     sample <- sapply(rep(theta, 1000), drawonesample)
-    pr <- apply(sample[1:19, ], 2, maxjointprob)
     sample1 <- sample2 <- sample3 <- sample
     sample1[10, ] <- sapply(sample1[10, ], function(x) seq(4)[-x][1])
     sample2[10, ] <- sapply(sample2[10, ], function(x) seq(4)[-x][2])
     sample3[10, ] <- sapply(sample3[10, ], function(x) seq(4)[-x][3])
+    pr <- apply(sample[1:19, ], 2, maxjointprob)
     pr1 <- apply(sample1[1:19, ], 2, maxjointprob)
     pr2 <- apply(sample2[1:19, ], 2, maxjointprob)
     pr3 <- apply(sample3[1:19, ], 2, maxjointprob)
 
-    log_diff <- log(pr) - log(c(pr1, pr2, pr3)) 
+    log_diff <- log(rep(pr, 3)) - log(c(pr1, pr2, pr3)) 
     
     wei <- rep(const / sample[21, ] ^ theta, 3)
     message("Mean weight: ", mean(wei))
     message("Mean diff score: ", mean(log_diff))
     message("Target score: ", mean(log(sample[21, ])))
-    pval <- sapply(score_diff, function(x) sum(rep(wei, each = 3)[log_diff >= x]) / length(log_diff))
+    pval <- sapply(score_diff, function(x) sum(wei[log_diff >= x]) / length(log_diff))
     return(pval)
   }
 
   pval_test1 <- function(x) {
-    delta <- .Call("test_find_percentile_diff", scores, x, package = "MotifAnalysis")
-    theta <- .Call("test_find_theta_diff", test_score, snpInfo$prior, trans_mat, delta, package = "MotifAnalysis")
-    const <- sum(snpInfo$prior * t(test_score) ^ theta) / 10
-    message("Constant value: ", const)
-    log_diff <- rep(0, 3000)
-    wei <- rep(0, 1000)
-    for(i in seq(1000)) {
-      sample <- drawonesample(theta)
-      sample_score <- .Call("test_compute_sample_score_diff", test_pwm, test_score, sample[seq(19)] - 1, sample[20] - 1, package = "MotifAnalysis")
-      log_diff[seq(3) + 3 * (i - 1)] <- sample_score[-1]
-      wei[i] <- const / exp(sample_score[1] * theta)
-    }
-    message("Mean weight: ", mean(wei))
-    message("Mean diff score: ", mean(log_diff))
-    message("Target score: ", mean(log(sample[21, ])))
-
-    pval <- sapply(score_diff, function(x) sum(rep(wei, each = 3)[log_diff >= x]) / length(log_diff))
-    return(pval)
+      delta <- .Call("test_find_percentile_diff", scores, x, package = "MotifAnalysis")
+      theta <- .Call("test_find_theta_diff", test_score, snpInfo$prior, trans_mat, delta, package = "MotifAnalysis")
+      const <- sum(snpInfo$prior * t(test_score) ^ theta) / 10
+      message("Constant value: ", const)
+      log_diff <- rep(0, 3000)
+      wei <- rep(0, 1000)
+      set.seed(0)
+      for(i in seq(1000)) {
+          sample <- drawonesample(theta)
+          sample_score <- .Call("test_compute_sample_score_diff", test_pwm, test_score, sample[seq(19)] - 1, sample[20] - 1, package = "MotifAnalysis")
+          sample_score_r <- log(test_score[11 - sample[20], sample[10]])
+          expect_equal(sample_score_r, log(sample[21]))
+          sample1 <- sample2 <- sample3 <- sample
+          sample1[10] <- seq(4)[-sample[10]][1]
+          sample2[10] <- seq(4)[-sample[10]][2]
+          sample3[10] <- seq(4)[-sample[10]][3]
+          pr1 <- maxjointprob(sample1[1:19])
+          pr2 <- maxjointprob(sample2[1:19])
+          pr3 <- maxjointprob(sample3[1:19])
+          pr <- maxjointprob(sample[1:19])
+          sample_score_r <- c(sample_score_r, log(pr) - log(c(pr1, pr2, pr3)))
+          expect_equal(sample_score, sample_score_r)
+          ## if use sample_score[-1], the result is the same as .Call
+          ## if use sample_score_r[-1], the result is the same as pval_test
+          log_diff[seq(3) + 3 * (i - 1)] <- sample_score_r[-1]
+          wei[i] <- const / exp(sample_score[1] * theta)
+      }
+      message("Mean weight: ", mean(wei))
+      message("Mean diff score: ", mean(log_diff))
+      pval <- sapply(score_diff, function(x) sum(rep(wei, each = 3)[log_diff >= x]) / length(log_diff))
+      return(pval)
   }
 
 
@@ -240,6 +256,9 @@ if(FALSE) {
   plot(log(pval1_8), log(p_values_8))
   abline(0,1)
   
+  plot(log(pval_8), log(pval1_8))
+  abline(0,1)
+
   plot(log(pval_9), log(p_values_9))
   abline(0,1)
 

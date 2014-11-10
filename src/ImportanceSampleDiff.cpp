@@ -13,11 +13,11 @@ Compute the probability that a random sequence can get a score higher than 'scor
 @arg p The upper percentile of the scores which is used as the mean of the importance sampling distribution.
 @return A matrix with 3 columns. The first two columns are the p-values for the log-likelihood scores of each allele. The third column are the p-values for the likelihood ratios.
 */
-NumericVector p_value_diff(NumericMatrix pwm, NumericMatrix wei_mat, NumericVector stat_dist, NumericMatrix trans_mat, NumericMatrix scores, double p) {
+NumericVector p_value_diff(NumericMatrix pwm, NumericMatrix wei_mat, NumericMatrix adj_mat, NumericVector stat_dist, NumericMatrix trans_mat, NumericMatrix scores, double p) {
 	double score_percentile = find_percentile_diff(scores, p);
 	printf("percentile:%3.3f\n", score_percentile);
 	// find the tilting parameter
-	double theta = find_theta_diff(wei_mat, stat_dist, trans_mat, score_percentile);
+	double theta = find_theta_diff(wei_mat, adj_mat, stat_dist, trans_mat, score_percentile);
 	printf("theta:%3.3f\n", theta);
 	NumericVector p_values(scores.nrow());
 	NumericVector sample_score(4);
@@ -25,7 +25,7 @@ NumericVector p_value_diff(NumericMatrix pwm, NumericMatrix wei_mat, NumericVect
 
 	double tol = 1e-10;
 	int motif_len = pwm.nrow();
-	NumericMatrix delta(4 * motif_len, motif_len);
+	NumericMatrix delta(4 * motif_len, 2 * motif_len - 1);
 	IntegerVector sample(2 * motif_len);
 	IntegerVector sample_vec(2 * motif_len - 1);
 
@@ -36,28 +36,33 @@ NumericVector p_value_diff(NumericMatrix pwm, NumericMatrix wei_mat, NumericVect
 			if(wei_mat(m, i) < tol)
 				wei_mat(m, i) = tol;
 		}
+	
 	for(int pos = 0; pos < motif_len; pos ++) {
-		for(int i = 0; i < 4; i ++) {
-			delta(i + 4 * pos, motif_len - 1) = 1;
-			if(theta < 0) {
-				delta(i + 4 * pos, motif_len - 1) = 1 / pow(wei_mat(motif_len - 1 - pos, i), - theta);
-			} else {
-				delta(i + 4 * pos, motif_len - 1) = pow(wei_mat(motif_len - 1 - pos, i), theta);
-			}
-			//printf("delta(%d,%d)=%3.10f\n", i, motif_len - 1, delta(i, motif_len - 1));
-		}
-		// Formula (A.4)
-		for(int m = motif_len - 2; m >= 0; m --) {
+		for(int m = 2 * motif_len - 2; m >= 0; m --) {
 			for(int i = 0; i < 4; i ++) {
 				delta(i + 4 * pos, m) = 0;
-				for(int j = 0; j < 4; j ++) {
-					delta(i + 4 * pos, m) += trans_mat(i, j) * delta(j + 4 * pos, m + 1);
+				if(m < 2 * motif_len - 2) {
+					for(int j = 0; j < 4; j ++) {
+						delta(i + 4 * pos, m) += trans_mat(i, j) * delta(j + 4 * pos, m + 1);
+					}
+				} else {
+					delta(i + 4 * pos, m) = 1;
+				}
+				if(m <= pos + motif_len - 1 && m >= pos) {
+					delta(i + 4 * pos, m) *= adj_mat(m - pos, i);
+				}
+				if(m == motif_len - 1) {
+					if(theta < 0) {
+						delta(i + 4 * pos, motif_len - 1) *= 1 / pow(wei_mat(motif_len - 1 - pos, i), - theta);
+					} else {
+						delta(i + 4 * pos, motif_len - 1) *= pow(wei_mat(motif_len - 1 - pos, i), theta);
+					}
 				}
 				if(delta(i + 4 * pos, m) < tol) {
 					delta(i + 4 * pos, m) = tol;
 				}
-				//printf("delta(%d,%d)=%3.10f\n", i, m, delta(i, m));
 			}
+			//printf("delta(%d,%d)=%3.10f\n", i, motif_len - 1, delta(i, motif_len - 1));
 		}
 	}
 
@@ -67,7 +72,6 @@ NumericVector p_value_diff(NumericMatrix pwm, NumericMatrix wei_mat, NumericVect
 			norm_const += stat_dist[i] * delta(i + 4 * pos, 0);
 		}
 	}
-	norm_const /= motif_len;
 	printf("Constant value : %3.10f\n", norm_const);
 
 	for(int i = 0; i < p_values.size(); i ++)
@@ -84,8 +88,8 @@ NumericVector p_value_diff(NumericMatrix pwm, NumericMatrix wei_mat, NumericVect
 			sample_vec[j] = sample[j];
 		}
 		start_pos = sample[2 * motif_len - 1];
-		sample_score = compute_sample_score_diff(pwm, wei_mat, sample_vec, start_pos);
-		wei = norm_const / exp(theta * sample_score[0]);
+		sample_score = compute_sample_score_diff(pwm, wei_mat, adj_mat, sample_vec, start_pos, theta);
+		wei = norm_const / exp(sample_score[0]);
 		mean_wei += wei;
 		mean_score += sample_score[0];
 		for(int j = 0; j < scores.nrow(); j ++) {
@@ -108,46 +112,46 @@ NumericVector p_value_diff(NumericMatrix pwm, NumericMatrix wei_mat, NumericVect
 	return(p_values);
 }
 
-double func_delta_diff(NumericMatrix wei_mat, NumericVector stat_dist, NumericMatrix trans_mat, double theta) {
+double func_delta_diff(NumericMatrix wei_mat, NumericMatrix adj_mat, NumericVector stat_dist, NumericMatrix trans_mat, double theta) {
 	int motif_len = wei_mat.nrow();
-	NumericMatrix delta(4 * motif_len, motif_len);
+	NumericMatrix delta(4 * motif_len, 2 * motif_len - 1);
 	double tol = 1e-10;
 	
 	for(int pos = 0; pos < motif_len; pos ++) {
-		for(int i = 0; i < 4; i ++) {
-			delta(i + 4 * pos, motif_len - 1) = 1;
-			if(theta < 0) {
-				delta(i + 4 * pos, motif_len - 1) = 1 / pow(wei_mat(motif_len - 1 - pos, i), - theta);
-			} else {
-				delta(i + 4 * pos, motif_len - 1) = pow(wei_mat(motif_len - 1 - pos, i), theta);
-			}
-			//printf("delta(%d,%d)=%3.10f\n", i, motif_len - 1, delta(i, motif_len - 1));
-		}
-		// Formula (A.4)
-		for(int m = motif_len - 2; m >= 0; m --) {
+		for(int m = 2 * motif_len - 2; m >= 0; m --) {
 			for(int i = 0; i < 4; i ++) {
 				delta(i + 4 * pos, m) = 0;
-				for(int j = 0; j < 4; j ++) {
-					delta(i + 4 * pos, m) += trans_mat(i, j) * delta(j + 4 * pos, m + 1);
+				if(m < 2 * motif_len - 2) {
+					for(int j = 0; j < 4; j ++) {
+						delta(i + 4 * pos, m) += trans_mat(i, j) * delta(j + 4 * pos, m + 1);
+					}
+				} else {
+					delta(i + 4 * pos, m) = 1;
+				}
+				if(m <= pos + motif_len - 1 && m >= pos) {
+					delta(i + 4 * pos, m) *= adj_mat(m - pos, i);
+				}
+				if(m == motif_len - 1) {
+					if(theta < 0) {
+						delta(i + 4 * pos, motif_len - 1) *= 1 / pow(wei_mat(motif_len - 1 - pos, i), - theta);
+					} else {
+						delta(i + 4 * pos, motif_len - 1) *= pow(wei_mat(motif_len - 1 - pos, i), theta);
+					}
 				}
 				if(delta(i + 4 * pos, m) < tol) {
 					delta(i + 4 * pos, m) = tol;
 				}
-				//printf("delta(%d,%d)=%3.10f\n", i, m, delta(i, m));
 			}
+			//printf("delta(%d,%d)=%3.10f\n", i, motif_len - 1, delta(i, motif_len - 1));
 		}
 	}
 
 	double norm_const = 0;
-	double const_copy = 0;
 	for(int i = 0; i < 4; i ++) {
 		for(int pos = 0; pos < motif_len; pos ++) {
 			norm_const += stat_dist[i] * delta(i + 4 * pos, 0);
-			const_copy += stat_dist[i] * delta(i + 4 * pos, motif_len - 1);
 		}
 	}
-	//	printf("const %lf\t%lf\n", norm_const, const_copy);
-	norm_const /= motif_len;
 	
 	return(norm_const);
 }
@@ -155,33 +159,34 @@ double func_delta_diff(NumericMatrix wei_mat, NumericVector stat_dist, NumericMa
 /*
   Find the tilting paramter for the importance sampling distribution, using Equation (4.5).
 */
-double find_theta_diff(NumericMatrix wei_mat, NumericVector stat_dist, NumericMatrix trans_mat, double score) {
+double find_theta_diff(NumericMatrix wei_mat, NumericMatrix adj_mat, NumericVector stat_dist, NumericMatrix trans_mat, double score) {
 	double theta = 0;
-	double low_delta = log(func_delta_diff(wei_mat, stat_dist, trans_mat, theta - 0.005));
-	double upp_delta = log(func_delta_diff(wei_mat, stat_dist, trans_mat, theta + 0.005));
+	double low_delta = log(func_delta_diff(wei_mat, adj_mat, stat_dist, trans_mat, theta - 0.005));
+	double upp_delta = log(func_delta_diff(wei_mat, adj_mat, stat_dist, trans_mat, theta + 0.005));
 	if(upp_delta - low_delta < score * 0.01) {
-		while(upp_delta - low_delta < score * 0.01) {
+		while(upp_delta - low_delta < score * 0.01 && theta < 1) {
 			theta += 0.01;
 			low_delta = upp_delta;
-			upp_delta = log(func_delta_diff(wei_mat, stat_dist, trans_mat, theta + 0.005));
+			upp_delta = log(func_delta_diff(wei_mat, adj_mat, stat_dist, trans_mat, theta + 0.005));
 		}
 	} else {
-		while(upp_delta - low_delta > score * 0.01) {
+		while(upp_delta - low_delta > score * 0.01 && theta > -1) {
 			theta -= 0.01;
 			upp_delta = low_delta;
-			low_delta = log(func_delta_diff(wei_mat, stat_dist, trans_mat, theta - 0.005));
+			low_delta = log(func_delta_diff(wei_mat, adj_mat, stat_dist, trans_mat, theta - 0.005));
 		}
 	}
 	return(theta);
 }
 
 IntegerVector importance_sample_diff(NumericMatrix delta, NumericVector stat_dist, NumericMatrix trans_mat, NumericMatrix wei_mat, double theta) {
-	int motif_len = delta.ncol();
+	int motif_len = wei_mat.nrow();
 	// compute the sampling distribution for each coordinate
 	// sample a random vector
 	RNGScope scope;
 	NumericVector rv = runif(2 * motif_len);
 	// note: the last digit is for sampling the start position
+	// 1. sample the starting position
 	double prob_start[motif_len];
 	for(int i = 0; i < motif_len; i ++) {
 		prob_start[i] = 0;
@@ -201,6 +206,7 @@ IntegerVector importance_sample_diff(NumericMatrix delta, NumericVector stat_dis
 	// the rest of the subsequence follows the prior distribution
 	if(start_pos == motif_len)
 		start_pos = motif_len - 1;
+	// 2. sample the actual vector
 	IntegerVector sample_vec(motif_len * 2);
 	sample_vec[motif_len * 2 - 1] = start_pos;
 	for(int i = 0; i < 2 * motif_len - 1; i ++) {
@@ -211,9 +217,7 @@ IntegerVector importance_sample_diff(NumericMatrix delta, NumericVector stat_dis
 			} else {
 				cond_prob[j] = trans_mat(sample_vec[i - 1], j);
 			}
-			if(i < motif_len) {
-				cond_prob[j] *= delta(j + 4 * start_pos, i);
-			}
+			cond_prob[j] *= delta(j + 4 * start_pos, i);
 			if(j > 0) {
 				cond_prob[j] += cond_prob[j - 1];
 			}
@@ -245,7 +249,7 @@ IntegerVector importance_sample_diff(NumericMatrix delta, NumericVector stat_dis
 	return(sample_vec);
 }
 
-NumericVector compute_sample_score_diff(NumericMatrix pwm, NumericMatrix wei_mat, IntegerVector sample_vec, int start_pos) {
+NumericVector compute_sample_score_diff(NumericMatrix pwm, NumericMatrix wei_mat, NumericMatrix adj_mat, IntegerVector sample_vec, int start_pos, double theta) {
 	// compute the reverse strand sequence
 	int motif_len = pwm.nrow();
 	IntegerVector rev_sample_vec(motif_len * 2 - 1);
@@ -284,7 +288,11 @@ NumericVector compute_sample_score_diff(NumericMatrix pwm, NumericMatrix wei_mat
 	// compute the weight = prior density / importance sampling density
 	// note: must use the score based on the true start_pos to compute the weight
 	// this is a bug that took 2 days to fix!
-	double adj_score = log(wei_mat(motif_len - 1 - start_pos, sample_vec[motif_len - 1]));
+	double adj_score = 0;
+	for(int i = 0; i < motif_len; i ++) {
+		adj_score += log(adj_mat(i, sample_vec[start_pos + i]));
+	}
+	adj_score += log(wei_mat(motif_len - 1 - start_pos, sample_vec[motif_len - 1])) * theta;
 	// return value
 	NumericVector ret(4);
 	ret[0] = adj_score;
@@ -355,35 +363,38 @@ SEXP test_find_percentile_diff(SEXP _scores, SEXP _p) {
 	return(wrap(ret));
 }
 
-SEXP test_p_value_diff(SEXP _pwm, SEXP _wei_mat, SEXP _stat_dist, SEXP _trans_mat, SEXP _scores, SEXP _p) {
+SEXP test_p_value_diff(SEXP _pwm, SEXP _wei_mat, SEXP _adj_mat, SEXP _stat_dist, SEXP _trans_mat, SEXP _scores, SEXP _p) {
 	NumericMatrix pwm(_pwm);
 	NumericMatrix wei_mat(_wei_mat);
+	NumericMatrix adj_mat(_adj_mat);
 	NumericVector stat_dist(_stat_dist);
 	NumericMatrix trans_mat(_trans_mat);
 	NumericMatrix scores(_scores);
 	double p = as<double>(_p);
 	
-	NumericVector p_values = p_value_diff(pwm, wei_mat, stat_dist, trans_mat, scores, p);
+	NumericVector p_values = p_value_diff(pwm, wei_mat, adj_mat, stat_dist, trans_mat, scores, p);
 	return(wrap(p_values));
 }
 
-SEXP test_find_theta_diff(SEXP _wei_mat, SEXP _stat_dist, SEXP _trans_mat, SEXP _score) {
+SEXP test_find_theta_diff(SEXP _wei_mat, SEXP _adj_mat, SEXP _stat_dist, SEXP _trans_mat, SEXP _score) {
 	NumericMatrix wei_mat(_wei_mat);
 	NumericVector stat_dist(_stat_dist);
 	NumericMatrix trans_mat(_trans_mat);
+	NumericMatrix adj_mat(_adj_mat);
 	double score = as<double>(_score);
 
-	double ret = find_theta_diff(wei_mat, stat_dist, trans_mat, score);
+	double ret = find_theta_diff(wei_mat, adj_mat, stat_dist, trans_mat, score);
 	return(wrap(ret));
 }
 
-SEXP test_func_delta_diff(SEXP _wei_mat, SEXP _stat_dist, SEXP _trans_mat, SEXP _theta) {
+SEXP test_func_delta_diff(SEXP _wei_mat, SEXP _adj_mat, SEXP _stat_dist, SEXP _trans_mat, SEXP _theta) {
 	NumericMatrix wei_mat(_wei_mat);
 	NumericVector stat_dist(_stat_dist);
 	NumericMatrix trans_mat(_trans_mat);
+	NumericMatrix adj_mat(_adj_mat);
 	double theta = as<double>(_theta);
 	
-	double ret = func_delta_diff(wei_mat, stat_dist, trans_mat, theta);
+	double ret = func_delta_diff(wei_mat, adj_mat, stat_dist, trans_mat, theta);
 	return(wrap(ret));
 }
 
@@ -396,10 +407,12 @@ SEXP test_importance_sample_diff(SEXP _delta, SEXP _stat_dist, SEXP _trans_mat, 
 	return(wrap(importance_sample_diff(delta, stat_dist, trans_mat, wei_mat, theta)));
 }
 
-SEXP test_compute_sample_score_diff(SEXP _pwm, SEXP _wei_mat, SEXP _sample_vec, SEXP _start_pos) {
+SEXP test_compute_sample_score_diff(SEXP _pwm, SEXP _wei_mat, SEXP _adj_mat, SEXP _sample_vec, SEXP _start_pos, SEXP _theta) {
 	NumericMatrix pwm(_pwm);
 	NumericMatrix wei_mat(_wei_mat);
+	NumericMatrix adj_mat(_adj_mat);
 	IntegerVector sample_vec(_sample_vec);
 	int start_pos = as<int>(_start_pos);
-	return(wrap(compute_sample_score_diff(pwm, wei_mat, sample_vec, start_pos)));
+	double theta = as<double>(_theta);
+	return(wrap(compute_sample_score_diff(pwm, wei_mat, adj_mat, sample_vec, start_pos, theta)));
 }

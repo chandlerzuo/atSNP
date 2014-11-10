@@ -34,18 +34,18 @@ RcppExport SEXP test_func_delta(SEXP, SEXP, SEXP, SEXP);
 RcppExport SEXP test_importance_sample(SEXP, SEXP, SEXP, SEXP, SEXP);
 RcppExport SEXP test_compute_sample_score(SEXP, SEXP, SEXP);
 
-NumericVector p_value_diff(NumericMatrix, NumericMatrix, NumericVector, NumericMatrix, NumericMatrix, double);
-double func_delta_diff(NumericMatrix, NumericVector, NumericMatrix, double);
-double find_theta_diff(NumericMatrix, NumericVector, NumericMatrix, double);
+NumericVector p_value_diff(NumericMatrix, NumericMatrix, NumericMatrix, NumericVector, NumericMatrix, NumericMatrix, double);
+double func_delta_diff(NumericMatrix, NumericMatrix, NumericVector, NumericMatrix, double);
+double find_theta_diff(NumericMatrix, NumericMatrix, NumericVector, NumericMatrix, double);
 IntegerVector importance_sample_diff(NumericMatrix, NumericVector, NumericMatrix, NumericMatrix, double);
-NumericVector compute_sample_score_diff(NumericMatrix, NumericMatrix, IntegerVector, int);
+NumericVector compute_sample_score_diff(NumericMatrix, NumericMatrix, NumericMatrix, IntegerVector, int, double);
 double find_percentile_diff(NumericMatrix, double);
 RcppExport SEXP test_find_percentile_diff(SEXP, SEXP);
-RcppExport SEXP test_p_value_diff(SEXP, SEXP, SEXP, SEXP, SEXP, SEXP);
-RcppExport SEXP test_find_theta_diff(SEXP, SEXP, SEXP, SEXP);
-RcppExport SEXP test_func_delta_diff(SEXP, SEXP, SEXP, SEXP);
+RcppExport SEXP test_p_value_diff(SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP);
+RcppExport SEXP test_find_theta_diff(SEXP, SEXP, SEXP, SEXP, SEXP);
+RcppExport SEXP test_func_delta_diff(SEXP, SEXP, SEXP, SEXP, SEXP);
 RcppExport SEXP test_importance_sample_diff(SEXP, SEXP, SEXP, SEXP, SEXP);
-RcppExport SEXP test_compute_sample_score_diff(SEXP, SEXP, SEXP, SEXP);
+RcppExport SEXP test_compute_sample_score_diff(SEXP, SEXP, SEXP, SEXP, SEXP, SEXP);
 
 
 
