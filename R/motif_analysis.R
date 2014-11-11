@@ -55,6 +55,7 @@ LoadMotifLibrary <- function(filename) {
 #' }
 #' @param genome.lib A string of the library name for the genome version. Default: "BSgenome.Hsapiens.UCSC.hg19".
 #' @param half.window.size An integer for the half window size around the SNP within which the motifs are matched. Default: 30.
+#' @param ... Other parameters passed to 'read.table'.
 #' @details TODO.
 #' @return A list object containing the following components:
 #' \tabular{ll}{
@@ -120,15 +121,30 @@ LoadSNPData <- function(filename, genome.lib = "BSgenome.Hsapiens.UCSC.hg19",
 #' @details TODO.
 #' @return A data.table containing:
 #' \tabular{ll}{
+#' motif \tab Name of the motif.\cr
+#' snpid \tab The SNP id.\cr
+#' ref_seq \tab The nucleobase sequence for the reference allele.\cr
+#' snp_seq \tab The nucleobase sequence for the SNP allele.\cr
+#' ref_seq_rev \tab The nucleobase sequence for the reference allele on the reverse strand.\cr
+#' snp_seq_rev \tab The nucleobase sequence for the SNP allele on the reverse strand.\cr
+#' motif_len \tab Length of the motif.\cr
+#' ref_start, ref_end, ref_strand \tab Location of the best matching subsequence on the reference allele.\cr
+#' snp_start, snp_end, snp_strand \tab Location of the best matching subsequence on the SNP allele.\cr
+#' log_lik_ref \tab Log-likelihood score for the reference allele.\cr
+#' log_lik_snp \tab Log-likelihood score for the SNP allele.\cr
 #' log_lik_ratio \tab The log-likelihood ratio.\cr
-#' on_odds \tab Enhanced log-odds for motif binding by SNP.\cr
-#' off_odds \tab Reduced log-odds for motif binding by SNP.\cr
-#' match_a1 \tab The starting positions of the best match for a1 sequences. Negative numbers correspond to the reverse strand.\cr
-#' match_a2 \tab The starting positions of the best match for a2 sequences. Negative numbers correspond to the reverse strand.\cr
+#' log_enhance_odds \tab Difference in log-likelihood ratio between SNP allele and reference allele based on the best matching subsequence on the reference allele.\cr
+#' log_reduce_odds \tab Difference in log-likelihood ratio between reference allele and SNP allele based on the best matching subsequence on the SNP allele.\cr
+#' ref_match_seq \tab Best matching subsequence on the reference allele.\cr
+#' snp_match_seq \tab Best matching subsequence on the SNP allele.\cr
+#' ref_match_seq \tab Subsequence on the reference allele corresponding to the best matching location on the SNP allele.\cr
+#' snp_match_seq \tab Subsequence on the SNP allele corresponding to the best matching location on the reference allele.\cr
 #' }
 #' Each component is a matrix, with columns representing the motifs and the rows representing the SNPs.
 #' @author Chandler Zuo\email{zuo@@stat.wisc.edu}
-#' @examples \dontrun{}
+#' @examples
+#' data(example)
+#' ComputeMotifScore(motif_library, snpInfo, ncores = 2)
 #' @useDynLib MotifAnalysis
 #' @import data.table doMC
 #' @export
@@ -254,7 +270,28 @@ ComputeMotifScore <- function(motif.lib, snp.info, ncores = 1) {
   motif_score_tbl[snp_strand == "+", ref_seq_snp_match := substr(ref_seq, snp_start, snp_end)]
   motif_score_tbl[snp_strand == "-", ref_seq_snp_match := substr(ref_seq_rev, len_seq - snp_end + 1, len_seq - snp_start + 1)]
   
-  return(motif_score_tbl)
+  return(motif_score_tbl[, list(snpid,
+                                motif,
+                                ref_seq,
+                                snp_seq,
+                                ref_seq_rev,
+                                snp_seq_rev,
+                                motif_len,
+                                ref_start,
+                                ref_end,
+                                ref_strand,
+                                snp_start,
+                                snp_end,
+                                snp_strand,
+                                log_lik_ref,
+                                log_lik_snp,
+                                log_lik_ratio,
+                                log_enhance_odds,
+                                log_reduce_odds,
+                                ref_match_seq,
+                                snp_match_seq,
+                                ref_seq_snp_match,
+                                snp_seq_ref_match)])
   
 }
 
@@ -270,49 +307,52 @@ CheckSameLength <- function(x) {
 #' @description TODO.
 #' @param motif.lib A list object with the output format of function 'LoadMotifLibrary'.
 #' @param snp.info A list object with the output format of function 'LoadSNPData'.
-#' @param motif.scores Log likelihood scores.
+#' @param motif.scores A data.table object containing at least the following columns:
+#' \tabular{ll}{
+#' motif \tab The name of the motif.\cr
+#' log_lik_ref \tab The log-likelihood score for the reference allele.\cr
+#' log_lik_snp \tab The log-likelihood score for the SNP allele.\cr
+#' }
 #' @param ncores An integer for the number of parallel process. Default: 1.
 #' @details TODO.
-#' @return A data.table with the following columns:
+#' @return A data.table extending 'motif.scores' by the following additional columns:
 #' \tabular{ll}{
-#' pval \tab P values.\cr
-#' motif \tab Motif names.\cr
-#' type \tab Type of the test, "a1", "a2", or "diff".}
+#' pval_ref \tab P values for scores on the reference allele.\cr
+#' pval_snp \tab P values for scores on the SNP allele.\cr
+#' pval_diff \tab P values for the difference in scores between the reference and the SNP alleles.\cr
+#' }
 #' @author Chandler Zuo\email{zuo@@stat.wisc.edu}
-#' @examples \dontrun{}
+#' @examples
+#' data(example)
+#' ComputePValues(motif_library, snpInfo, motif_scores, ncores = 4) 
 #' @import doMC Rcpp data.table
 #' @useDynLib MotifAnalysis
 #' @export
-ComputePValues <- function(motif.lib, snp.info, motif.scores, ncores) {
-  library(doMC)
+ComputePValues <- function(motif.lib, snp.info, motif.scores, ncores = 1) {
   registerDoMC(ncores)
   results <- foreach(i = seq_along(motif.lib$matrix)) %dopar% {
-    scores <- cbind(motif.scores$log_lik_a1[, i],
-                    motif.scores$log_lik_a2[, i])
+      rowids <- which(motif.scores$motif == names(motif.lib$matrix)[i])
+    scores <- cbind(motif.scores$log_lik_ref[rowids],
+                    motif.scores$log_lik_snp[rowids])
     pwm <- motif.lib$matrix[[i]]
     pwm[pwm < 1e-10] <- 1e-10
     wei.mat <- pwm
     for(i in seq(nrow(wei.mat))) {
-      for(j in seq(ncol(wei.mat))) {
-        wei.mat[i, j] <- exp(mean(log((pwm[i, -j]) / pwm[i, j])))
-      }
+        for(j in seq(ncol(wei.mat))) {
+            wei.mat[i, j] <- exp(mean(log(pwm[i, j] / pwm[i, -j])))
+        }
     }
-    pval_a <- .Call("test_p_value", pwm, snp.info$prior,
+    pval_a <- .Call("test_p_value_diff", pwm, snp.info$prior,
                     snp.info$transition, scores, 0.01,
                     package = "MotifAnalysis")
-    pval_diff <- .Call("test_p_value_diff", pwm,
-                         wei.mat, snp.info$prior,
+    pval_diff_r <- .Call("test_p_value_diff", pwm,
+                         wei.mat, pwm ^ 0.5, snp.info$prior,
                          snp.info$transition, scores,
                          0.1, package = "MotifAnalysis")
     message("Finished testing the ", i, "th motif")
-    data.table(
-               pval = c(pval_a[, 1:2], pval_diff),
-               motif = names(motif.lib$matrix)[i],
-               type = rep(c("a1", "a2", "diff"), each = nrow(scores)))
+      motif.scores[rowids, pval_ref := pval_a[, 1]]
+      motif.scores[rowids, pval_snp := pval_a[, 2]]
+      motif.scores[rowids, pval_diff := pval_diff_r]
   }
-  ret <- results[[1]]
-  for(i in seq_along(results)[-1]) {
-    ret <- rbind(ret, results[[i]])
-  }
-  return(ret)
+  return(motif.scores)
 }

@@ -353,7 +353,7 @@ double find_percentile_diff(NumericMatrix scores, double p) {
 			}
 		}
 	}
-	return(- heap[0]);
+	return(heap[0]);
 }
 
 SEXP test_find_percentile_diff(SEXP _scores, SEXP _p) {

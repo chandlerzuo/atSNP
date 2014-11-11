@@ -15,11 +15,24 @@ ComputeMotifScore(motif.lib, snp.info, ncores = 1)
 \value{
 A data.table containing:
 \tabular{ll}{
+motif \tab Name of the motif.\cr
+snpid \tab The SNP id.\cr
+ref_seq \tab The nucleobase sequence for the reference allele.\cr
+snp_seq \tab The nucleobase sequence for the SNP allele.\cr
+ref_seq_rev \tab The nucleobase sequence for the reference allele on the reverse strand.\cr
+snp_seq_rev \tab The nucleobase sequence for the SNP allele on the reverse strand.\cr
+motif_len \tab Length of the motif.\cr
+ref_start, ref_end, ref_strand \tab Location of the best matching subsequence on the reference allele.\cr
+snp_start, snp_end, snp_strand \tab Location of the best matching subsequence on the SNP allele.\cr
+log_lik_ref \tab Log-likelihood score for the reference allele.\cr
+log_lik_snp \tab Log-likelihood score for the SNP allele.\cr
 log_lik_ratio \tab The log-likelihood ratio.\cr
-on_odds \tab Enhanced log-odds for motif binding by SNP.\cr
-off_odds \tab Reduced log-odds for motif binding by SNP.\cr
-match_a1 \tab The starting positions of the best match for a1 sequences. Negative numbers correspond to the reverse strand.\cr
-match_a2 \tab The starting positions of the best match for a2 sequences. Negative numbers correspond to the reverse strand.\cr
+log_enhance_odds \tab Difference in log-likelihood ratio between SNP allele and reference allele based on the best matching subsequence on the reference allele.\cr
+log_reduce_odds \tab Difference in log-likelihood ratio between reference allele and SNP allele based on the best matching subsequence on the SNP allele.\cr
+ref_match_seq \tab Best matching subsequence on the reference allele.\cr
+snp_match_seq \tab Best matching subsequence on the SNP allele.\cr
+ref_match_seq \tab Subsequence on the reference allele corresponding to the best matching location on the SNP allele.\cr
+snp_match_seq \tab Subsequence on the SNP allele corresponding to the best matching location on the reference allele.\cr
 }
 Each component is a matrix, with columns representing the motifs and the rows representing the SNPs.
 }
@@ -30,7 +43,8 @@ Compute the log-likelihood scores for motifs.
 TODO.
 }
 \examples{
-\dontrun{}
+data(example)
+ComputeMotifScore(motif_library, snpInfo, ncores = 2)
 }
 \author{
 Chandler Zuo\email{zuo@stat.wisc.edu}

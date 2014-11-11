@@ -19,6 +19,8 @@ a2 \tab The deoxyribose at the SNP genome.\cr
 \item{genome.lib}{A string of the library name for the genome version. Default: "BSgenome.Hsapiens.UCSC.hg19".}
 
 \item{half.window.size}{An integer for the half window size around the SNP within which the motifs are matched. Default: 30.}
+
+\item{...}{Other parameters passed to 'read.table'.}
 }
 \value{
 A list object containing the following components:

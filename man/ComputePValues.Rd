@@ -3,23 +3,29 @@
 \alias{ComputePValues}
 \title{Compute p values.}
 \usage{
-ComputePValues(motif.lib, snp.info, motif.scores, ncores)
+ComputePValues(motif.lib, snp.info, motif.scores, ncores = 1)
 }
 \arguments{
 \item{motif.lib}{A list object with the output format of function 'LoadMotifLibrary'.}
 
 \item{snp.info}{A list object with the output format of function 'LoadSNPData'.}
 
-\item{motif.scores}{Log likelihood scores.}
+\item{motif.scores}{A data.table object containing at least the following columns:
+\tabular{ll}{
+motif \tab The name of the motif.\cr
+log_lik_ref \tab The log-likelihood score for the reference allele.\cr
+log_lik_snp \tab The log-likelihood score for the SNP allele.\cr
+}}
 
 \item{ncores}{An integer for the number of parallel process. Default: 1.}
 }
 \value{
-A data.table with the following columns:
+A data.table extending 'motif.scores' by the following additional columns:
 \tabular{ll}{
-pval \tab P values.\cr
-motif \tab Motif names.\cr
-type \tab Type of the test, "a1", "a2", or "diff".}
+pval_ref \tab P values for scores on the reference allele.\cr
+pval_snp \tab P values for scores on the SNP allele.\cr
+pval_diff \tab P values for the difference in scores between the reference and the SNP alleles.\cr
+}
 }
 \description{
 TODO.
@@ -28,7 +34,8 @@ TODO.
 TODO.
 }
 \examples{
-\dontrun{}
+data(example)
+ComputePValues(motif_library, snpInfo, motif_scores, ncores = 4)
 }
 \author{
 Chandler Zuo\email{zuo@stat.wisc.edu}
