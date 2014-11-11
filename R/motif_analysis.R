@@ -330,29 +330,34 @@ CheckSameLength <- function(x) {
 #' @export
 ComputePValues <- function(motif.lib, snp.info, motif.scores, ncores = 1) {
   registerDoMC(ncores)
-  results <- foreach(i = seq_along(motif.lib$matrix)) %dopar% {
-      rowids <- which(motif.scores$motif == names(motif.lib$matrix)[i])
+  results <- foreach(motifid = seq_along(motif.lib$matrix)) %dopar% {
+      rowids <- which(motif.scores$motif == names(motif.lib$matrix)[motifid])
     scores <- cbind(motif.scores$log_lik_ref[rowids],
                     motif.scores$log_lik_snp[rowids])
-    pwm <- motif.lib$matrix[[i]]
+    pwm <- motif.lib$matrix[[motifid]]
     pwm[pwm < 1e-10] <- 1e-10
-    wei.mat <- pwm
-    for(i in seq(nrow(wei.mat))) {
-        for(j in seq(ncol(wei.mat))) {
+      wei.mat <- pwm
+      for(i in seq(nrow(wei.mat))) {
+          for(j in seq(ncol(wei.mat))) {
             wei.mat[i, j] <- exp(mean(log(pwm[i, j] / pwm[i, -j])))
         }
     }
-    pval_a <- .Call("test_p_value_diff", pwm, snp.info$prior,
+    pval_a <- .Call("test_p_value", pwm, snp.info$prior,
                     snp.info$transition, scores, 0.01,
                     package = "MotifAnalysis")
     pval_diff_r <- .Call("test_p_value_diff", pwm,
                          wei.mat, pwm ^ 0.5, snp.info$prior,
                          snp.info$transition, scores,
                          0.1, package = "MotifAnalysis")
-    message("Finished testing the ", i, "th motif")
-      motif.scores[rowids, pval_ref := pval_a[, 1]]
-      motif.scores[rowids, pval_snp := pval_a[, 2]]
-      motif.scores[rowids, pval_diff := pval_diff_r]
+    message("Finished testing the ", motifid, "th motif")
+      list(rowids = rowids,
+           pval_a = pval_a,
+           pval_diff = pval_diff_r)
+  }
+  for(i in seq(length(results))) {
+      motif.scores[results[[i]]$rowids, pval_ref := results[[i]]$pval_a[, 1]]
+      motif.scores[results[[i]]$rowids, pval_snp := results[[i]]$pval_a[, 2]]
+      motif.scores[results[[i]]$rowids, pval_diff := results[[i]]$pval_diff]
   }
   return(motif.scores)
 }
