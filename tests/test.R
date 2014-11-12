@@ -16,6 +16,8 @@ data(example)
 
 motif_scores <- ComputeMotifScore(motif_library, snpInfo, ncores = 5)
 
+motif_scores <- MatchSubsequence(motif_scores$snp.tbl, motif_scores$motif.scores, ncores = 3)
+
 len_seq <- sapply(motif_scores$ref_seq, nchar)
 snp_pos <- as.integer(len_seq / 2) + 1
 
@@ -111,7 +113,7 @@ test_that("Error: the maximum log likelihood computation is not correct.", {
     start_pos <- snp_pos - nrow(pwm) + 1
     end_pos <- snp_pos
     rev_seq <- 5 - rev(seq_vec)
-
+    
     maxLogProb <- -Inf
     for(i in start_pos : end_pos) {
       LogProb <- log(prod(pwm[cbind(seq(nrow(pwm)),
@@ -127,7 +129,7 @@ test_that("Error: the maximum log likelihood computation is not correct.", {
     }
     return(maxLogProb)
   }
-
+  
   ## find the maximum log likelihood on the reference sequence
   my_log_lik_ref <- sapply(seq(nrow(motif_scores)),
                            function(x) {

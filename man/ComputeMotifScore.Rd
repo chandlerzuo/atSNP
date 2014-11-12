@@ -13,14 +13,16 @@ ComputeMotifScore(motif.lib, snp.info, ncores = 1)
 \item{ncores}{An integer for the number of parallel process. Default: 1.}
 }
 \value{
-A data.table containing:
-\tabular{ll}{
+A list of two data.table's. Field 'snp.tbl' contains:
+\tabular{cc}{
+snpid \tab SNP id.\cr
+ref_seq \tab Reference allele nucleobase sequence.\cr
+snp_seq \tab SNP allele nucleobase sequence.\cr
+ref_seq_rev \tab Reference allele nucleobase sequence on the reverse strand.\cr
+snp_seq_rev \tab SNP allele nucleobase sequence on the reverse strand.\cr}
+Field 'motif.score' contains:
+\tabular{cc}{
 motif \tab Name of the motif.\cr
-snpid \tab The SNP id.\cr
-ref_seq \tab The nucleobase sequence for the reference allele.\cr
-snp_seq \tab The nucleobase sequence for the SNP allele.\cr
-ref_seq_rev \tab The nucleobase sequence for the reference allele on the reverse strand.\cr
-snp_seq_rev \tab The nucleobase sequence for the SNP allele on the reverse strand.\cr
 motif_len \tab Length of the motif.\cr
 ref_start, ref_end, ref_strand \tab Location of the best matching subsequence on the reference allele.\cr
 snp_start, snp_end, snp_strand \tab Location of the best matching subsequence on the SNP allele.\cr
@@ -29,12 +31,7 @@ log_lik_snp \tab Log-likelihood score for the SNP allele.\cr
 log_lik_ratio \tab The log-likelihood ratio.\cr
 log_enhance_odds \tab Difference in log-likelihood ratio between SNP allele and reference allele based on the best matching subsequence on the reference allele.\cr
 log_reduce_odds \tab Difference in log-likelihood ratio between reference allele and SNP allele based on the best matching subsequence on the SNP allele.\cr
-ref_match_seq \tab Best matching subsequence on the reference allele.\cr
-snp_match_seq \tab Best matching subsequence on the SNP allele.\cr
-ref_match_seq \tab Subsequence on the reference allele corresponding to the best matching location on the SNP allele.\cr
-snp_match_seq \tab Subsequence on the SNP allele corresponding to the best matching location on the reference allele.\cr
 }
-Each component is a matrix, with columns representing the motifs and the rows representing the SNPs.
 }
 \description{
 Compute the log-likelihood scores for motifs.

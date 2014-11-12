@@ -119,14 +119,16 @@ LoadSNPData <- function(filename, genome.lib = "BSgenome.Hsapiens.UCSC.hg19",
 #' @param snp.info A list object with the output format of function 'LoadSNPData'.
 #' @param ncores An integer for the number of parallel process. Default: 1.
 #' @details TODO.
-#' @return A data.table containing:
-#' \tabular{ll}{
+#' @return A list of two data.table's. Field 'snp.tbl' contains:
+#' \tabular{cc}{
+#' snpid \tab SNP id.\cr
+#' ref_seq \tab Reference allele nucleobase sequence.\cr
+#' snp_seq \tab SNP allele nucleobase sequence.\cr
+#' ref_seq_rev \tab Reference allele nucleobase sequence on the reverse strand.\cr
+#' snp_seq_rev \tab SNP allele nucleobase sequence on the reverse strand.\cr}
+#' Field 'motif.score' contains:
+#' \tabular{cc}{
 #' motif \tab Name of the motif.\cr
-#' snpid \tab The SNP id.\cr
-#' ref_seq \tab The nucleobase sequence for the reference allele.\cr
-#' snp_seq \tab The nucleobase sequence for the SNP allele.\cr
-#' ref_seq_rev \tab The nucleobase sequence for the reference allele on the reverse strand.\cr
-#' snp_seq_rev \tab The nucleobase sequence for the SNP allele on the reverse strand.\cr
 #' motif_len \tab Length of the motif.\cr
 #' ref_start, ref_end, ref_strand \tab Location of the best matching subsequence on the reference allele.\cr
 #' snp_start, snp_end, snp_strand \tab Location of the best matching subsequence on the SNP allele.\cr
@@ -135,12 +137,7 @@ LoadSNPData <- function(filename, genome.lib = "BSgenome.Hsapiens.UCSC.hg19",
 #' log_lik_ratio \tab The log-likelihood ratio.\cr
 #' log_enhance_odds \tab Difference in log-likelihood ratio between SNP allele and reference allele based on the best matching subsequence on the reference allele.\cr
 #' log_reduce_odds \tab Difference in log-likelihood ratio between reference allele and SNP allele based on the best matching subsequence on the SNP allele.\cr
-#' ref_match_seq \tab Best matching subsequence on the reference allele.\cr
-#' snp_match_seq \tab Best matching subsequence on the SNP allele.\cr
-#' ref_match_seq \tab Subsequence on the reference allele corresponding to the best matching location on the SNP allele.\cr
-#' snp_match_seq \tab Subsequence on the SNP allele corresponding to the best matching location on the reference allele.\cr
 #' }
-#' Each component is a matrix, with columns representing the motifs and the rows representing the SNPs.
 #' @author Chandler Zuo\email{zuo@@stat.wisc.edu}
 #' @examples
 #' data(example)
@@ -168,7 +165,15 @@ ComputeMotifScore <- function(motif.lib, snp.info, ncores = 1) {
   if(nrow(snp.info$sequence_matrix) / 2 == as.integer(nrow(snp.info$sequence_matrix) / 2)) {
     stop("Error: 'snp.info$sequence_matrix' must have an odd number of rows so that the central row refers to the SNP nucleotide.")
   }
+
+  motifs <- names(motif.lib$matrix)
+  snpids <- colnames(snp.info$sequence_matrix)
+  nsnps <- ncol(snp.info$sequence_matrix)
+  nmotifs <- length(motif.lib$matrix)
   
+  motif_tbl <- data.table(motif = motifs,
+                          motif_len = sapply(motif.lib$matrix, nrow))
+
   registerDoMC(ncores)
 
   motif_score_par <- foreach(i = seq(ncores)) %dopar% {
@@ -180,30 +185,51 @@ ComputeMotifScore <- function(motif.lib, snp.info, ncores = 1) {
     }
     this.snp.info <- list(sequence_matrix = snp.info$sequence_matrix[, ids],
                           ref_base = snp.info$ref_base[ids], snp_base = snp.info$snp_base[ids])
-    .Call("motif_score", motif.lib, this.snp.info, package = "MotifAnalysis")
+    motif.scores <- .Call("motif_score", motif.lib, this.snp.info, package = "MotifAnalysis")
+    for(i in seq_along(motif.scores)) {
+      rownames(motif.scores[[i]]) <- snpids[ids]
+      colnames(motif.scores[[i]]) <- motifs
+    }
+    
+    len_seq <- nrow(snp.info$sequence_matrix)
+    strand_ref <- (motif.scores$match_ref_base > 0)
+    ref_start <- motif.scores$match_ref_base
+    ref_start[!strand_ref] <- len_seq + motif.scores$match_ref_base[!strand_ref] + 1
+    
+    strand_snp <- (motif.scores$match_snp_base > 0)
+    snp_start <- motif.scores$match_snp_base
+    snp_start[!strand_snp] <- len_seq + motif.scores$match_snp_base[!strand_snp] + 1
+    
+    motif_score_tbl <- data.table(snpid = rep(snpids[ids], nmotifs),
+                                  motif = rep(motifs, each = length(ids)),
+                                  log_lik_ref = c(motif.scores$log_lik_ref),
+                                  log_lik_snp = c(motif.scores$log_lik_snp),
+                                  log_lik_ratio = c(motif.scores$log_lik_ratio),
+                                  log_enhance_odds = c(motif.scores$log_enhance_odds),
+                                  log_reduce_odds = c(motif.scores$log_reduce_odds),
+                                  ref_start = c(ref_start),
+                                  snp_start = c(snp_start),
+                                  ref_strand = c("-", "+")[1 + as.integer(strand_ref)],
+                                  snp_strand = c("-", "+")[1 + as.integer(strand_snp)]
+                                  )
+    setkey(motif_score_tbl, motif)
+    setkey(motif_tbl, motif)
+    motif_score_tbl <- motif_tbl[motif_score_tbl]
+    motif_score_tbl[ref_strand == "-", ref_start := ref_start - motif_len + 1]
+    motif_score_tbl[, ref_end := ref_start + motif_len - 1]
+    motif_score_tbl[snp_strand == "-", snp_start := snp_start - motif_len + 1]
+    motif_score_tbl[, snp_end := snp_start + motif_len - 1]
+
+    motif_score_tbl
+    
   }
 
   motif.scores <- motif_score_par[[1]]
   if(ncores > 1) {
     for(i in 2:ncores) {
-      for(j in seq_along(motif.scores)) {
-        motif.scores[[j]] <- rbind(motif.scores[[j]], motif_score_par[[i]][[j]])
-      }
+      motif.scores <- rbind(motif.scores, motif_score_par[[i]])
     }
   }
-
-  motifs <- names(motif.lib$matrix)
-  snpids <- colnames(snp.info$sequence_matrix)
-  nsnps <- ncol(snp.info$sequence_matrix)
-  nmotifs <- length(motif.lib$matrix)
-  for(i in seq_along(motif.scores)) {
-    rownames(motif.scores[[i]]) <- snpids
-    colnames(motif.scores[[i]]) <- motifs
-  }
-
-
-  motif_tbl <- data.table(motif = motifs,
-                          motif_len = sapply(motif.lib$matrix, nrow))
 
   ## sequences on the reference genome
   ref_seqs <- apply(snp.info$sequence_matrix, 2, function(x) paste(c("A", "C", "G", "T")[x], collapse = ""))
@@ -227,72 +253,117 @@ ComputeMotifScore <- function(motif.lib, snp.info, ncores = 1) {
                         snp_seq = snp_seqs,
                         ref_seq_rev = ref_seqs_rev,
                         snp_seq_rev = snp_seqs_rev)
-
-  len_seq <- nrow(snp.info$sequence_matrix)
-  strand_ref <- (motif.scores$match_ref_base > 0)
-  ref_start <- motif.scores$match_ref_base
-  ref_start[!strand_ref] <- len_seq + motif.scores$match_ref_base[!strand_ref] + 1
-
-  strand_snp <- (motif.scores$match_snp_base > 0)
-  snp_start <- motif.scores$match_snp_base
-  snp_start[!strand_snp] <- len_seq + motif.scores$match_snp_base[!strand_snp] + 1
-
-  motif_score_tbl <- data.table(snpid = rep(snpids, nmotifs),
-                                 motif = rep(motifs, each = nsnps),
-                                 log_lik_ref = c(motif.scores$log_lik_ref),
-                                 log_lik_snp = c(motif.scores$log_lik_snp),
-                                 log_lik_ratio = c(motif.scores$log_lik_ratio),
-                                 log_enhance_odds = c(motif.scores$log_enhance_odds),
-                                 log_reduce_odds = c(motif.scores$log_reduce_odds),
-                                 ref_start = c(ref_start),
-                                 snp_start = c(snp_start),
-                                 ref_strand = c("-", "+")[1 + as.integer(strand_ref)],
-                                 snp_strand = c("-", "+")[1 + as.integer(strand_snp)]
-                                 )
-
-  setkey(motif_score_tbl, motif)
-  setkey(motif_tbl, motif)
-  motif_score_tbl <- motif_tbl[motif_score_tbl]
-  motif_score_tbl[ref_strand == "-", ref_start := ref_start - motif_len + 1]
-  motif_score_tbl[, ref_end := ref_start + motif_len - 1]
-  motif_score_tbl[snp_strand == "-", snp_start := snp_start - motif_len + 1]
-  motif_score_tbl[, snp_end := snp_start + motif_len - 1]
-
-  setkey(motif_score_tbl, snpid)
-  setkey(snp_tbl, snpid)
-  motif_score_tbl <- snp_tbl[motif_score_tbl]
-  motif_score_tbl[ref_strand == "+", ref_match_seq := substr(ref_seq, ref_start, ref_end)]
-  motif_score_tbl[ref_strand == "-", ref_match_seq := substr(ref_seq_rev, len_seq - ref_end + 1, len_seq - ref_start + 1)]
-  motif_score_tbl[snp_strand == "+", snp_match_seq := substr(snp_seq, snp_start, snp_end)]
-  motif_score_tbl[snp_strand == "-", snp_match_seq := substr(snp_seq_rev, len_seq - snp_end + 1, len_seq - snp_start + 1)]
-  motif_score_tbl[ref_strand == "+", snp_seq_ref_match := substr(snp_seq, ref_start, ref_end)]
-  motif_score_tbl[ref_strand == "-", snp_seq_ref_match := substr(snp_seq_rev, len_seq - ref_end + 1, len_seq - ref_start + 1)]
-  motif_score_tbl[snp_strand == "+", ref_seq_snp_match := substr(ref_seq, snp_start, snp_end)]
-  motif_score_tbl[snp_strand == "-", ref_seq_snp_match := substr(ref_seq_rev, len_seq - snp_end + 1, len_seq - snp_start + 1)]
   
-  return(motif_score_tbl[, list(snpid,
-                                motif,
-                                ref_seq,
-                                snp_seq,
-                                ref_seq_rev,
-                                snp_seq_rev,
-                                motif_len,
-                                ref_start,
-                                ref_end,
-                                ref_strand,
-                                snp_start,
-                                snp_end,
-                                snp_strand,
-                                log_lik_ref,
-                                log_lik_snp,
-                                log_lik_ratio,
-                                log_enhance_odds,
-                                log_reduce_odds,
-                                ref_match_seq,
-                                snp_match_seq,
-                                ref_seq_snp_match,
-                                snp_seq_ref_match)])
+  return(list(snp.tbl = snp_tbl, motif.scores = motif.scores))
+}
+
+#' @name MatchSubsequence
+#' @title Compute the matching subsequence.
+#' @description TODO.
+#' @param snp.tbl A data.table with the following information:
+#' \tabular{cc}{
+#' snpid \tab SNP id.\cr
+#' ref_seq \tab Reference allele nucleobase sequence.\cr
+#' snp_seq \tab SNP allele nucleobase sequence.\cr
+#' ref_seq_rev \tab Reference allele nucleobase sequence on the reverse strand.\cr
+#' snp_seq_rev \tab SNP allele nucleobase sequence on the reverse strand.\cr}
+#' @param motif.scores A data.table with the following information:
+#' \tabular{cc}{
+#' motif \tab Name of the motif.\cr
+#' motif_len \tab Length of the motif.\cr
+#' ref_start, ref_end, ref_strand \tab Location of the best matching subsequence on the reference allele.\cr
+#' snp_start, snp_end, snp_strand \tab Location of the best matching subsequence on the SNP allele.\cr
+#' log_lik_ref \tab Log-likelihood score for the reference allele.\cr
+#' log_lik_snp \tab Log-likelihood score for the SNP allele.\cr
+#' log_lik_ratio \tab The log-likelihood ratio.\cr
+#' log_enhance_odds \tab Difference in log-likelihood ratio between SNP allele and reference allele based on the best matching subsequence on the reference allele.\cr
+#' log_reduce_odds \tab Difference in log-likelihood ratio between reference allele and SNP allele based on the best matching subsequence on the SNP allele.\cr
+#' }
+#' @param snpids A subset of snpids to compute the subsequences. Default: NULL, when all snps are computed.
+#' @param motifs A subset of motifs to compute the subsequences. Default: NULL, when all motifs are computed.
+#' @param ncores The number of cores used for parallel computing.
+#' @return A data.table containing all columns in both 'snp.tbl' and 'motif.scores'. In addition, the following columns are added:
+#' \tabular{ll}{
+#' ref_match_seq \tab Best matching subsequence on the reference allele.\cr
+#' snp_match_seq \tab Best matching subsequence on the SNP allele.\cr
+#' ref_match_seq \tab Subsequence on the reference allele corresponding to the best matching location on the SNP allele.\cr
+#' snp_match_seq \tab Subsequence on the SNP allele corresponding to the best matching location on the reference allele.\cr
+#' }
+#' @author Chandler Zuo\email{zuo@@stat.wisc.edu}
+#' @examples
+#' data(example)
+#' ComputeMotifScore(motif_scores$snp.tbl, motif_scores$motif.scores)
+#' @useDynLib MotifAnalysis
+#' @import data.table doMC
+#' @export
+MatchSubsequence <- function(snp.tbl, motif.scores, snpids = NULL, motifs = NULL, ncores = 2) {
+  if(is.null(snpids)) {
+    snpids <- unique(snp.tbl$snpid)
+  }
+  if(is.null(motifs)) {
+    motifs <- unique(motif.scores$motif)
+  }
+  snpids <- unique(snpids)
+  motifs <- unique(motifs)
+  motif.scores <- motif.scores[snpid %in% snpids & motif %in% motifs, ]
+  snp.tbl <- snp.tbl[snpid %in% snpids, ]
+  snp.tbl[, len_seq := nchar(ref_seq)]
   
+  registerDoMC(ncores)
+
+  motif_score_par <- foreach(i = seq(ncores)) %dopar% {
+    k <- as.integer(length(snpids) / ncores)
+    if(i < ncores) {
+      ids <- seq(k) + k * (i - 1)
+    } else {
+      ids <- (k * (ncores - 1) + 1):length(snpids) 
+    }
+    motif.scores <- motif.scores[snpid %in% snpids[ids], ]
+    setkey(motif.scores, snpid)
+    setkey(snp.tbl, snpid)
+    motif.scores <- snp.tbl[motif.scores]
+    motif.scores[ref_strand == "+", ref_match_seq := substr(ref_seq, ref_start, ref_end)]
+    motif.scores[ref_strand == "-", ref_match_seq := substr(ref_seq_rev, len_seq - ref_end + 1, len_seq - ref_start + 1)]
+    motif.scores[snp_strand == "+", snp_match_seq := substr(snp_seq, snp_start, snp_end)]
+    motif.scores[snp_strand == "-", snp_match_seq := substr(snp_seq_rev, len_seq - snp_end + 1, len_seq - snp_start + 1)]
+    motif.scores[ref_strand == "+", snp_seq_ref_match := substr(snp_seq, ref_start, ref_end)]
+    motif.scores[ref_strand == "-", snp_seq_ref_match := substr(snp_seq_rev, len_seq - ref_end + 1, len_seq - ref_start + 1)]
+    motif.scores[snp_strand == "+", ref_seq_snp_match := substr(ref_seq, snp_start, snp_end)]
+    motif.scores[snp_strand == "-", ref_seq_snp_match := substr(ref_seq_rev, len_seq - snp_end + 1, len_seq - snp_start + 1)]
+
+    motif.scores[, list(snpid,
+                        motif,
+                        ref_seq,
+                        snp_seq,
+                        ref_seq_rev,
+                        snp_seq_rev,
+                        motif_len,
+                        ref_start,
+                        ref_end,
+                        ref_strand,
+                        snp_start,
+                        snp_end,
+                        snp_strand,
+                        log_lik_ref,
+                        log_lik_snp,
+                        log_lik_ratio,
+                        log_enhance_odds,
+                        log_reduce_odds,
+                        ref_match_seq,
+                        snp_match_seq,
+                        ref_seq_snp_match,
+                        snp_seq_ref_match)]
+  }
+
+  motif_score_tbl <- motif_score_par[[1]]
+  if(ncores > 1) {
+    for(i in 2:ncores) {
+      motif_score_tbl <- rbind(motif_score_tbl,
+                               motif_score_par[[i]])
+    }
+  }
+  
+  return(motif_score_tbl)
 }
 
 CheckSameLength <- function(x) {
