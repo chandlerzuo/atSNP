@@ -19,7 +19,7 @@ NumericMatrix p_value(NumericMatrix pwm, NumericVector stat_dist, NumericMatrix 
 	// find the tilting parameter
 	double theta = find_theta(pwm, stat_dist, trans_mat, score_percentile);
 	printf("theta:%3.3f\n", theta);
-	NumericMatrix p_values(scores.nrow(), 3);
+	NumericMatrix p_values(scores.nrow(), 4);
 
 	double tol = 1e-10;
 	int motif_len = pwm.nrow();
@@ -72,7 +72,7 @@ NumericMatrix p_value(NumericMatrix pwm, NumericVector stat_dist, NumericMatrix 
 	printf("Constant value : %3.10f\n", norm_const);
 
 	for(int i = 0; i < p_values.nrow(); i ++)
-		for(int j = 0; j < 3; j ++)
+		for(int j = 0; j < 4; j ++)
 			p_values(i, j) = 0;
 	
 	int n_sample = 1e4;
@@ -92,22 +92,20 @@ NumericMatrix p_value(NumericMatrix pwm, NumericVector stat_dist, NumericMatrix 
 		mean_adj_score += sample_score[1];
 		for(int j = 0; j < scores.nrow(); j ++) {
 			for(int k = 0; k < 2; k ++) {
-				if(scores(j, k) <= sample_score[0])
+				if(scores(j, k) <= sample_score[0]) {
 					p_values(j, k) += wei;
-			}
-			for(int k = 2; k < 5; k ++) {
-				// SNP changes binding affinity
-				if(sample_score[k] <= scores(j, 1) - scores(j, 0) && sample_score[k] <= scores(j, 0) - scores(j, 1))
-					p_values(j, 2) += sample_score[1];
+					p_values(j, k + 2) += wei * wei;
+				}
 			}
 		}
 	}
 	printf("Mean sample : %lf \t adj_score : %lf \t weight : %lf \n", mean_sample / n_sample, mean_adj_score / n_sample, mean_wei / n_sample);
 	for(int j = 0; j < scores.nrow(); j ++) {
-		for(int k = 0; k < 2; k ++) {
+		for(int k = 0; k < 4; k ++) {
 			p_values(j, k) /= n_sample;
 		}
-		p_values(j, 2) /= 3 * n_sample;
+		p_values(j, 2) -= p_values(j, 0) * p_values(j, 0);
+		p_values(j, 3) -= p_values(j, 1) * p_values(j, 1);
 	}
 	return(p_values);
 }
@@ -272,7 +270,7 @@ NumericVector compute_sample_score(NumericMatrix pwm, IntegerVector sample_vec, 
 	if(rnd_score_rev > rnd_score)
 		rnd_score = rnd_score_rev;
 	// SNP score
-	double snp_score[3];
+	//	double snp_score[3];
 	int snp_id = 0;
 	double rnd_score_copy, rnd_score_rev_copy;
 	for(int j = 0; j < 4; j ++) {
@@ -284,7 +282,7 @@ NumericVector compute_sample_score(NumericMatrix pwm, IntegerVector sample_vec, 
 		rnd_score_rev_copy = pwm_log_prob(pwm, rev_sample_vec_copy, find_best_match(pwm, rev_sample_vec_copy));
 		if(rnd_score_rev_copy > rnd_score_copy)
 			rnd_score_copy = rnd_score_rev_copy;
-		snp_score[snp_id] = rnd_score_copy - rnd_score;
+		//		snp_score[snp_id] = rnd_score_copy - rnd_score;
 		snp_id ++;
 	}
 	// compute the weight = prior density / importance sampling density
@@ -292,12 +290,12 @@ NumericVector compute_sample_score(NumericMatrix pwm, IntegerVector sample_vec, 
 	// this is a bug that took 2 days to fix!
 	double adj_score = pwm_log_prob(pwm, sample_vec, start_pos);
 	// return value
-	NumericVector ret(5);
+	NumericVector ret(2);
 	ret[0] = rnd_score;
 	ret[1] = adj_score;
-	ret[2] = snp_score[0];
-	ret[3] = snp_score[1];
-	ret[4] = snp_score[2];
+	//	ret[2] = snp_score[0];
+	//	ret[3] = snp_score[1];
+	//	ret[4] = snp_score[2];
 	//	printf("score:%3.3f\tweight:%3.3f\tconstant:%3.3f\n", ret[0], ret[1], log(delta(0, 3)));
 	return(ret);
 	

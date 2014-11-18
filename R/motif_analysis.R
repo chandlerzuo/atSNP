@@ -286,8 +286,8 @@ ComputeMotifScore <- function(motif.lib, snp.info, ncores = 1) {
 #' \tabular{ll}{
 #' ref_match_seq \tab Best matching subsequence on the reference allele.\cr
 #' snp_match_seq \tab Best matching subsequence on the SNP allele.\cr
-#' ref_match_seq \tab Subsequence on the reference allele corresponding to the best matching location on the SNP allele.\cr
-#' snp_match_seq \tab Subsequence on the SNP allele corresponding to the best matching location on the reference allele.\cr
+#' ref_seq_snp_match \tab Subsequence on the reference allele corresponding to the best matching location on the SNP allele.\cr
+#' snp_seq_ref_match \tab Subsequence on the SNP allele corresponding to the best matching location on the reference allele.\cr
 #' }
 #' @author Chandler Zuo\email{zuo@@stat.wisc.edu}
 #' @examples
@@ -402,20 +402,33 @@ CheckSameLength <- function(x) {
 ComputePValues <- function(motif.lib, snp.info, motif.scores, ncores = 1) {
   registerDoMC(ncores)
   results <- foreach(motifid = seq_along(motif.lib$matrix)) %dopar% {
-      rowids <- which(motif.scores$motif == names(motif.lib$matrix)[motifid])
+    rowids <- which(motif.scores$motif == names(motif.lib$matrix)[motifid])
     scores <- cbind(motif.scores$log_lik_ref[rowids],
                     motif.scores$log_lik_snp[rowids])
     pwm <- motif.lib$matrix[[motifid]]
     pwm[pwm < 1e-10] <- 1e-10
-      wei.mat <- pwm
-      for(i in seq(nrow(wei.mat))) {
-          for(j in seq(ncol(wei.mat))) {
-            wei.mat[i, j] <- exp(mean(log(pwm[i, j] / pwm[i, -j])))
-        }
+    wei.mat <- pwm
+    for(i in seq(nrow(wei.mat))) {
+      for(j in seq(ncol(wei.mat))) {
+        wei.mat[i, j] <- exp(mean(log(pwm[i, j] / pwm[i, -j])))
+      }
     }
+    p <- 5 / nrow(scores)
     pval_a <- .Call("test_p_value", pwm, snp.info$prior,
-                    snp.info$transition, scores, 0.01,
+                    snp.info$transition, scores, p,
                     package = "MotifAnalysis")
+    while(p < 0.1) {
+      p <- p * 10
+      pval_a.new <- .Call("test_p_value", pwm, snp.info$prior,
+                      snp.info$transition, scores, p,
+                      package = "MotifAnalysis")
+      update.id <- which(pval_a.new[, 3:4] < pval_a[, 3:4])
+      if(length(update.id) > 0) {
+        pval_a[update.id] <- pval_a.new[update.id]
+        update.id <- update.id + nrow(scores) * 2
+        pval_a[update.id] <- pval_a.new[update.id]
+      }
+    }
     pval_diff_r <- .Call("test_p_value_diff", pwm,
                          wei.mat, pwm ^ 0.5, snp.info$prior,
                          snp.info$transition, scores,
