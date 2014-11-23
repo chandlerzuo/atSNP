@@ -35,7 +35,7 @@ TODO.
 }
 \examples{
 data(example)
-ComputePValues(motif_library, snpInfo, motif_scores, ncores = 4)
+ComputePValues(motif_library, snpInfo, motif_scores$motif.scores, ncores = 4)
 }
 \author{
 Chandler Zuo\email{zuo@stat.wisc.edu}

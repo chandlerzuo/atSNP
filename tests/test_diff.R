@@ -1,10 +1,10 @@
 library(MotifAnalysis)
-library(testthat)
 data(example)
 
 trans_mat <- matrix(rep(snpInfo$prior, each = 4), nrow = 4)
-test_pwm <- motif_library$matrix[[1]]
-scores <- as.matrix(motif_scores[motif == names(motif_library$matrix)[1], list(log_lik_ref, log_lik_snp)])
+id <- 6
+test_pwm <- motif_library$matrix[[6]]
+scores <- as.matrix(motif_scores$motif.scores[motif == names(motif_library$matrix)[6], list(log_lik_ref, log_lik_snp)])
 
 test_score <- test_pwm
 for(i in seq(nrow(test_score))) {
@@ -13,47 +13,49 @@ for(i in seq(nrow(test_score))) {
   }
 }
 
-adj_mat <- test_pwm ^ 0.5
+adj_mat <- test_pwm + apply(test_pwm, 1, mean)
+
+motif_len <- nrow(test_pwm)
 
 ## these are functions for this test only
 drawonesample <- function(theta) {
-    prob_start <- sapply(seq(10),
+    prob_start <- sapply(seq(motif_len),
                          function(j)
-                             sum(snpInfo$prior * test_score[11 - j, ] ^ theta *
-                                     adj_mat[11 - j, ]) /
-                                         sum(snpInfo$prior * adj_mat[11 - j, ])
+                             sum(snpInfo$prior * test_score[motif_len + 1 - j, ] ^ theta *
+                                     adj_mat[motif_len + 1 - j, ]) /
+                                         sum(snpInfo$prior * adj_mat[motif_len + 1 - j, ])
                          )
-    id <- sample(seq(10), 1, prob = prob_start)
-    sample <- sample(1:4, 19, replace = TRUE, prob = snpInfo$prior)
+    id <- sample(seq(motif_len), 1, prob = prob_start)
+    sample <- sample(1:4, 2 * motif_len - 1, replace = TRUE, prob = snpInfo$prior)
     delta <- adj_mat
-    delta[11 - id, ] <- delta[11 - id, ] * test_score[11 - id, ] ^ theta
-    sample[id - 1 + seq(10)] <- apply(delta, 1, function(x)
+    delta[motif_len + 1 - id, ] <- delta[motif_len + 1 - id, ] * test_score[motif_len + 1 - id, ] ^ theta
+    sample[id - 1 + seq(motif_len)] <- apply(delta, 1, function(x)
         sample(seq(4), 1, prob = x * snpInfo$prior))
     sample <- c(sample,
                 id,
-                sum(log(delta[cbind(seq(10), sample[id - 1 + seq(10)])]))
+                sum(log(delta[cbind(seq(motif_len), sample[id - 1 + seq(motif_len)])]))
                 )
     return(sample)
 }
-jointprob <- function(x) prod(test_pwm[cbind(seq(10), x)])
+jointprob <- function(x) prod(test_pwm[cbind(seq(motif_len), x)])
 maxjointprob <- function(x) {
   maxp <- -Inf
   p <- -Inf
-  for(i in 1:10) {
-    p <- jointprob(x[i:(i+9)])
+  for(i in 1:motif_len) {
+    p <- jointprob(x[i:(i+motif_len - 1)])
     if(p > maxp)
       maxp <- p
   }
-  for(i in 1:10) {
-    p <- jointprob(5 - x[(i+9):i])
+  for(i in 1:motif_len) {
+    p <- jointprob(5 - x[(i+motif_len - 1):i])
     if(p > maxp)
       maxp <- p
   }
   return(maxp)
 }
 get_freq <- function(sample) {
-  emp_freq <- matrix(0, nrow = 19, ncol = 4)
-  for(i in seq(19)) {
+  emp_freq <- matrix(0, nrow = 2 * motif_len - 1, ncol = 4)
+  for(i in seq(2 * motif_len - 1)) {
     for(j in seq(4)) {
       emp_freq[i, j] <- sum(sample[i, ] == j - 1)
     }
@@ -79,41 +81,41 @@ test_that("Error: the scores for samples are not equivalent.", {
   ## Use R code to generate a random sample
   for(i in seq(10)) {
     sample <- drawonesample(theta)
-    sample_score <- .Call("test_compute_sample_score_diff", test_pwm, test_score, adj_mat, sample[seq(19)] - 1, sample[20] - 1, theta, package = "MotifAnalysis")
-    expect_equal(sample[21], sample_score[1])
+    sample_score <- .Call("test_compute_sample_score_diff", test_pwm, test_score, adj_mat, sample[seq(2 * motif_len - 1)] - 1, sample[2 * motif_len] - 1, theta, package = "MotifAnalysis")
+    expect_equal(sample[2 * motif_len + 1], sample_score[1])
 
     sample1 <- sample2 <- sample3 <- sample
-    sample1[10] <- seq(4)[-sample[10]][1]
-    sample2[10] <- seq(4)[-sample[10]][2]
-    sample3[10] <- seq(4)[-sample[10]][3]
-    sample_score_r <- log(maxjointprob(sample[seq(19)])) -
-      log(c(maxjointprob(sample1[seq(19)]),
-            maxjointprob(sample2[seq(19)]),
-            maxjointprob(sample3[seq(19)])))
+    sample1[motif_len] <- seq(4)[-sample[motif_len]][1]
+    sample2[motif_len] <- seq(4)[-sample[motif_len]][2]
+    sample3[motif_len] <- seq(4)[-sample[motif_len]][3]
+    sample_score_r <- log(maxjointprob(sample[seq(2 * motif_len - 1)])) -
+      log(c(maxjointprob(sample1[seq(2 * motif_len - 1)]),
+            maxjointprob(sample2[seq(2 * motif_len - 1)]),
+            maxjointprob(sample3[seq(2 * motif_len - 1)])))
     expect_equal(sample_score_r, sample_score[-1])
   }
   
   ## Use C code to generate a random sample
-  delta <- matrix(1, nrow = 40, ncol = 19)
-  for(pos in seq(10)) {
-      for(j in (pos + 9) : 1) {
-          if(j < pos + 9) {
+  delta <- matrix(1, nrow = 4 * motif_len, ncol = 2 * motif_len - 1)
+  for(pos in seq(motif_len)) {
+      for(j in (pos + motif_len - 1) : 1) {
+          if(j < pos + motif_len - 1) {
               delta[4 * (pos - 1) + seq(4), j] <- sum(snpInfo$prior * delta[4 * (pos - 1) + seq(4), j + 1])
           }
           if(j >= pos) {
               delta[4 * (pos - 1) + seq(4), j] <- delta[4 * (pos - 1) + seq(4), j] * adj_mat[j - pos + 1, ]
           }
-          if(j == 10) {
+          if(j == motif_len) {
               delta[4 * (pos - 1) + seq(4), j] <- delta[4 * (pos - 1) + seq(4), j] * test_score[j - pos + 1, ] ^ theta
           }
       }
   }
   for(i in seq(10)) {
     sample <- .Call("test_importance_sample_diff", delta, snpInfo$prior, trans_mat, test_pwm, theta, package = "MotifAnalysis")
-    start_pos <- sample[20] + 1
-    adj_score <- sum(log(adj_mat[cbind(seq(10), sample[start_pos - 1 + seq(10)] + 1)]))
-    adj_score <- adj_score + theta * log(test_score[11 - start_pos, sample[10] + 1])
-    sample_score <- .Call("test_compute_sample_score_diff", test_pwm, test_score, adj_mat, sample[seq(19)], sample[20], theta, package = "MotifAnalysis")
+    start_pos <- sample[2 * motif_len] + 1
+    adj_score <- sum(log(adj_mat[cbind(seq(motif_len), sample[start_pos - 1 + seq(motif_len)] + 1)]))
+    adj_score <- adj_score + theta * log(test_score[motif_len + 1 - start_pos, sample[motif_len] + 1])
+    sample_score <- .Call("test_compute_sample_score_diff", test_pwm, test_score, adj_mat, sample[seq(2 * motif_len - 1)], sample[2 * motif_len], theta, package = "MotifAnalysis")
     expect_equal(adj_score, sample_score[1])
   }
   
@@ -129,17 +131,15 @@ test_that("Error: compute the normalizing constant.", {
   ##
   const <- .Call("test_func_delta_diff", test_score, adj_mat, snpInfo$prior, trans_mat, theta, package = "MotifAnalysis")
 
-   prob_start <- sapply(seq(10),
+   prob_start <- sapply(seq(motif_len),
                          function(j)
-                             sum(snpInfo$prior * test_score[11 - j, ] ^ theta *
-                                     adj_mat[11 - j, ]) /
-                                         sum(snpInfo$prior * adj_mat[11 - j, ])
+                             sum(snpInfo$prior * test_score[motif_len + 1 - j, ] ^ theta *
+                                     adj_mat[motif_len + 1 - j, ]) /
+                                         sum(snpInfo$prior * adj_mat[motif_len + 1 - j, ])
                          )
   
-  const.r <- prod(apply(snpInfo$prior * t(adj_mat), 2, sum)) * sum(prob_start)
+  const.r <- prod(apply(snpInfo$prior * t(adj_mat), 2, sum)) * sum(prob_start) / motif_len
   expect_equal(const, const.r)
-
-  plot(sapply(seq(-1, 1, by = 0.01), function(x) log(.Call("test_func_delta_diff", test_score, adj_mat, snpInfo$prior, trans_mat, x, package = "MotifAnalysis"))))
 })
 
 test_that("Error: sample distributions are not expected.", {
@@ -150,27 +150,27 @@ test_that("Error: sample distributions are not expected.", {
   theta <- .Call("test_find_theta_diff", test_score, adj_mat, snpInfo$prior, snpInfo$transition, delta, package = "MotifAnalysis")
 
   ## construct the delta matrix
-  delta <- matrix(1, nrow = 40, ncol = 19)
-   for(pos in seq(10)) {
-        for(j in (pos + 9) : 1) {
-            if(j < pos + 9) {
+  delta <- matrix(1, nrow = 4 * motif_len, ncol = 2 * motif_len - 1)
+   for(pos in seq(motif_len)) {
+        for(j in (pos + motif_len - 1) : 1) {
+            if(j < pos + motif_len - 1) {
                 delta[4 * (pos - 1) + seq(4), j] <- sum(snpInfo$prior * delta[4 * (pos - 1) + seq(4), j + 1])
             }
             if(j >= pos) {
                 delta[4 * (pos - 1) + seq(4), j] <- delta[4 * (pos - 1) + seq(4), j] * adj_mat[j - pos + 1, ]
             }
-            if(j == 10) {
+            if(j == motif_len) {
                 delta[4 * (pos - 1) + seq(4), j] <- delta[4 * (pos - 1) + seq(4), j] * test_score[j - pos + 1, ] ^ theta
             }
         }
     }
 
-  target_freq <- matrix(0, nrow = 4, ncol = 19)
+  target_freq <- matrix(0, nrow = 4, ncol = 2 * motif_len - 1)
   
   mat <- snpInfo$prior * matrix(delta[, 1], nrow = 4)
   wei <- apply(mat, 2, sum)
-  for(j in seq(19)) {
-      for(pos in seq(10)) {
+  for(j in seq(2 * motif_len - 1)) {
+      for(pos in seq(motif_len)) {
           tmp <- delta[seq(4) + 4 * (pos - 1), j] * snpInfo$prior
           target_freq[, j] <- target_freq[, j] +  tmp / sum(tmp) * wei[pos]
       }
@@ -201,6 +201,21 @@ test_that("Error: sample distributions are not expected.", {
   
 })
 
+test_that("Error: the chosen pvalues should have the smaller variance.", {
+
+  .structure_diff <- function(pval_mat) {
+    id <- apply(pval_mat[, c(2, 4)], 1, which.min)
+    return(cbind(pval_mat[, c(1, 3)][cbind(seq_along(id), id)],
+                 pval_mat[, c(2, 4)][cbind(seq_along(id), id)]))
+  }
+  
+  for(p in c(0.05, 0.1, 0.2, 0.5)) {
+    p_values <- .Call("test_p_value_diff", test_pwm, test_score, adj_mat, snpInfo$prior, snpInfo$transition, scores, p, package = "MotifAnalysis")
+    p_values_s <- .structure_diff(p_values)
+    expect_equal(p_values_s[, 2], apply(p_values[, c(2, 4)], 1, min))
+  }
+})
+         
 ## Visual checks
 if(FALSE) {
   
@@ -209,14 +224,30 @@ if(FALSE) {
 
 ## test the theta
 
-  p_values_9 <- .Call("test_p_value_diff", test_pwm, test_score, adj_mat, snpInfo$prior, snpInfo$transition, scores, 0.1, package = "MotifAnalysis")
+  p_values_9 <- .Call("test_p_value_diff", test_pwm, test_score, adj_mat, snpInfo$prior, snpInfo$transition, scores, 0.9, package = "MotifAnalysis")
   p_values_8 <- .Call("test_p_value_diff", test_pwm, test_score, adj_mat, snpInfo$prior, snpInfo$transition, scores, 0.2, package = "MotifAnalysis")
 
+  plot(log(p_values_9[, 1])- log(p_values_9[, 3]), cex = 0.1)
+
+  plot(p_values_9[, 1], p_values_9[, 2])
+  
+  plot(p_values_9[, 2], p_values_9[, 4])
+  abline(0, 1)
+  
+  plot(p_values_8[, 2], p_values_8[, 4])
+  abline(0, 1)
+
+  plot(p_values_8[, 2], p_values_9[, 2])
+  abline(0, 1)
+
+  p_values <- cbind(p_values_9[, 1], p_values_8[, 1], p_values_9[, 3], p_values_8[, 3])[cbind(seq(nrow(p_values_9)), apply(cbind(p_values_9[, 2], p_values_8[, 2], p_values_9[, 4], p_values_8[, 4]), 1, which.min))]
+  
   score_diff <- apply(scores, 1, function(x) abs(diff(x)))
   
-  par(mfrow = c(1, 2))
-  plot(log(p_values_9) ~ score_diff)
-  plot(log(p_values_8) ~ score_diff)
+  par(mfrow = c(1, 3))
+  plot(log(p_values_9[, 1]) ~ score_diff, ylim = c(-5, 0))
+  plot(log(p_values_8[, 1]) ~ score_diff, ylim = c(-5, 0))
+  plot(log(p_values) ~ score_diff, ylim = c(-5, 0))
   
   p_values_9 <- .Call("test_p_value_diff", test_pwm, test_score, adj_mat, snpInfo$prior, trans_mat, scores, 0.1, package = "MotifAnalysis")
   p_values_8 <- .Call("test_p_value_diff", test_pwm, test_score, adj_mat, snpInfo$prior, trans_mat, scores, 0.2, package = "MotifAnalysis")
@@ -231,17 +262,17 @@ if(FALSE) {
 ##      set.seed(0)
       for(i in seq(1000)) {
           sample <- drawonesample(theta)
-          sample_score <- .Call("test_compute_sample_score_diff", test_pwm, test_score, adj_mat, sample[seq(19)] - 1, sample[20] - 1, theta, package = "MotifAnalysis")
+          sample_score <- .Call("test_compute_sample_score_diff", test_pwm, test_score, adj_mat, sample[seq(2 * motif_len - 1)] - 1, sample[2 * motif_len] - 1, theta, package = "MotifAnalysis")
 
           sample1 <- sample2 <- sample3 <- sample
-          sample1[10] <- seq(4)[-sample[10]][1]
-          sample2[10] <- seq(4)[-sample[10]][2]
-          sample3[10] <- seq(4)[-sample[10]][3]
-          pr1 <- maxjointprob(sample1[1:19])
-          pr2 <- maxjointprob(sample2[1:19])
-          pr3 <- maxjointprob(sample3[1:19])
-          pr <- maxjointprob(sample[1:19])
-          sample_score_r <- c(sample[21], log(pr) - log(c(pr1, pr2, pr3)))
+          sample1[motif_len] <- seq(4)[-sample[motif_len]][1]
+          sample2[motif_len] <- seq(4)[-sample[motif_len]][2]
+          sample3[motif_len] <- seq(4)[-sample[motif_len]][3]
+          pr1 <- maxjointprob(sample1[seq(2 * motif_len - 1)])
+          pr2 <- maxjointprob(sample2[seq(2 * motif_len - 1)])
+          pr3 <- maxjointprob(sample3[seq(2 * motif_len - 1)])
+          pr <- maxjointprob(sample[seq(2 * motif_len - 1)])
+          sample_score_r <- c(sample[2 * motif_len + 1], log(pr) - log(c(pr1, pr2, pr3)))
           expect_equal(sample_score, sample_score_r)
           ## if use sample_score[-1], the result is the same as .Call
           ## if use sample_score_r[-1], the result is the same as pval_test
@@ -254,15 +285,14 @@ if(FALSE) {
       return(pval)
   }
 
-
   pval_8 <- pval_test(0.2)
   
   pval_9 <- pval_test(0.1)
-  
-  plot(log(pval_8), log(p_values_8))
-  abline(0,1)
-  
-  plot(log(pval_9), log(p_values_9))
+
+  par(mfrow = c(1, 2))
+  plot(log(pval_8), log(p_values_8[, 1]))
+  abline(0,1)  
+  plot(log(pval_9), log(p_values_9[, 1]))
   abline(0,1)
 
 }

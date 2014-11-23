@@ -279,6 +279,7 @@ ComputeMotifScore <- function(motif.lib, snp.info, ncores = 1) {
 #' log_enhance_odds \tab Difference in log-likelihood ratio between SNP allele and reference allele based on the best matching subsequence on the reference allele.\cr
 #' log_reduce_odds \tab Difference in log-likelihood ratio between reference allele and SNP allele based on the best matching subsequence on the SNP allele.\cr
 #' }
+#' @param motif.lib A list of the position weight matrices for the motifs.
 #' @param snpids A subset of snpids to compute the subsequences. Default: NULL, when all snps are computed.
 #' @param motifs A subset of motifs to compute the subsequences. Default: NULL, when all motifs are computed.
 #' @param ncores The number of cores used for parallel computing.
@@ -292,23 +293,34 @@ ComputeMotifScore <- function(motif.lib, snp.info, ncores = 1) {
 #' @author Chandler Zuo\email{zuo@@stat.wisc.edu}
 #' @examples
 #' data(example)
-#' ComputeMotifScore(motif_scores$snp.tbl, motif_scores$motif.scores)
+#' MatchSubsequence(motif_scores$snp.tbl, motif_scores$motif.scores, motif_library)
 #' @useDynLib MotifAnalysis
 #' @import data.table doMC
 #' @export
-MatchSubsequence <- function(snp.tbl, motif.scores, snpids = NULL, motifs = NULL, ncores = 2) {
+MatchSubsequence <- function(snp.tbl, motif.scores, motif.lib, snpids = NULL, motifs = NULL, ncores = 2) {
   if(is.null(snpids)) {
     snpids <- unique(snp.tbl$snpid)
   }
   if(is.null(motifs)) {
     motifs <- unique(motif.scores$motif)
   }
+  if(sum(! motifs %in% names(motif_library$matrix)) > 0) {
+    stop("Error: some motifs are not included in 'motif_library'.")
+  }
   snpids <- unique(snpids)
   motifs <- unique(motifs)
   motif.scores <- motif.scores[snpid %in% snpids & motif %in% motifs, ]
   snp.tbl <- snp.tbl[snpid %in% snpids, ]
   snp.tbl[, len_seq := nchar(ref_seq)]
-  
+
+  ## get the IUPAC subsequence for the motifs
+  motif.tbl <- data.table(
+    motif = motifs,
+    IUPAC = sapply(motif_library$matrix[motifs],
+      function(x) GetIUPACSequence(x, prob = 0.25))
+  )
+  setkey(motif.tbl, motif)
+
   registerDoMC(ncores)
 
   motif_score_par <- foreach(i = seq(ncores)) %dopar% {
@@ -319,6 +331,8 @@ MatchSubsequence <- function(snp.tbl, motif.scores, snpids = NULL, motifs = NULL
       ids <- (k * (ncores - 1) + 1):length(snpids) 
     }
     motif.scores <- motif.scores[snpid %in% snpids[ids], ]
+    setkey(motif.scores, motif)
+    motif.scores <- motif.tbl[motif.scores]
     setkey(motif.scores, snpid)
     setkey(snp.tbl, snpid)
     motif.scores <- snp.tbl[motif.scores]
@@ -335,8 +349,6 @@ MatchSubsequence <- function(snp.tbl, motif.scores, snpids = NULL, motifs = NULL
                         motif,
                         ref_seq,
                         snp_seq,
-                        ref_seq_rev,
-                        snp_seq_rev,
                         motif_len,
                         ref_start,
                         ref_end,
@@ -366,13 +378,6 @@ MatchSubsequence <- function(snp.tbl, motif.scores, snpids = NULL, motifs = NULL
   return(motif_score_tbl)
 }
 
-CheckSameLength <- function(x) {
-  if(length(x) == 1) {
-    return(TRUE)
-  }
-  return(var(unlist(sapply(x, length))) == 0)
-}
-
 #' @name ComputePValues
 #' @title Compute p values.
 #' @description TODO.
@@ -395,7 +400,7 @@ CheckSameLength <- function(x) {
 #' @author Chandler Zuo\email{zuo@@stat.wisc.edu}
 #' @examples
 #' data(example)
-#' ComputePValues(motif_library, snpInfo, motif_scores, ncores = 4) 
+#' ComputePValues(motif_library, snpInfo, motif_scores$motif.scores, ncores = 4) 
 #' @import doMC Rcpp data.table
 #' @useDynLib MotifAnalysis
 #' @export
@@ -413,35 +418,69 @@ ComputePValues <- function(motif.lib, snp.info, motif.scores, ncores = 1) {
         wei.mat[i, j] <- exp(mean(log(pwm[i, j] / pwm[i, -j])))
       }
     }
+  
     p <- 5 / nrow(scores)
-    pval_a <- .Call("test_p_value", pwm, snp.info$prior,
-                    snp.info$transition, scores, p,
-                    package = "MotifAnalysis")
+    pval_a <- NULL
     while(p < 0.1) {
-      p <- p * 10
       pval_a.new <- .Call("test_p_value", pwm, snp.info$prior,
                       snp.info$transition, scores, p,
                       package = "MotifAnalysis")
-      update.id <- which(pval_a.new[, 3:4] < pval_a[, 3:4])
-      if(length(update.id) > 0) {
-        pval_a[update.id] <- pval_a.new[update.id]
-        update.id <- update.id + nrow(scores) * 2
-        pval_a[update.id] <- pval_a.new[update.id]
+      pval_a.new <- .structure(pval_a.new)
+      if(is.null(pval_a)) {
+        pval_a <- pval_a.new
+      } else {
+        update.id <- which(pval_a.new[, 3:4] < pval_a[, 3:4])
+        if(length(update.id) > 0) {
+          pval_a[update.id] <- pval_a.new[update.id]
+          update.id <- update.id + nrow(pval_a) * 2
+          pval_a[update.id] <- pval_a.new[update.id]
+        }
+      }
+      p <- p * 10
+    }
+
+    pval_diff <- NULL
+    for(p in c(0.05, 0.1, 0.2, 0.5)) {
+      pval_diff.new <- .Call("test_p_value_diff", pwm,
+                           wei.mat, pwm + apply(pwm, 1, mean), snp.info$prior,
+                           snp.info$transition, scores,
+                           0.05, package = "MotifAnalysis")
+      pval_diff.new <- .structure_diff(pval_diff.new)
+      if(is.null(pval_diff)) {
+        pval_diff <- pval_diff.new
+      } else {
+        update.id <- which(pval_diff.new[, 2] < pval_diff[, 2])
+        pval_diff[update.id, 1] <- pval_diff.new[update.id, 1]
+        pval_diff[update.id, 2] <- pval_diff.new[update.id, 2]
       }
     }
-    pval_diff_r <- .Call("test_p_value_diff", pwm,
-                         wei.mat, pwm ^ 0.5, snp.info$prior,
-                         snp.info$transition, scores,
-                         0.1, package = "MotifAnalysis")
     message("Finished testing the ", motifid, "th motif")
-      list(rowids = rowids,
-           pval_a = pval_a,
-           pval_diff = pval_diff_r)
+    list(rowids = rowids,
+         pval_a = pval_a,
+         pval_diff = pval_diff)
   }
   for(i in seq(length(results))) {
       motif.scores[results[[i]]$rowids, pval_ref := results[[i]]$pval_a[, 1]]
       motif.scores[results[[i]]$rowids, pval_snp := results[[i]]$pval_a[, 2]]
-      motif.scores[results[[i]]$rowids, pval_diff := results[[i]]$pval_diff]
+      motif.scores[results[[i]]$rowids, pval_diff := results[[i]]$pval_diff[, 1]]
   }
   return(motif.scores)
+}
+
+#' @name GetIUPACSequence
+#' @title Get the IUPAC sequence of a motif.
+#' @description Convert the posotion weight matrix of a motif to the IUPAC sequence.
+#' @param pwm The position weight matrix, with the columns representing A, C, G, T.
+#' @param prob The probability threshold. Default: 0.25.
+#' @return A character string.
+#' @author Chandler Zuo\email{zuo@@stat.wisc.edu}
+#' @examples
+#' data(example)
+#' GetIUPACSequence(motif_library$matrix[[1]], prob = 0.2)
+#' @export
+GetIUPACSequence <- function(pwm, prob = 0.25) {
+  iupac.table <-
+    c(".", "A", "C", "M", "G", "R", "S", "V", "T", "W", "Y", "H", "K", "D", "B", "N")
+  iupac.value <- (pwm >= prob) %*% c(1, 2, 4, 8) + 1
+  return(paste(iupac.table[iupac.value], collapse = ""))
 }

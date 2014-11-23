@@ -13,13 +13,14 @@ Compute the probability that a random sequence can get a score higher than 'scor
 @arg p The upper percentile of the scores which is used as the mean of the importance sampling distribution.
 @return A matrix with 3 columns. The first two columns are the p-values for the log-likelihood scores of each allele. The third column are the p-values for the likelihood ratios.
 */
-NumericVector p_value_diff(NumericMatrix pwm, NumericMatrix wei_mat, NumericMatrix adj_mat, NumericVector stat_dist, NumericMatrix trans_mat, NumericMatrix scores, double p) {
+NumericMatrix p_value_diff(NumericMatrix pwm, NumericMatrix wei_mat, NumericMatrix adj_mat, NumericVector stat_dist, NumericMatrix trans_mat, NumericMatrix scores, double p) {
 	double score_percentile = find_percentile_diff(scores, p);
 	printf("percentile:%3.3f\n", score_percentile);
 	// find the tilting parameter
 	double theta = find_theta_diff(wei_mat, adj_mat, stat_dist, trans_mat, score_percentile);
 	printf("theta:%3.3f\n", theta);
-	NumericVector p_values(scores.nrow());
+	NumericMatrix p_values(scores.nrow(), 4);
+	NumericMatrix moments(scores.nrow(), 4);
 	NumericVector sample_score(4);
 	int start_pos;
 
@@ -72,13 +73,16 @@ NumericVector p_value_diff(NumericMatrix pwm, NumericMatrix wei_mat, NumericMatr
 			norm_const += stat_dist[i] * delta(i + 4 * pos, 0);
 		}
 	}
+	norm_const /= motif_len;
 	printf("Constant value : %3.10f\n", norm_const);
 
-	for(int i = 0; i < p_values.size(); i ++)
-		p_values[i] = 0;
-	
+	for(int i = 0; i < p_values.nrow(); i ++) {
+		for(int j = 0; j < 4; j ++) {
+			p_values(i, j) = 0;
+			moments(i, j) = 0;
+		}
+	}	
 	int n_sample = 1e4;
-	double mean_wei = 0;
 	double wei = 0;
 	double mean_diff = 0;
 	double mean_score = 0;
@@ -90,7 +94,6 @@ NumericVector p_value_diff(NumericMatrix pwm, NumericMatrix wei_mat, NumericMatr
 		start_pos = sample[2 * motif_len - 1];
 		sample_score = compute_sample_score_diff(pwm, wei_mat, adj_mat, sample_vec, start_pos, theta);
 		wei = norm_const / exp(sample_score[0]);
-		mean_wei += wei;
 		mean_score += sample_score[0];
 		for(int j = 0; j < scores.nrow(); j ++) {
 			for(int k = 1; k < 4; k ++) {
@@ -98,16 +101,30 @@ NumericVector p_value_diff(NumericMatrix pwm, NumericMatrix wei_mat, NumericMatr
 				if(j == 0) {
 					mean_diff += sample_score[k];
 				}
-				if(sample_score[k] >= scores(j, 1) - scores(j, 0) && sample_score[k] >= scores(j, 0) - scores(j, 1))
-					p_values[j] += wei;
+				moments(j, 0) += wei;
+				moments(j, 1) += wei * wei;
+				if(sample_score[k] >= scores(j, 1) - scores(j, 0) && sample_score[k] >= scores(j, 0) - scores(j, 1)) {
+					moments(j, 2) += wei;
+					moments(j, 3) += wei * wei;
+				}
 			}
 		}
 	}
-	printf("Mean weight : %lf \n", mean_wei / n_sample);
+	printf("Mean weight : %lf \n", moments(0, 0) / 3 / n_sample);
 	printf("Mean diff score : %lf \n", mean_diff / 3 / n_sample);
 	printf("Mean score : %lf \n", mean_score / n_sample);
 	for(int j = 0; j < scores.nrow(); j ++) {
-		p_values[j] /= 3 * n_sample;
+		p_values(j, 0) = moments(j, 2) / 3 / n_sample;
+		p_values(j, 1) = moments(j, 3) / 3 / n_sample - p_values(j, 0) * p_values(j, 0);
+		p_values(j, 2) = moments(j, 2) / moments(j, 0);
+		double grad1 = 3 * n_sample / moments(j, 0);
+		double grad2 = - p_values(j, 0) * grad1 * grad1;
+		double var1 = p_values(j, 1);
+		double var2 = moments(j, 1) / 3 / n_sample - 1 / grad1 / grad1;
+		double cov = moments(j, 3) / 3 / n_sample - p_values(j, 0) / grad1;
+		p_values(j, 3) = grad1 * grad1 * var1 + grad2 * grad2 * var2 + 2 * grad1 * grad2 * cov;
+		p_values(j, 1) /= 3 * n_sample - 1;
+		p_values(j, 3) /= 3 * n_sample - 1;
 	}
 	return(p_values);
 }
@@ -153,7 +170,7 @@ double func_delta_diff(NumericMatrix wei_mat, NumericMatrix adj_mat, NumericVect
 		}
 	}
 	
-	return(norm_const);
+	return(norm_const / motif_len);
 }
 
 /*

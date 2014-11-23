@@ -2,6 +2,7 @@
 
 export(ComputeMotifScore)
 export(ComputePValues)
+export(GetIUPACSequence)
 export(LoadMotifLibrary)
 export(LoadSNPData)
 export(MatchSubsequence)

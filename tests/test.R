@@ -1,13 +1,22 @@
 library(MotifAnalysis)
-library(testthat)
 
 if(FALSE) {
   # construct the test data set
   motif_file <- "/p/keles/ENCODE-CHARGE/volume1/ENCODE-Motifs/encode_motifs_for_fimo.txt"
   system.time(motif_library <- LoadMotifLibrary(motif_file))
-  system.time(snpInfo <- LoadSNPData("/p/keles/ENCODE-CHARGE/volume2/SNP/hg19_allinfo.bed", nrow = 100))
-  motif_library$matrix <- motif_library$matrix[1:5]
+  system.time(snpInfo <- LoadSNPData("/p/keles/ENCODE-CHARGE/volume2/SNP/hg19_allinfo.bed", nrow = 2000))
+  motif_library$matrix <- motif_library$matrix[c(1:5, 1695, 595)]
   motif_scores <- ComputeMotifScore(motif_library, snpInfo, ncores = 5)
+
+  motif_pval <- ComputePValues(motif_library, snpInfo, motif_scores$motif.scores, ncores = 4)
+  
+  i <- 7
+
+  par(mfrow = c(1, 3))
+  plot(log(pval_diff) ~ abs(log_lik_ratio), data = motif_pval[motif == names(motif_library$matrix)[i], ])
+  plot(log(pval_ref) ~ log_lik_ref, data = motif_pval[motif == names(motif_library$matrix)[i], ])
+  plot(log(pval_snp) ~ log_lik_snp, data = motif_pval[motif == names(motif_library$matrix)[i], ])
+
   system.time(save(motif_library, snpInfo, motif_scores, file = "~/MotifAnalysis_git/MotifAnalysis/data/example.rda"))
 }
 
@@ -18,8 +27,12 @@ motif_scores <- ComputeMotifScore(motif_library, snpInfo, ncores = 5)
 
 motif_scores <- MatchSubsequence(motif_scores$snp.tbl, motif_scores$motif.scores, ncores = 3)
 
+motif_scores[snpid == "rs2511200" & motif == "ALX3_jolma_DBD_M449", ]
+
 len_seq <- sapply(motif_scores$ref_seq, nchar)
 snp_pos <- as.integer(len_seq / 2) + 1
+
+i <- which(motif_scores$snpid == "rs2511200" & motif_scores$motif == "ALX3_jolma_DBD_M449")
 
 test_that("Error: reference bases are not the same as the sequence matrix.", {
   expect_equal(sum(snpInfo$sequence_matrix[31, ] != snpInfo$ref_base), 0)

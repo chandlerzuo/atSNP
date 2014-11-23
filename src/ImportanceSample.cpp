@@ -19,7 +19,7 @@ NumericMatrix p_value(NumericMatrix pwm, NumericVector stat_dist, NumericMatrix 
 	// find the tilting parameter
 	double theta = find_theta(pwm, stat_dist, trans_mat, score_percentile);
 	printf("theta:%3.3f\n", theta);
-	NumericMatrix p_values(scores.nrow(), 4);
+	NumericMatrix p_values(scores.nrow(), 8);
 
 	double tol = 1e-10;
 	int motif_len = pwm.nrow();
@@ -72,13 +72,14 @@ NumericMatrix p_value(NumericMatrix pwm, NumericVector stat_dist, NumericMatrix 
 	printf("Constant value : %3.10f\n", norm_const);
 
 	for(int i = 0; i < p_values.nrow(); i ++)
-		for(int j = 0; j < 4; j ++)
+		for(int j = 0; j < 8; j ++)
 			p_values(i, j) = 0;
 	
 	int n_sample = 1e4;
 	double mean_sample = 0;
 	double mean_adj_score = 0;
 	double mean_wei = 0;
+	double mean_wei2 = 0;
 	double wei = 0;
 	for(int i = 0; i < n_sample; i ++) {
 		sample = importance_sample(delta, stat_dist, trans_mat, pwm, theta);
@@ -89,23 +90,34 @@ NumericMatrix p_value(NumericMatrix pwm, NumericVector stat_dist, NumericMatrix 
 		mean_sample += sample_score[0];
 		wei = norm_const / exp(theta * sample_score[1]);
 		mean_wei += wei;
+		mean_wei2 += wei * wei;
 		mean_adj_score += sample_score[1];
 		for(int j = 0; j < scores.nrow(); j ++) {
 			for(int k = 0; k < 2; k ++) {
 				if(scores(j, k) <= sample_score[0]) {
-					p_values(j, k) += wei;
-					p_values(j, k + 2) += wei * wei;
+					p_values(j, 4 * k) += wei;
+					p_values(j, 4 * k + 1) += wei * wei;
 				}
 			}
 		}
 	}
 	printf("Mean sample : %lf \t adj_score : %lf \t weight : %lf \n", mean_sample / n_sample, mean_adj_score / n_sample, mean_wei / n_sample);
+	mean_wei /= n_sample;
+	mean_wei2 /= n_sample;
+	double var_wei = mean_wei2 - mean_wei * mean_wei;
 	for(int j = 0; j < scores.nrow(); j ++) {
-		for(int k = 0; k < 4; k ++) {
+		for(int k = 0; k < 8; k += 4) {
 			p_values(j, k) /= n_sample;
+			p_values(j, k + 1) /= n_sample;
+			double cov = p_values(j, k + 1) - mean_wei * p_values(j, k);
+			p_values(j, k + 1) -= p_values(j, k) * p_values(j, k);
+			p_values(j, k + 2) = p_values(j, k) / mean_wei;
+			double grad1 = 1 / mean_wei;
+			double grad2 = - p_values(j, k) * grad1 * grad1;
+			p_values(j, k + 3) = grad1 * grad1 * p_values(j, k + 1) + grad2 * grad2 * var_wei + 2 * grad1 * grad2 * cov;
+			p_values(j, k + 1) /= n_sample - 1;
+			p_values(j, k + 3) /= n_sample - 1;
 		}
-		p_values(j, 2) -= p_values(j, 0) * p_values(j, 0);
-		p_values(j, 3) -= p_values(j, 1) * p_values(j, 1);
 	}
 	return(p_values);
 }

@@ -3,8 +3,8 @@
 \alias{MatchSubsequence}
 \title{Compute the matching subsequence.}
 \usage{
-MatchSubsequence(snp.tbl, motif.scores, snpids = NULL, motifs = NULL,
-  ncores = 2)
+MatchSubsequence(snp.tbl, motif.scores, motif.lib, snpids = NULL,
+  motifs = NULL, ncores = 2)
 }
 \arguments{
 \item{snp.tbl}{A data.table with the following information:
@@ -28,6 +28,8 @@ log_enhance_odds \tab Difference in log-likelihood ratio between SNP allele and 
 log_reduce_odds \tab Difference in log-likelihood ratio between reference allele and SNP allele based on the best matching subsequence on the SNP allele.\cr
 }}
 
+\item{motif.lib}{A list of the position weight matrices for the motifs.}
+
 \item{snpids}{A subset of snpids to compute the subsequences. Default: NULL, when all snps are computed.}
 
 \item{motifs}{A subset of motifs to compute the subsequences. Default: NULL, when all motifs are computed.}
@@ -39,8 +41,8 @@ A data.table containing all columns in both 'snp.tbl' and 'motif.scores'. In add
 \tabular{ll}{
 ref_match_seq \tab Best matching subsequence on the reference allele.\cr
 snp_match_seq \tab Best matching subsequence on the SNP allele.\cr
-ref_match_seq \tab Subsequence on the reference allele corresponding to the best matching location on the SNP allele.\cr
-snp_match_seq \tab Subsequence on the SNP allele corresponding to the best matching location on the reference allele.\cr
+ref_seq_snp_match \tab Subsequence on the reference allele corresponding to the best matching location on the SNP allele.\cr
+snp_seq_ref_match \tab Subsequence on the SNP allele corresponding to the best matching location on the reference allele.\cr
 }
 }
 \description{
@@ -48,7 +50,7 @@ TODO.
 }
 \examples{
 data(example)
-ComputeMotifScore(motif_scores$snp.tbl, motif_scores$motif.scores)
+MatchSubsequence(motif_scores$snp.tbl, motif_scores$motif.scores, motif_library)
 }
 \author{
 Chandler Zuo\email{zuo@stat.wisc.edu}
