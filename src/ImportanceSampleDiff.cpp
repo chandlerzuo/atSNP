@@ -13,14 +13,14 @@ Compute the probability that a random sequence can get a score higher than 'scor
 @arg p The upper percentile of the scores which is used as the mean of the importance sampling distribution.
 @return A matrix with 3 columns. The first two columns are the p-values for the log-likelihood scores of each allele. The third column are the p-values for the likelihood ratios.
 */
-NumericMatrix p_value_diff(NumericMatrix pwm, NumericMatrix wei_mat, NumericMatrix adj_mat, NumericVector stat_dist, NumericMatrix trans_mat, NumericMatrix scores, double p) {
-	double score_percentile = find_percentile_diff(scores, p);
-	printf("percentile:%3.3f\n", score_percentile);
+NumericMatrix p_value_diff(NumericMatrix pwm, NumericMatrix wei_mat, NumericMatrix adj_mat, NumericVector stat_dist, NumericMatrix trans_mat, NumericVector scores, double score_percentile) {
+	// double score_percentile = find_percentile_diff(scores, p);
+	//	printf("percentile:%3.3f\n", score_percentile);
 	// find the tilting parameter
 	double theta = find_theta_diff(wei_mat, adj_mat, stat_dist, trans_mat, score_percentile);
-	printf("theta:%3.3f\n", theta);
-	NumericMatrix p_values(scores.nrow(), 4);
-	NumericMatrix moments(scores.nrow(), 4);
+	//	printf("theta:%3.3f\n", theta);
+	NumericMatrix p_values(scores.size(), 4);
+	NumericMatrix moments(scores.size(), 4);
 	NumericVector sample_score(4);
 	int start_pos;
 
@@ -74,7 +74,7 @@ NumericMatrix p_value_diff(NumericMatrix pwm, NumericMatrix wei_mat, NumericMatr
 		}
 	}
 	norm_const /= motif_len;
-	printf("Constant value : %3.10f\n", norm_const);
+	//	printf("Constant value : %3.10f\n", norm_const);
 
 	for(int i = 0; i < p_values.nrow(); i ++) {
 		for(int j = 0; j < 4; j ++) {
@@ -86,6 +86,8 @@ NumericMatrix p_value_diff(NumericMatrix pwm, NumericMatrix wei_mat, NumericMatr
 	double wei = 0;
 	double mean_diff = 0;
 	double mean_score = 0;
+	double wei_sum = 0;
+	double wei2_sum = 0;
 	for(int i = 0; i < n_sample; i ++) {
 		sample = importance_sample_diff(delta, stat_dist, trans_mat, wei_mat, theta);
 		for(int j = 0; j < motif_len * 2 - 1; j ++) {
@@ -95,36 +97,42 @@ NumericMatrix p_value_diff(NumericMatrix pwm, NumericMatrix wei_mat, NumericMatr
 		sample_score = compute_sample_score_diff(pwm, wei_mat, adj_mat, sample_vec, start_pos, theta);
 		wei = norm_const / exp(sample_score[0]);
 		mean_score += sample_score[0];
-		for(int j = 0; j < scores.nrow(); j ++) {
+		wei_sum += wei;
+		wei2_sum += wei * wei;
+		for(int j = 0; j < scores.size(); j ++) {
 			for(int k = 1; k < 4; k ++) {
 				// SNP changes binding affinity
 				if(j == 0) {
 					mean_diff += sample_score[k];
 				}
-				moments(j, 0) += wei;
-				moments(j, 1) += wei * wei;
-				if(sample_score[k] >= scores(j, 1) - scores(j, 0) && sample_score[k] >= scores(j, 0) - scores(j, 1)) {
-					moments(j, 2) += wei;
-					moments(j, 3) += wei * wei;
+				if(sample_score[k] >= scores(j) && sample_score[k] >= -scores(j)) {
+					moments(j, 0) += wei;
+					moments(j, 1) += wei * wei;
 				}
 			}
 		}
 	}
-	printf("Mean weight : %lf \n", moments(0, 0) / 3 / n_sample);
-	printf("Mean diff score : %lf \n", mean_diff / 3 / n_sample);
-	printf("Mean score : %lf \n", mean_score / n_sample);
-	for(int j = 0; j < scores.nrow(); j ++) {
-		p_values(j, 0) = moments(j, 2) / 3 / n_sample;
-		p_values(j, 1) = moments(j, 3) / 3 / n_sample - p_values(j, 0) * p_values(j, 0);
-		p_values(j, 2) = moments(j, 2) / moments(j, 0);
-		double grad1 = 3 * n_sample / moments(j, 0);
+	//	printf("Mean weight : %lf \n", moments(0, 0) / 3 / n_sample);
+	//	printf("Mean diff score : %lf \n", mean_diff / 3 / n_sample);
+	//	printf("Mean score : %lf \n", mean_score / n_sample);
+	wei2_sum /= n_sample;
+	wei_sum /= n_sample;
+	double var2 = wei2_sum - wei_sum * wei_sum;
+	double grad1 = 1 / wei_sum;
+	for(int j = 0; j < scores.size(); j ++) {
+		p_values(j, 0) = moments(j, 0) / 3 / n_sample;
+		p_values(j, 1) = moments(j, 1) / 3 / n_sample - p_values(j, 0) * p_values(j, 0);
+		p_values(j, 2) = p_values(j, 0) / wei_sum;
 		double grad2 = - p_values(j, 0) * grad1 * grad1;
 		double var1 = p_values(j, 1);
-		double var2 = moments(j, 1) / 3 / n_sample - 1 / grad1 / grad1;
-		double cov = moments(j, 3) / 3 / n_sample - p_values(j, 0) / grad1;
-		p_values(j, 3) = grad1 * grad1 * var1 + grad2 * grad2 * var2 + 2 * grad1 * grad2 * cov;
+		double cov = moments(j, 1) / 3 / n_sample - p_values(j, 0) * wei_sum;
 		p_values(j, 1) /= 3 * n_sample - 1;
-		p_values(j, 3) /= 3 * n_sample - 1;
+		if(p_values(j, 0) != wei_sum) {
+			p_values(j, 3) = grad1 * grad1 * var1 + grad2 * grad2 * var2 + 2 * grad1 * grad2 * cov;
+			p_values(j, 3) /= 3 * n_sample - 1;
+		} else {
+			p_values(j, 3) = 1;
+		}
 	}
 	return(p_values);
 }
@@ -320,9 +328,9 @@ NumericVector compute_sample_score_diff(NumericMatrix pwm, NumericMatrix wei_mat
 	return(ret);
 }
 
-double find_percentile_diff(NumericMatrix scores, double p) {
+double find_percentile_diff(NumericVector scores, double p) {
 	// compute the 1% quantile among the scores
-	int n_top = scores.nrow() * p + 1;
+	int n_top = scores.size() * p + 1;
 	// heap stores the smalles 1% of all scores
 	double heap[n_top];
 	// initialize the heap
@@ -331,8 +339,8 @@ double find_percentile_diff(NumericMatrix scores, double p) {
 	}
 	double score_diff = 0;
 	// use the heap structure to find the 1% quantile among scores
-	for(int i = 0; i < scores.nrow(); i ++) {
-		score_diff = scores(i, 0) - scores(i, 1);
+	for(int i = 0; i < scores.size(); i ++) {
+		score_diff = scores(i);
 		if(score_diff < 0)
 			score_diff = - score_diff;
 		if(heap[0] < score_diff)
@@ -373,23 +381,23 @@ double find_percentile_diff(NumericMatrix scores, double p) {
 	return(heap[0]);
 }
 
-SEXP test_find_percentile_diff(SEXP _scores, SEXP _p) {
-	NumericMatrix scores(_scores);
-	double p = as<double>(_p);
-	double ret = find_percentile_diff(scores, p);
+SEXP test_find_percentile_diff(SEXP _scores, SEXP _perc) {
+	NumericVector scores(_scores);
+	double perc = as<double>(_perc);
+	double ret = find_percentile_diff(scores, perc);
 	return(wrap(ret));
 }
 
-SEXP test_p_value_diff(SEXP _pwm, SEXP _wei_mat, SEXP _adj_mat, SEXP _stat_dist, SEXP _trans_mat, SEXP _scores, SEXP _p) {
+SEXP test_p_value_diff(SEXP _pwm, SEXP _wei_mat, SEXP _adj_mat, SEXP _stat_dist, SEXP _trans_mat, SEXP _scores, SEXP _perc) {
 	NumericMatrix pwm(_pwm);
 	NumericMatrix wei_mat(_wei_mat);
 	NumericMatrix adj_mat(_adj_mat);
 	NumericVector stat_dist(_stat_dist);
 	NumericMatrix trans_mat(_trans_mat);
-	NumericMatrix scores(_scores);
-	double p = as<double>(_p);
+	NumericVector scores(_scores);
+	double perc = as<double>(_perc);
 	
-	NumericVector p_values = p_value_diff(pwm, wei_mat, adj_mat, stat_dist, trans_mat, scores, p);
+	NumericVector p_values = p_value_diff(pwm, wei_mat, adj_mat, stat_dist, trans_mat, scores, perc);
 	return(wrap(p_values));
 }
 

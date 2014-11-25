@@ -361,6 +361,7 @@ MatchSubsequence <- function(snp.tbl, motif.scores, motif.lib, snpids = NULL, mo
                         log_lik_ratio,
                         log_enhance_odds,
                         log_reduce_odds,
+			IUPAC,
                         ref_match_seq,
                         snp_match_seq,
                         ref_seq_snp_match,
@@ -404,65 +405,168 @@ MatchSubsequence <- function(snp.tbl, motif.scores, motif.lib, snpids = NULL, mo
 #' @import doMC Rcpp data.table
 #' @useDynLib MotifAnalysis
 #' @export
-ComputePValues <- function(motif.lib, snp.info, motif.scores, ncores = 1) {
+ComputePValues <- function(motif.lib, snp.info, motif.scores, ncores = 1, getPlot = FALSE) {
   registerDoMC(ncores)
-  results <- foreach(motifid = seq_along(motif.lib$matrix)) %dopar% {
-    rowids <- which(motif.scores$motif == names(motif.lib$matrix)[motifid])
-    scores <- cbind(motif.scores$log_lik_ref[rowids],
-                    motif.scores$log_lik_snp[rowids])
-    pwm <- motif.lib$matrix[[motifid]]
-    pwm[pwm < 1e-10] <- 1e-10
-    wei.mat <- pwm
-    for(i in seq(nrow(wei.mat))) {
-      for(j in seq(ncol(wei.mat))) {
-        wei.mat[i, j] <- exp(mean(log(pwm[i, j] / pwm[i, -j])))
-      }
+  results <- as.list(seq_along(motif.lib$matrix))
+  nsets <- as.integer(length(motif.lib$matrix) / ncores)
+  for(i in seq(nsets)) {
+    message(i)
+    if(i < nsets) {
+      ids <- seq(ncores) + (i - 1) * ncores
+    } else {
+      ids <- ((nsets - 1) * ncores + 1) : length(motif.lib$matrix)
     }
-  
-    p <- 5 / nrow(scores)
-    pval_a <- NULL
-    while(p < 0.1) {
-      pval_a.new <- .Call("test_p_value", pwm, snp.info$prior,
-                      snp.info$transition, scores, p,
-                      package = "MotifAnalysis")
-      pval_a.new <- .structure(pval_a.new)
-      if(is.null(pval_a)) {
-        pval_a <- pval_a.new
-      } else {
-        update.id <- which(pval_a.new[, 3:4] < pval_a[, 3:4])
-        if(length(update.id) > 0) {
-          pval_a[update.id] <- pval_a.new[update.id]
-          update.id <- update.id + nrow(pval_a) * 2
-          pval_a[update.id] <- pval_a.new[update.id]
+    results[ids] <- foreach(motifid = ids) %dopar% {
+      rowids <- which(motif.scores$motif == names(motif.lib$matrix)[motifid])
+      scores <- cbind(motif.scores$log_lik_ref[rowids],
+                      motif.scores$log_lik_snp[rowids])
+      pwm <- motif.lib$matrix[[motifid]]
+      pwm[pwm < 1e-10] <- 1e-10
+      wei.mat <- pwm
+      for(i in seq(nrow(wei.mat))) {
+        for(j in seq(ncol(wei.mat))) {
+          wei.mat[i, j] <- exp(mean(log(pwm[i, j] / pwm[i, -j])))
         }
       }
-      p <- p * 10
-    }
+      set.seed(motifid)
+      
+      p <- 5 / nrow(scores)
 
-    pval_diff <- NULL
-    for(p in c(0.05, 0.1, 0.2, 0.5)) {
-      pval_diff.new <- .Call("test_p_value_diff", pwm,
-                           wei.mat, pwm + apply(pwm, 1, mean), snp.info$prior,
-                           snp.info$transition, scores,
-                           0.05, package = "MotifAnalysis")
-      pval_diff.new <- .structure_diff(pval_diff.new)
-      if(is.null(pval_diff)) {
-        pval_diff <- pval_diff.new
-      } else {
-        update.id <- which(pval_diff.new[, 2] < pval_diff[, 2])
-        pval_diff[update.id, 1] <- pval_diff.new[update.id, 1]
-        pval_diff[update.id, 2] <- pval_diff.new[update.id, 2]
+      m <- 20
+      b <- (1 / p) ^ ( 1 / sum(seq(m)))
+      allp <- rep(1, m + 1)
+      step <- b
+      for(k in rev(seq(m))) {
+        allp[k] <- allp[k + 1] / step
+        step <- step * b
       }
+      allp <- allp[-(m + 1)]
+      
+      score.p <- quantile(c(scores), 1 - allp)
+      
+      pval_a <- matrix(1, nrow = nrow(scores), ncol = 4)
+      for(l in seq_along(allp)) {
+        if(l == 1) {
+          score.upp = max(scores) + 1
+        } else {
+          score.upp = score.p[l - 1]
+        }
+        if(l == length(allp)) {
+          score.low = min(scores) - 1
+        } else {
+          score.low = score.p[l + 1]
+        }
+        compute.id <- which(scores < score.upp & scores >= score.low)
+        if(length(compute.id) == 0) {
+          next
+        }
+        pval_a.new <- .Call("test_p_value", pwm, snp.info$prior,
+                            snp.info$transition, scores[compute.id], score.p[l],
+                            package = "MotifAnalysis")
+        pval_a.new <- .structure(pval_a.new)
+        if(FALSE) {
+          update.id <- which(scores < score.p[l] & scores >= score.low)
+          pval_a[update.id] <- pval_a.new[compute.id %in% update.id, 1]
+          if(l > 1) {
+            update.id <- which(scores < score.upp & scores >= score.p[l])
+            pval_a[update.id] <- (pval_a.new[compute.id %in% update.id, 1] + pval_a[update.id]) / 2
+          }
+        }
+
+        if(TRUE) {
+          update.id <- which(pval_a.new[, 2] < pval_a[, 3:4][compute.id])
+          pval_a[compute.id[update.id]] <- pval_a.new[update.id, 1]
+          pval_a[compute.id[update.id] + 2 * nrow(pval_a)] <- pval_a.new[update.id, 2]
+        }
+        if(FALSE) {
+          if(length(update.id) > 0) {
+            pval_a[update.id] <- pval_a.new[update.id]
+            update.id <- update.id + nrow(pval_a) * 2
+            pval_a[update.id] <- pval_a.new[update.id]
+          }
+        }
+      }
+      
+      score_diff <- apply(scores, 1, function(x) abs(diff(x)))
+      score.p <- round(quantile(score_diff, c((seq(8) + 1) / 10, 0.9 + seq(9) / 100)))
+      score.p <- c(score.p,
+                   seq(round(quantile(score_diff, 0.1) + 1),
+                       round(quantile(score_diff, 0.9)),
+                       by = 2)
+                   )
+      score.p <- rev(sort(unique(score.p)))
+
+      pval_diff <- matrix(1, nrow = length(score_diff), ncol = 2)
+      for(l in seq_along(score.p)) {
+        if(l == 1) {
+          score.upp <- max(score_diff) + 1
+        } else {
+          score.upp <- score.p[l - 1]
+        }
+        if(l == length(score.p)) {
+          score.low <- min(score_diff) - 1
+        } else {
+          score.low <- score.p[l + 1]
+        }
+        compute.id <- which(score_diff < score.upp & score_diff >= score.low)
+        if(length(compute.id) == 0) {
+          next
+        }
+        pval_diff.new <- .Call("test_p_value_diff", pwm,
+                               wei.mat, pwm + apply(pwm, 1, mean), snp.info$prior,
+                               snp.info$transition, score_diff[compute.id],
+                               score.p[l], package = "MotifAnalysis")
+        pval_diff.new <- .structure_diff(pval_diff.new)
+        update.id <- which(pval_diff.new[, 2] < pval_diff[compute.id, 2])
+        pval_diff[compute.id[update.id], ] <- pval_diff.new[update.id, ]
+      }
+
+      ## Force the p-values to be increasing
+      pval_a[, 1] <- sort(pval_a[, 1])[rank(-scores[,1])]
+      pval_a[, 2] <- sort(pval_a[, 2])[rank(-scores[,2])]
+      score_diff <- abs(scores[,1] - scores[,2])
+      pval_diff[, 1] <- sort(pval_diff[,1])[rank(-score_diff)]
+      pval_a[pval_a[, 1] > 1, 1] <- 1
+      pval_a[pval_a[, 2] > 1, 2] <- 1
+      pval_diff[pval_diff[, 1] > 1, 1] <- 1
+      message("Finished testing the ", motifid, "th motif")
+      ##    save(list = ls(), file = paste("/p/keles/ENCODE-CHARGE/volume2/SNP/test/motif", motifid, ".Rda", sep= ""))
+      if(getPlot) {
+        plotdat <- data.frame(
+                              score = c(scores),
+                              p.value = c(pval_a[, seq(2)]),
+                              var = c(pval_a[, 3:4]),
+                              Allele = rep(c("ref", "snp"), each = nrow(scores))
+                              )
+        plotdat.diff <- data.frame(
+                                   score = score_diff,
+                                   p.value = pval_diff[,1],
+                                   var = pval_diff[,2]
+                                   )
+        plotdat <- unique(plotdat)
+        plotdat.diff <- unique(plotdat.diff)
+        localenv <- environment()
+        options(warn = -1)
+        pdf(paste("/p/keles/ENCODE-CHARGE/volume2/SNP/test/motif", motifid, ".pdf", sep = ""), width = 10, height = 10)
+        id <- which(rank(plotdat$p.value[plotdat$Allele == "ref"]) <= 500)
+        print(ggplot(aes(x = score, y = p.value), data = plotdat[plotdat$Allele == "ref", ], environment = localenv) + geom_point() + scale_y_log10() + geom_errorbar(aes(ymax = p.value + sqrt(var), ymin = p.value - sqrt(var))) + ggtitle(paste(names(motif_library$matrix)[motifid], "ref"))) 
+        id <- which(rank(plotdat$p.value[plotdat$Allele == "snp"]) <= 500)
+        print(ggplot(aes(x = score, y = p.value), data = plotdat[plotdat$Allele == "snp", ], environment = localenv) + geom_point() + scale_y_log10() + geom_errorbar(aes(ymax = p.value + sqrt(var), ymin = p.value - sqrt(var))) + ggtitle(paste(names(motif_library$matrix)[motifid], "SNP")))
+        id <- which(rank(plotdat.diff$p.value) <= 500)
+        print(ggplot(aes(x = score, y = p.value), data = plotdat.diff, environment = localenv) + geom_point() + scale_y_log10() + geom_errorbar(aes(ymax = p.value + sqrt(var), ymin = p.value - sqrt(var))) + ggtitle(paste(names(motif_library$matrix)[motifid], "Change")))
+        dev.off()
+      }
+      
+      list(rowids = rowids,
+           pval_a = pval_a,
+           pval_diff = pval_diff)
     }
-    message("Finished testing the ", motifid, "th motif")
-    list(rowids = rowids,
-         pval_a = pval_a,
-         pval_diff = pval_diff)
   }
+  
   for(i in seq(length(results))) {
-      motif.scores[results[[i]]$rowids, pval_ref := results[[i]]$pval_a[, 1]]
-      motif.scores[results[[i]]$rowids, pval_snp := results[[i]]$pval_a[, 2]]
-      motif.scores[results[[i]]$rowids, pval_diff := results[[i]]$pval_diff[, 1]]
+    motif.scores[results[[i]]$rowids, pval_ref := results[[i]]$pval_a[, 1]]
+    motif.scores[results[[i]]$rowids, pval_snp := results[[i]]$pval_a[, 2]]
+    motif.scores[results[[i]]$rowids, pval_diff := results[[i]]$pval_diff[, 1]]
   }
   return(motif.scores)
 }

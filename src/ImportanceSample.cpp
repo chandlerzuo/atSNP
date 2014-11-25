@@ -13,13 +13,13 @@ Compute the probability that a random sequence can get a score higher than 'scor
 @arg p The upper percentile of the scores which is used as the mean of the importance sampling distribution.
 @return A matrix with 3 columns. The first two columns are the p-values for the log-likelihood scores of each allele. The third column are the p-values for the likelihood ratios.
 */
-NumericMatrix p_value(NumericMatrix pwm, NumericVector stat_dist, NumericMatrix trans_mat, NumericMatrix scores, double p) {
-	double score_percentile = find_percentile(scores, p);
-	printf("percentile:%3.3f\n", score_percentile);
+NumericMatrix p_value(NumericMatrix pwm, NumericVector stat_dist, NumericMatrix trans_mat, NumericVector scores, double score_percentile) {
+	// double score_percentile = find_percentile(scores, p);
+	// printf("percentile:%3.3f\n", score_percentile);
 	// find the tilting parameter
 	double theta = find_theta(pwm, stat_dist, trans_mat, score_percentile);
 	printf("theta:%3.3f\n", theta);
-	NumericMatrix p_values(scores.nrow(), 8);
+	NumericMatrix p_values(scores.size(), 4);
 
 	double tol = 1e-10;
 	int motif_len = pwm.nrow();
@@ -69,10 +69,10 @@ NumericMatrix p_value(NumericMatrix pwm, NumericVector stat_dist, NumericMatrix 
 		}
 	}
 	norm_const /= motif_len;
-	printf("Constant value : %3.10f\n", norm_const);
+	//	printf("Constant value : %3.10f\n", norm_const);
 
 	for(int i = 0; i < p_values.nrow(); i ++)
-		for(int j = 0; j < 8; j ++)
+		for(int j = 0; j < 4; j ++)
 			p_values(i, j) = 0;
 	
 	int n_sample = 1e4;
@@ -92,12 +92,10 @@ NumericMatrix p_value(NumericMatrix pwm, NumericVector stat_dist, NumericMatrix 
 		mean_wei += wei;
 		mean_wei2 += wei * wei;
 		mean_adj_score += sample_score[1];
-		for(int j = 0; j < scores.nrow(); j ++) {
-			for(int k = 0; k < 2; k ++) {
-				if(scores(j, k) <= sample_score[0]) {
-					p_values(j, 4 * k) += wei;
-					p_values(j, 4 * k + 1) += wei * wei;
-				}
+		for(int j = 0; j < scores.size(); j ++) {
+			if(scores(j) <= sample_score[0]) {
+				p_values(j, 0) += wei;
+				p_values(j, 1) += wei * wei;
 			}
 		}
 	}
@@ -105,19 +103,20 @@ NumericMatrix p_value(NumericMatrix pwm, NumericVector stat_dist, NumericMatrix 
 	mean_wei /= n_sample;
 	mean_wei2 /= n_sample;
 	double var_wei = mean_wei2 - mean_wei * mean_wei;
-	for(int j = 0; j < scores.nrow(); j ++) {
-		for(int k = 0; k < 8; k += 4) {
-			p_values(j, k) /= n_sample;
-			p_values(j, k + 1) /= n_sample;
-			double cov = p_values(j, k + 1) - mean_wei * p_values(j, k);
-			p_values(j, k + 1) -= p_values(j, k) * p_values(j, k);
-			p_values(j, k + 2) = p_values(j, k) / mean_wei;
-			double grad1 = 1 / mean_wei;
-			double grad2 = - p_values(j, k) * grad1 * grad1;
-			p_values(j, k + 3) = grad1 * grad1 * p_values(j, k + 1) + grad2 * grad2 * var_wei + 2 * grad1 * grad2 * cov;
-			p_values(j, k + 1) /= n_sample - 1;
-			p_values(j, k + 3) /= n_sample - 1;
+	for(int j = 0; j < scores.size(); j ++) {
+		p_values(j, 0) /= n_sample;
+		p_values(j, 1) /= n_sample;
+		double cov = p_values(j, 1) - mean_wei * p_values(j, 0);
+		p_values(j, 1) -= p_values(j, 0) * p_values(j, 0);
+		p_values(j, 2) = p_values(j, 0) / mean_wei;
+		double grad1 = 1 / mean_wei;
+		double grad2 = - p_values(j, 0) * grad1 * grad1;
+		p_values(j, 3) = grad1 * grad1 * p_values(j, 1) + grad2 * grad2 * var_wei + 2 * grad1 * grad2 * cov;
+		if(var_wei == p_values(j, 1)) {
+			p_values(j, 3) = n_sample - 1;
 		}
+		p_values(j, 1) /= n_sample - 1;
+		p_values(j, 3) /= n_sample - 1;
 	}
 	return(p_values);
 }
@@ -180,13 +179,13 @@ double find_theta(NumericMatrix pwm, NumericVector stat_dist, NumericMatrix tran
 	double low_delta = log(func_delta(pwm, stat_dist, trans_mat, theta - 0.005));
 	double upp_delta = log(func_delta(pwm, stat_dist, trans_mat, theta + 0.005));
 	if(upp_delta - low_delta < score * 0.01) {
-		while(upp_delta - low_delta < score * 0.01) {
+		while(upp_delta - low_delta < score * 0.01 && theta < 1) {
 			theta += 0.01;
 			low_delta = upp_delta;
 			upp_delta = log(func_delta(pwm, stat_dist, trans_mat, theta + 0.005));
 		}
 	} else {
-		while(upp_delta - low_delta > score * 0.01) {
+		while(upp_delta - low_delta > score * 0.01 && theta > -1) {
 			theta -= 0.01;
 			upp_delta = low_delta;
 			low_delta = log(func_delta(pwm, stat_dist, trans_mat, theta - 0.005));
@@ -313,9 +312,9 @@ NumericVector compute_sample_score(NumericMatrix pwm, IntegerVector sample_vec, 
 	
 }
 
-double find_percentile(NumericMatrix scores, double p) {
+double find_percentile(NumericVector scores, double p) {
 	// compute the 1% quantile among the scores
-	int n_top = scores.nrow() * p * 2 + 1;
+	int n_top = scores.size() * p * 2 + 1;
 	// heap stores the smalles 1% of all scores
 	double heap[n_top];
 	// initialize the heap
@@ -323,40 +322,38 @@ double find_percentile(NumericMatrix scores, double p) {
 		heap[i] = -1e10;
 	}
 	// use the heap structure to find the 1% quantile among scores
-	for(int i = 0; i < scores.nrow(); i ++) {
-		for(int j = 0; j < scores.ncol(); j ++) {
-			if(heap[0] < scores(i, j))
-				heap[0] = scores(i, j);
-			int idx = 0;
-			// sort the values in the heap
-			while(1) {
-				// no children
-				if(2 * idx + 1 >= n_top)
+	for(int i = 0; i < scores.size(); i ++) {
+		if(heap[0] < scores(i))
+			heap[0] = scores(i);
+		int idx = 0;
+		// sort the values in the heap
+		while(1) {
+			// no children
+			if(2 * idx + 1 >= n_top)
+				break;
+			// only one child
+			if(2 * idx + 2 == n_top) {
+				if(heap[idx] > heap[idx * 2 + 1]) {
+					double tmp = heap[idx];
+					heap[idx] = heap[idx * 2 + 1];
+					heap[idx * 2 + 1] = tmp;
+					idx = idx * 2 + 1;
+				} else {
 					break;
-				// only one child
-				if(2 * idx + 2 == n_top) {
-					if(heap[idx] > heap[idx * 2 + 1]) {
-						double tmp = heap[idx];
-						heap[idx] = heap[idx * 2 + 1];
-						heap[idx * 2 + 1] = tmp;
-						idx = idx * 2 + 1;
-					} else {
-						break;
-					}
 				}
-				if(2 * idx + 2 < n_top) {
-					// find the larger between the children
-					int new_idx = idx * 2 + 1;
-					if(heap[new_idx] > heap[new_idx + 1])
-						new_idx ++;
-					if(heap[idx] > heap[new_idx]) {
-						double tmp = heap[idx];
-						heap[idx] = heap[new_idx];
-						heap[new_idx] = tmp;
-						idx = new_idx;
-					} else {
-						break;
-					}
+			}
+			if(2 * idx + 2 < n_top) {
+				// find the larger between the children
+				int new_idx = idx * 2 + 1;
+				if(heap[new_idx] > heap[new_idx + 1])
+					new_idx ++;
+				if(heap[idx] > heap[new_idx]) {
+					double tmp = heap[idx];
+					heap[idx] = heap[new_idx];
+					heap[new_idx] = tmp;
+					idx = new_idx;
+				} else {
+					break;
 				}
 			}
 		}
@@ -365,20 +362,20 @@ double find_percentile(NumericMatrix scores, double p) {
 }
 
 SEXP test_find_percentile(SEXP _scores, SEXP _p) {
-	NumericMatrix scores(_scores);
+	NumericVector scores(_scores);
 	double p = as<double>(_p);
 	double ret = find_percentile(scores, p);
 	return(wrap(ret));
 }
 
-SEXP test_p_value(SEXP _pwm, SEXP _stat_dist, SEXP _trans_mat, SEXP _scores, SEXP _p) {
+SEXP test_p_value(SEXP _pwm, SEXP _stat_dist, SEXP _trans_mat, SEXP _scores, SEXP _perc) {
 	NumericMatrix pwm(_pwm);
 	NumericVector stat_dist(_stat_dist);
 	NumericMatrix trans_mat(_trans_mat);
-	NumericMatrix scores(_scores);
-	double p = as<double>(_p);
+	NumericVector scores(_scores);
+	double perc = as<double>(_perc);
 	
-	NumericMatrix p_values = p_value(pwm, stat_dist, trans_mat, scores, p);
+	NumericMatrix p_values = p_value(pwm, stat_dist, trans_mat, scores, perc);
 	return(wrap(p_values));
 }
 
