@@ -73,7 +73,6 @@ NumericMatrix p_value_diff(NumericMatrix pwm, NumericMatrix wei_mat, NumericMatr
 			norm_const += stat_dist[i] * delta(i + 4 * pos, 0);
 		}
 	}
-	norm_const /= motif_len;
 	//	printf("Constant value : %3.10f\n", norm_const);
 
 	for(int i = 0; i < p_values.nrow(); i ++) {
@@ -85,7 +84,7 @@ NumericMatrix p_value_diff(NumericMatrix pwm, NumericMatrix wei_mat, NumericMatr
 	int n_sample = 1e4;
 	double wei = 0;
 	double mean_diff = 0;
-	double mean_score = 0;
+	//	double mean_score = 0;
 	double wei_sum = 0;
 	double wei2_sum = 0;
 	for(int i = 0; i < n_sample; i ++) {
@@ -95,8 +94,8 @@ NumericMatrix p_value_diff(NumericMatrix pwm, NumericMatrix wei_mat, NumericMatr
 		}
 		start_pos = sample[2 * motif_len - 1];
 		sample_score = compute_sample_score_diff(pwm, wei_mat, adj_mat, sample_vec, start_pos, theta);
-		wei = norm_const / exp(sample_score[0]);
-		mean_score += sample_score[0];
+		wei = norm_const / sample_score[0];
+		//		mean_score += sample_score[0];
 		wei_sum += wei;
 		wei2_sum += wei * wei;
 		for(int j = 0; j < scores.size(); j ++) {
@@ -178,7 +177,7 @@ double func_delta_diff(NumericMatrix wei_mat, NumericMatrix adj_mat, NumericVect
 		}
 	}
 	
-	return(norm_const / motif_len);
+	return(norm_const);
 }
 
 /*
@@ -314,10 +313,15 @@ NumericVector compute_sample_score_diff(NumericMatrix pwm, NumericMatrix wei_mat
 	// note: must use the score based on the true start_pos to compute the weight
 	// this is a bug that took 2 days to fix!
 	double adj_score = 0;
-	for(int i = 0; i < motif_len; i ++) {
-		adj_score += log(adj_mat(i, sample_vec[start_pos + i]));
+	double adj_s = 0;
+	for(int s = 0; s < motif_len; s ++) {
+		adj_s = 0;
+		for(int i = 0; i < motif_len; i ++) {
+			adj_s += log(adj_mat(i, sample_vec[s + i]));
+		}
+		adj_s += log(wei_mat(motif_len - 1 - s, sample_vec[motif_len - 1])) * theta;
+		adj_score += exp(adj_s);
 	}
-	adj_score += log(wei_mat(motif_len - 1 - start_pos, sample_vec[motif_len - 1])) * theta;
 	// return value
 	NumericVector ret(4);
 	ret[0] = adj_score;

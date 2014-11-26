@@ -68,7 +68,6 @@ NumericMatrix p_value(NumericMatrix pwm, NumericVector stat_dist, NumericMatrix 
 			norm_const += stat_dist[i] * delta(i, j);
 		}
 	}
-	norm_const /= motif_len;
 	//	printf("Constant value : %3.10f\n", norm_const);
 
 	for(int i = 0; i < p_values.nrow(); i ++)
@@ -86,12 +85,12 @@ NumericMatrix p_value(NumericMatrix pwm, NumericVector stat_dist, NumericMatrix 
 		for(int j = 0; j < sample.size() - 1; j ++) {
 			sample_vec[j] = sample[j];
 		}
-		sample_score = compute_sample_score(pwm, sample_vec, sample[2 * motif_len - 1]);
+		sample_score = compute_sample_score(pwm, sample_vec, sample[2 * motif_len - 1], theta);
 		mean_sample += sample_score[0];
-		wei = norm_const / exp(theta * sample_score[1]);
+		wei = norm_const / sample_score[1];
 		mean_wei += wei;
 		mean_wei2 += wei * wei;
-		mean_adj_score += sample_score[1];
+		mean_adj_score += log(sample_score[1]);
 		for(int j = 0; j < scores.size(); j ++) {
 			if(scores(j) <= sample_score[0]) {
 				p_values(j, 0) += wei;
@@ -168,7 +167,7 @@ double func_delta(NumericMatrix pwm, NumericVector stat_dist, NumericMatrix tran
 		}
 	}
 	
-	return(cst / motif_len);
+	return(cst);
 }
 
 /*
@@ -263,7 +262,7 @@ IntegerVector importance_sample(NumericMatrix delta, NumericVector stat_dist, Nu
 	return(sample_vec);
 }
 
-NumericVector compute_sample_score(NumericMatrix pwm, IntegerVector sample_vec, int start_pos) {
+NumericVector compute_sample_score(NumericMatrix pwm, IntegerVector sample_vec, int start_pos, double theta) {
 	int seq_len = sample_vec.size();
 	//	printf("\n");
 	// compute the reverse strand sequence
@@ -299,7 +298,10 @@ NumericVector compute_sample_score(NumericMatrix pwm, IntegerVector sample_vec, 
 	// compute the weight = prior density / importance sampling density
 	// note: must use the score based on the true start_pos to compute the weight
 	// this is a bug that took 2 days to fix!
-	double adj_score = pwm_log_prob(pwm, sample_vec, start_pos);
+	double adj_score = 0;
+	for(int s = 0; s < pwm.nrow(); s ++) {
+		adj_score += exp(theta * pwm_log_prob(pwm, sample_vec, s));
+	}
 	// return value
 	NumericVector ret(2);
 	ret[0] = rnd_score;
@@ -408,9 +410,10 @@ SEXP test_importance_sample(SEXP _delta, SEXP _stat_dist, SEXP _trans_mat, SEXP 
 	return(wrap(importance_sample(delta, stat_dist, trans_mat, pwm, theta)));
 }
 
-SEXP test_compute_sample_score(SEXP _pwm, SEXP _sample_vec, SEXP _start_pos) {
+SEXP test_compute_sample_score(SEXP _pwm, SEXP _sample_vec, SEXP _start_pos, SEXP _theta) {
 	NumericMatrix pwm(_pwm);
 	IntegerVector sample_vec(_sample_vec);
 	int start_pos = as<int>(_start_pos);
-	return(wrap(compute_sample_score(pwm, sample_vec, start_pos)));
+	double theta = as<double>(_theta);
+	return(wrap(compute_sample_score(pwm, sample_vec, start_pos, theta)));
 }

@@ -32,10 +32,13 @@ drawonesample <- function(theta) {
     delta[motif_len + 1 - id, ] <- delta[motif_len + 1 - id, ] * test_score[motif_len + 1 - id, ] ^ theta
     sample[id - 1 + seq(motif_len)] <- apply(delta, 1, function(x)
         sample(seq(4), 1, prob = x * snpInfo$prior))
-    sample <- c(sample,
-                id,
-                sum(log(delta[cbind(seq(motif_len), sample[id - 1 + seq(motif_len)])]))
-                )
+    sc <- 0
+    for(s in seq(motif_len)) {
+      delta <- adj_mat
+      delta[motif_len + 1 - s, ] <- delta[motif_len + 1 - s, ] * test_score[motif_len + 1 - s, ] ^ theta
+      sc <- sc + prod(delta[cbind(seq(motif_len), sample[s - 1 + seq(motif_len)])])
+    }
+    sample <- c(sample, id, sc)
     return(sample)
 }
 jointprob <- function(x) prod(test_pwm[cbind(seq(motif_len), x)])
@@ -74,17 +77,14 @@ test_that("Error: quantile function computing are not equivalent.", {
 })
 
 test_that("Error: the scores for samples are not equivalent.", {
-
   p <- 0.1
   delta <- .Call("test_find_percentile_diff", score_diff, p, package = "MotifAnalysis")
   theta <- .Call("test_find_theta_diff", test_score, adj_mat, snpInfo$prior, snpInfo$transition, delta, package = "MotifAnalysis")
-
   ## Use R code to generate a random sample
   for(i in seq(10)) {
     sample <- drawonesample(theta)
     sample_score <- .Call("test_compute_sample_score_diff", test_pwm, test_score, adj_mat, sample[seq(2 * motif_len - 1)] - 1, sample[2 * motif_len] - 1, theta, package = "MotifAnalysis")
     expect_equal(sample[2 * motif_len + 1], sample_score[1])
-
     sample1 <- sample2 <- sample3 <- sample
     sample1[motif_len] <- seq(4)[-sample[motif_len]][1]
     sample2[motif_len] <- seq(4)[-sample[motif_len]][2]
@@ -114,16 +114,19 @@ test_that("Error: the scores for samples are not equivalent.", {
   for(i in seq(10)) {
     sample <- .Call("test_importance_sample_diff", delta, snpInfo$prior, trans_mat, test_pwm, theta, package = "MotifAnalysis")
     start_pos <- sample[2 * motif_len] + 1
-    adj_score <- sum(log(adj_mat[cbind(seq(motif_len), sample[start_pos - 1 + seq(motif_len)] + 1)]))
-    adj_score <- adj_score + theta * log(test_score[motif_len + 1 - start_pos, sample[motif_len] + 1])
+    adj_score <- 0
+    for(s in seq_len(motif_len)) {
+      adj_s <- sum(log(adj_mat[cbind(seq(motif_len), sample[s - 1 + seq(motif_len)] + 1)]))
+      adj_s <- adj_s + theta * log(test_score[motif_len + 1 - s, sample[motif_len] + 1])
+      adj_score <- adj_score + exp(adj_s)
+    }
     sample_score <- .Call("test_compute_sample_score_diff", test_pwm, test_score, adj_mat, sample[seq(2 * motif_len - 1)], sample[2 * motif_len], theta, package = "MotifAnalysis")
     expect_equal(adj_score, sample_score[1])
   }
-  
 })
 
 test_that("Error: compute the normalizing constant.", {
-  
+
   ## parameters
   p <- 0.1
   delta <- .Call("test_find_percentile_diff", score_diff, p, package = "MotifAnalysis")
@@ -139,7 +142,7 @@ test_that("Error: compute the normalizing constant.", {
                                          sum(snpInfo$prior * adj_mat[motif_len + 1 - j, ])
                          )
   
-  const.r <- prod(apply(snpInfo$prior * t(adj_mat), 2, sum)) * sum(prob_start) / motif_len
+  const.r <- prod(apply(snpInfo$prior * t(adj_mat), 2, sum)) * sum(prob_start)
   expect_equal(const, const.r)
 })
 
@@ -276,7 +279,7 @@ if(FALSE) {
           ## if use sample_score[-1], the result is the same as .Call
           ## if use sample_score_r[-1], the result is the same as pval_test
           log_diff[seq(3) + 3 * (i - 1)] <- sample_score[-1]
-          wei[i] <- const / exp(sample_score[1])
+          wei[i] <- const / sample_score[1]
       }
       message("Mean weight: ", mean(wei))
       message("Mean diff score: ", mean(log_diff))

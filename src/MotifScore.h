@@ -25,14 +25,14 @@ NumericMatrix p_value(NumericMatrix, NumericVector, NumericMatrix, NumericVector
 double func_delta(NumericMatrix, NumericVector, NumericMatrix, double);
 double find_theta(NumericMatrix, NumericVector, NumericMatrix, double);
 IntegerVector importance_sample(NumericMatrix, NumericVector, NumericMatrix, NumericMatrix, double);
-NumericVector compute_sample_score(NumericMatrix, IntegerVector, int);
+NumericVector compute_sample_score(NumericMatrix, IntegerVector, int, double);
 double find_percentile(NumericVector, double);
 RcppExport SEXP test_find_percentile(SEXP, SEXP);
 RcppExport SEXP test_p_value(SEXP, SEXP, SEXP, SEXP, SEXP);
 RcppExport SEXP test_find_theta(SEXP, SEXP, SEXP, SEXP);
 RcppExport SEXP test_func_delta(SEXP, SEXP, SEXP, SEXP);
 RcppExport SEXP test_importance_sample(SEXP, SEXP, SEXP, SEXP, SEXP);
-RcppExport SEXP test_compute_sample_score(SEXP, SEXP, SEXP);
+RcppExport SEXP test_compute_sample_score(SEXP, SEXP, SEXP, SEXP);
 
 NumericMatrix p_value_diff(NumericMatrix, NumericMatrix, NumericMatrix, NumericVector, NumericMatrix, NumericVector, double);
 double func_delta_diff(NumericMatrix, NumericMatrix, NumericVector, NumericMatrix, double);

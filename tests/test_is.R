@@ -17,10 +17,12 @@ drawonesample <- function(theta) {
   sample <- sample(1:4, 2 * motif_len - 1, replace = TRUE, prob = snpInfo$prior)
   id <- sample(seq(motif_len), 1)
   sample[id : (id + motif_len - 1)] <- apply(delta, 2, function(x) sample(1:4, 1, prob = x))
-  sample <- c(sample,
-              id,
-              prod(test_pwm[cbind(seq(motif_len),
-                                                   sample[id : (id + motif_len - 1)])]))
+  sc <- 0
+  for(s in seq(motif_len)) {
+    sc <- sc + prod(test_pwm[cbind(seq(motif_len),
+                                   sample[s : (s + motif_len - 1)])]) ^ theta
+  }
+  sample <- c(sample, id, sc)
   return(sample)
 }
 jointprob <- function(x) prod(test_pwm[cbind(seq(motif_len), x)])
@@ -69,8 +71,8 @@ test_that("Error: the scores for samples are not equivalent.", {
   ## Use R code to generate a random sample
   for(i in seq(10)) {
     sample <- drawonesample(theta)
-    sample_score <- .Call("test_compute_sample_score", test_pwm, sample[seq(2 * motif_len - 1)] - 1, sample[motif_len * 2] - 1, package = "MotifAnalysis")
-    expect_equal(sample[2 * motif_len + 1], exp(sample_score[2]))
+    sample_score <- .Call("test_compute_sample_score", test_pwm, sample[seq(2 * motif_len - 1)] - 1, sample[motif_len * 2] - 1, theta, package = "MotifAnalysis")
+    expect_equal(sample[2 * motif_len + 1], sample_score[2])
   }
   ## Use C code to generate a random sample
   for(i in seq(10)) {
@@ -80,10 +82,13 @@ test_that("Error: the scores for samples are not equivalent.", {
                           nrow = 4, ncol = motif_len - 1), delta)
     sample <- .Call("test_importance_sample", delta, snpInfo$prior, trans_mat, test_pwm, theta, package = "MotifAnalysis")
     start_pos <- sample[motif_len * 2]
-    adj_score <- prod(test_pwm[cbind(seq(motif_len),
-                                     sample[start_pos + seq(motif_len)] + 1)])
-    sample_score <- .Call("test_compute_sample_score", test_pwm, sample[seq(2 * motif_len - 1)], sample[motif_len * 2], package = "MotifAnalysis")
-    expect_equal(adj_score, exp(sample_score[2]))
+    adj_score <- 0
+    for(s in seq(motif_len) - 1) {
+      adj_score <- adj_score + prod(test_pwm[cbind(seq(motif_len),
+                                                   sample[s + seq(motif_len)] + 1)]) ^ theta
+    }
+    sample_score <- .Call("test_compute_sample_score", test_pwm, sample[seq(2 * motif_len - 1)], sample[motif_len * 2], theta, package = "MotifAnalysis")
+    expect_equal(adj_score, sample_score[2])
   }
 })
 
@@ -94,7 +99,7 @@ test_that("Error: compute the normalizing constant.", {
   theta <- .Call("test_find_theta", test_pwm, snpInfo$prior, snpInfo$transition, delta, package = "MotifAnalysis")
   ##
   const <- .Call("test_func_delta", test_pwm, snpInfo$prior, trans_mat, theta, package = "MotifAnalysis")
-  const.r <- prod(apply(snpInfo$prior * t(test_pwm) ^ theta, 2, sum))
+  const.r <- prod(apply(snpInfo$prior * t(test_pwm) ^ theta, 2, sum)) * motif_len
   expect_equal(abs(const - const.r) / const < 1e-5, TRUE)
 })
 
@@ -126,7 +131,6 @@ test_that("Error: sample distributions are not expected.", {
 })
 
 test_that("Error: the chosen pvalues should have the smaller variance.", {
-
   .structure <- function(pval_mat) {
     id1 <- apply(pval_mat[, c(2, 4)], 1, which.min)
     return(cbind(
@@ -134,13 +138,11 @@ test_that("Error: the chosen pvalues should have the smaller variance.", {
                  pval_mat[, c(2, 4)][cbind(seq_along(id1), id1)])
            )
   }
-
   for(p in c(0.01, 0.05, 0.1)) {
     p_values <- .Call("test_p_value", test_pwm, snpInfo$prior, snpInfo$transition, c(scores), quantile(c(scores), 1 - p), package = "MotifAnalysis")
     p_values_s <- .structure(p_values)
     expect_equal(p_values_s[, 2], apply(p_values[, c(2, 4)], 1, min))
   }
-  
 })
 
 ## Visual checks
@@ -152,18 +154,15 @@ if(FALSE) {
 ## test the theta
 
   p_values_1 <- .Call("test_p_value", test_pwm, snpInfo$prior, snpInfo$transition, c(scores), quantile(scores, 0.01), package = "MotifAnalysis")
-  p_values_9 <- .Call("test_p_value", test_pwm, snpInfo$prior, snpInfo$transition, c(scores), quantile(scores, 0.1), package = "MotifAnalysis")
-  p_values_99 <- .Call("test_p_value", test_pwm, snpInfo$prior, snpInfo$transition, c(scores), quantile(scores, 0.11), package = "MotifAnalysis")
+  
+  p_values_9 <- .Call("test_p_value", test_pwm, snpInfo$prior, snpInfo$transition, c(scores), quantile(scores, 0.9), package = "MotifAnalysis")
+  
+  p_values_99 <- .Call("test_p_value", test_pwm, snpInfo$prior, snpInfo$transition, c(scores), quantile(scores, 0.99), package = "MotifAnalysis")
   
   par(mfrow = c(1, 3))
-  plot(log(p_values_1[, 1]) ~ scores[, 1])
-  plot(log(p_values_9[, 1]) ~ scores[, 1])
-  plot(log(p_values_99[, 1]) ~ scores[, 1])
-
-  par(mfrow = c(1, 3))
-  plot(log(p_values_1[, 3]) ~ scores[, 1])
-  plot(log(p_values_9[, 3]) ~ scores[, 1])
-  plot(log(p_values_99[, 3]) ~ scores[, 1])
+  plot(log(p_values_1[, 1]) ~ c(scores))
+  plot(log(p_values_9[, 1]) ~ c(scores))
+  plot(log(p_values_99[, 1]) ~ c(scores))
 
   p_values_9 <- .Call("test_p_value", test_pwm, snpInfo$prior, trans_mat, c(scores), quantile(scores, 0.9), package = "MotifAnalysis")
   p_values_99 <- .Call("test_p_value", test_pwm, snpInfo$prior, trans_mat, c(scores), quantile(scores, 0.99), package = "MotifAnalysis")
@@ -171,15 +170,15 @@ if(FALSE) {
   pval_test <- function(x) {
     delta <- .Call("test_find_percentile", c(scores), x, package = "MotifAnalysis")
     theta <- .Call("test_find_theta", test_pwm, snpInfo$prior, trans_mat, delta, package = "MotifAnalysis")
-    const <- prod(apply(snpInfo$prior * t(test_pwm) ^ theta, 2, sum))
+    const <- prod(apply(snpInfo$prior * t(test_pwm) ^ theta, 2, sum)) * motif_len
     print(const)
-    sample <- sapply(rep(theta, 10000), drawonesample)
+    sample <- sapply(rep(theta, 1000), drawonesample)
     pr <- apply(sample[seq(2 * motif_len - 1), ], 2, maxjointprob)
-    wei <- const / sample[2 * motif_len + 1, ] ^ theta
+    wei <- const / sample[2 * motif_len + 1, ]
     print(mean(log(sample[2 * motif_len + 1, ])))
     print(mean(log(pr)))
     print(mean(wei))
-    pval <- sapply(scores[,1], function(x) sum(wei[log(pr) >= x]) / length(pr))
+    pval <- sapply(c(scores), function(x) sum(wei[log(pr) >= x]) / sum(wei))
     return(pval)
   }
 
