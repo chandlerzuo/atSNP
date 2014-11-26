@@ -104,7 +104,7 @@ NumericMatrix p_value_diff(NumericMatrix pwm, NumericMatrix wei_mat, NumericMatr
 				if(j == 0) {
 					mean_diff += sample_score[k];
 				}
-				if(sample_score[k] >= scores(j) && sample_score[k] >= -scores(j)) {
+				if(sample_score[k] >= scores(j) || sample_score[k] <= -scores(j)) {
 					moments(j, 0) += wei;
 					moments(j, 1) += wei * wei;
 				}

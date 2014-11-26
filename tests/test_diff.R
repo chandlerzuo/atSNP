@@ -283,7 +283,7 @@ if(FALSE) {
       }
       message("Mean weight: ", mean(wei))
       message("Mean diff score: ", mean(log_diff))
-      pval <- sapply(score_diff, function(x) sum(rep(wei, each = 3)[log_diff >= x]) / length(log_diff))
+      pval <- sapply(score_diff, function(x) sum(rep(wei, each = 3)[abs(log_diff) >= x]) / length(log_diff))
       return(pval)
   }
 
