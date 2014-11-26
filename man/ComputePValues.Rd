@@ -3,7 +3,8 @@
 \alias{ComputePValues}
 \title{Compute p values.}
 \usage{
-ComputePValues(motif.lib, snp.info, motif.scores, ncores = 1)
+ComputePValues(motif.lib, snp.info, motif.scores, ncores = 1,
+  getPlot = FALSE)
 }
 \arguments{
 \item{motif.lib}{A list object with the output format of function 'LoadMotifLibrary'.}

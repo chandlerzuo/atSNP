@@ -12,7 +12,7 @@
 #' \dontrun{
 #' pwms <- LoadMotifLibrary("/p/keles/ENCODE-CHARGE/volume1/ENCODE-Motifs/encode_motifs_for_fimo.txt")
 #' }
-#' @useDynLib MotifAnalysis
+#' @useDynLib atSNP
 #' @export
 LoadMotifLibrary <- function(filename) {
     lines <- readLines(filename)
@@ -67,7 +67,7 @@ LoadMotifLibrary <- function(filename) {
 #' @author Chandler Zuo \email{zuo@@stat.wisc.edu}
 #' @examples
 #' \dontrun{LoadSNPData("/p/keles/ENCODE-CHARGE/volume2/SNP/hg19_allinfo.bed")}
-#' @useDynLib MotifAnalysis
+#' @useDynLib atSNP
 #' @export
 LoadSNPData <- function(filename, genome.lib = "BSgenome.Hsapiens.UCSC.hg19",
                         half.window.size = 30, ...) {
@@ -91,7 +91,7 @@ LoadSNPData <- function(filename, genome.lib = "BSgenome.Hsapiens.UCSC.hg19",
   a1 <- codes[tbl$a1]
   a2 <- codes[tbl$a2]
   names(a1) <- names(a2) <- NULL
-  transition <- .Call("transition_matrix", sequences, package = "MotifAnalysis")
+  transition <- .Call("transition_matrix", sequences, package = "atSNP")
   prior <- apply(transition, 1, sum)
   prior <- prior / sum(prior)
   transition <- transition / apply(transition, 1, sum)
@@ -142,7 +142,7 @@ LoadSNPData <- function(filename, genome.lib = "BSgenome.Hsapiens.UCSC.hg19",
 #' @examples
 #' data(example)
 #' ComputeMotifScore(motif_library, snpInfo, ncores = 2)
-#' @useDynLib MotifAnalysis
+#' @useDynLib atSNP
 #' @import data.table doMC
 #' @export
 ComputeMotifScore <- function(motif.lib, snp.info, ncores = 1) {
@@ -185,7 +185,7 @@ ComputeMotifScore <- function(motif.lib, snp.info, ncores = 1) {
     }
     this.snp.info <- list(sequence_matrix = snp.info$sequence_matrix[, ids],
                           ref_base = snp.info$ref_base[ids], snp_base = snp.info$snp_base[ids])
-    motif.scores <- .Call("motif_score", motif.lib, this.snp.info, package = "MotifAnalysis")
+    motif.scores <- .Call("motif_score", motif.lib, this.snp.info, package = "atSNP")
     for(i in seq_along(motif.scores)) {
       rownames(motif.scores[[i]]) <- snpids[ids]
       colnames(motif.scores[[i]]) <- motifs
@@ -294,7 +294,7 @@ ComputeMotifScore <- function(motif.lib, snp.info, ncores = 1) {
 #' @examples
 #' data(example)
 #' MatchSubsequence(motif_scores$snp.tbl, motif_scores$motif.scores, motif_library)
-#' @useDynLib MotifAnalysis
+#' @useDynLib atSNP
 #' @import data.table doMC
 #' @export
 MatchSubsequence <- function(snp.tbl, motif.scores, motif.lib, snpids = NULL, motifs = NULL, ncores = 2) {
@@ -403,7 +403,7 @@ MatchSubsequence <- function(snp.tbl, motif.scores, motif.lib, snpids = NULL, mo
 #' data(example)
 #' ComputePValues(motif_library, snpInfo, motif_scores$motif.scores, ncores = 4) 
 #' @import doMC Rcpp data.table
-#' @useDynLib MotifAnalysis
+#' @useDynLib atSNP
 #' @export
 ComputePValues <- function(motif.lib, snp.info, motif.scores, ncores = 1, getPlot = FALSE) {
   registerDoMC(ncores)
@@ -465,7 +465,7 @@ ComputePValues <- function(motif.lib, snp.info, motif.scores, ncores = 1, getPlo
       }
       pval_a.new <- .Call("test_p_value", pwm, snp.info$prior,
                           snp.info$transition, scores[compute.id], score.p[l],
-                          package = "MotifAnalysis")
+                          package = "atSNP")
       pval_a.new <- .structure(pval_a.new)
       if(FALSE) {
         update.id <- which(scores < score.p[l] & scores >= score.low)
@@ -518,7 +518,7 @@ ComputePValues <- function(motif.lib, snp.info, motif.scores, ncores = 1, getPlo
       pval_diff.new <- .Call("test_p_value_diff", pwm,
                              wei.mat, pwm + apply(pwm, 1, mean), snp.info$prior,
                              snp.info$transition, score_diff[compute.id],
-                             score.p[l], package = "MotifAnalysis")
+                             score.p[l], package = "atSNP")
       pval_diff.new <- .structure_diff(pval_diff.new)
       update.id <- which(pval_diff.new[, 2] < pval_diff[compute.id, 2])
       pval_diff[compute.id[update.id], ] <- pval_diff.new[update.id, ]

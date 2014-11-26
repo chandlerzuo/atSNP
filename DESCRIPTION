@@ -1,11 +1,11 @@
-Package: MotifAnalysis
+Package: atSNP
 Type: Package
-Title: Motif Analysis for SNP data.
+Title: Affinity test for identifying regulatory SNPs.
 Version: 1.0
 Date: 2014-10-21
-Author: Chandler Zuo
+Author: Chandler Zuo, Sunyoung Shin
 Maintainer: Chandler Zuo<zuo@stat.wisc.edu>
-Description: Motif analysis.
+Description: Affinity test for regulatory SNPs.
 License: GPL-2
 LinkingTo: Rcpp
 Depends:

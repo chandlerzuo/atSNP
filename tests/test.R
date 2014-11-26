@@ -1,4 +1,4 @@
-library(MotifAnalysis)
+library(atSNP)
 
 if(FALSE) {
   # construct the test data set
