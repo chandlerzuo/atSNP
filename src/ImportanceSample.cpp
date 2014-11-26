@@ -314,7 +314,7 @@ NumericVector compute_sample_score(NumericMatrix pwm, IntegerVector sample_vec, 
 
 double find_percentile(NumericVector scores, double p) {
 	// compute the 1% quantile among the scores
-	int n_top = scores.size() * p * 2 + 1;
+	int n_top = scores.size() * p + 1;
 	// heap stores the smalles 1% of all scores
 	double heap[n_top];
 	// initialize the heap

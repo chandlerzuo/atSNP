@@ -56,8 +56,8 @@ get_freq <- function(sample) {
 
 test_that("Error: quantile function computing are not equivalent.", {
   for(p in c(1, 10, 50, 90, 99) / 100) {
-    delta <- .Call("test_find_percentile", scores, p, package = "MotifAnalysis")
-    delta.r <- -sort(-scores)[as.integer(p * length(scores)) + 1]
+    delta <- .Call("test_find_percentile", c(scores), p, package = "MotifAnalysis")
+    delta.r <- -sort(-c(scores))[as.integer(p * length(scores)) + 1]
     expect_equal(delta, delta.r)
   }
 })
@@ -129,20 +129,16 @@ test_that("Error: the chosen pvalues should have the smaller variance.", {
 
   .structure <- function(pval_mat) {
     id1 <- apply(pval_mat[, c(2, 4)], 1, which.min)
-    id2 <- apply(pval_mat[, c(6, 8)], 1, which.min)
     return(cbind(
                  pval_mat[, c(1, 3)][cbind(seq_along(id1), id1)],
-                 pval_mat[, c(5, 7)][cbind(seq_along(id2), id2)],
-                 pval_mat[, c(2, 4)][cbind(seq_along(id1), id1)],
-                 pval_mat[, c(6, 8)][cbind(seq_along(id2), id2)])
+                 pval_mat[, c(2, 4)][cbind(seq_along(id1), id1)])
            )
   }
 
   for(p in c(0.01, 0.05, 0.1)) {
-    p_values <- .Call("test_p_value", test_pwm, snpInfo$prior, snpInfo$transition, scores, p, package = "MotifAnalysis")
+    p_values <- .Call("test_p_value", test_pwm, snpInfo$prior, snpInfo$transition, c(scores), quantile(c(scores), 1 - p), package = "MotifAnalysis")
     p_values_s <- .structure(p_values)
-    expect_equal(p_values_s[, 3], apply(p_values[, c(2, 4)], 1, min))
-    expect_equal(p_values_s[, 4], apply(p_values[, c(6, 8)], 1, min))
+    expect_equal(p_values_s[, 2], apply(p_values[, c(2, 4)], 1, min))
   }
   
 })
@@ -155,9 +151,9 @@ if(FALSE) {
 
 ## test the theta
 
-  p_values_1 <- .Call("test_p_value", test_pwm, snpInfo$prior, snpInfo$transition, scores, 0.99, package = "MotifAnalysis")
-  p_values_9 <- .Call("test_p_value", test_pwm, snpInfo$prior, snpInfo$transition, scores, 0.1, package = "MotifAnalysis")
-  p_values_99 <- .Call("test_p_value", test_pwm, snpInfo$prior, snpInfo$transition, scores, 0.01, package = "MotifAnalysis")
+  p_values_1 <- .Call("test_p_value", test_pwm, snpInfo$prior, snpInfo$transition, c(scores), quantile(scores, 0.01), package = "MotifAnalysis")
+  p_values_9 <- .Call("test_p_value", test_pwm, snpInfo$prior, snpInfo$transition, c(scores), quantile(scores, 0.1), package = "MotifAnalysis")
+  p_values_99 <- .Call("test_p_value", test_pwm, snpInfo$prior, snpInfo$transition, c(scores), quantile(scores, 0.11), package = "MotifAnalysis")
   
   par(mfrow = c(1, 3))
   plot(log(p_values_1[, 1]) ~ scores[, 1])
@@ -169,11 +165,11 @@ if(FALSE) {
   plot(log(p_values_9[, 3]) ~ scores[, 1])
   plot(log(p_values_99[, 3]) ~ scores[, 1])
 
-  p_values_9 <- .Call("test_p_value", test_pwm, snpInfo$prior, trans_mat, scores, 0.1, package = "MotifAnalysis")
-  p_values_99 <- .Call("test_p_value", test_pwm, snpInfo$prior, trans_mat, scores, 0.01, package = "MotifAnalysis")
+  p_values_9 <- .Call("test_p_value", test_pwm, snpInfo$prior, trans_mat, c(scores), quantile(scores, 0.9), package = "MotifAnalysis")
+  p_values_99 <- .Call("test_p_value", test_pwm, snpInfo$prior, trans_mat, c(scores), quantile(scores, 0.99), package = "MotifAnalysis")
   
   pval_test <- function(x) {
-    delta <- .Call("test_find_percentile", scores, x, package = "MotifAnalysis")
+    delta <- .Call("test_find_percentile", c(scores), x, package = "MotifAnalysis")
     theta <- .Call("test_find_theta", test_pwm, snpInfo$prior, trans_mat, delta, package = "MotifAnalysis")
     const <- prod(apply(snpInfo$prior * t(test_pwm) ^ theta, 2, sum))
     print(const)
@@ -216,47 +212,3 @@ if(FALSE) {
   plot(p_values_99[, 1], p_values_99[, 2])
 
 }
-
-## this correspond to setting p = 0.1 and p = 0.01
-
-theta1 <- 0.1
-theta2 <- 0.22
-const1 <- prod(apply(snpInfo$prior * t(test_pwm) ^ theta1, 2, sum))
-const2 <- prod(apply(snpInfo$prior * t(test_pwm) ^ theta2, 2, sum))
-sample1 <- sapply(rep(theta1, 10000), drawonesample)
-sample2 <- sapply(rep(theta2, 1000), drawonesample)
-pr1 <- apply(sample1[seq(2 * motif_len - 1), ], 2, maxjointprob)
-wei1 <- const1 / sample1[2 * motif_len + 1, ] ^ theta1
-pr2 <- apply(sample2[seq(2 * motif_len - 1), ], 2, maxjointprob)
-wei2 <- const2 / sample2[2 * motif_len + 1, ] ^ theta2
-
-par(mfrow = c(1,2))
-hist(log(pr1))
-hist(log(pr2))
-
-mean(log(pr1))
-mean(log(pr2))
-
-x <- max(scores[,1])
-sum(wei2[log(pr2) > x]) / length(pr2)
-sum((wei2[log(pr2) > x])^2) / length(pr2) - (sum(wei2[log(pr2) > x]) / length(pr2))^2
-
-pval1 <- sapply(scores[,1], function(x) sum(wei1[log(pr1) > x]) / length(pr1))
-pval2 <- sapply(scores[,1], function(x) sum(wei2[log(pr2) > x]) / length(pr2))
-pval21 <- sapply(scores[,1], function(x) sum((wei1 * wei1)[log(pr1) > x]) / length(pr1))
-pval22 <- sapply(scores[,1], function(x) sum((wei2 * wei2)[log(pr2) > x]) / length(pr2))
-
-var1 <- pval21 - pval1 * pval1
-var2 <- pval22 - pval2 * pval2
-
-plot(pval1, pval2, xlim = c(0, 0.01), ylim = c(0, 0.01))
-abline(0, 1)
-
-plot(var1[pval1 < 0.01], var2[pval1 < 0.01])
-abline(0,1)
-
-plot(pval2[pval2 < 0.01], sqrt(var2[pval2 < 0.01]))
-
-plot(pval1[pval2 < 0.01], sqrt(var1[pval2 < 0.01]))
-
-## conclusion: for small p, the variance is too large

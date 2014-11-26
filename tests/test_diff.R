@@ -5,6 +5,7 @@ trans_mat <- matrix(rep(snpInfo$prior, each = 4), nrow = 4)
 id <- 6
 test_pwm <- motif_library$matrix[[6]]
 scores <- as.matrix(motif_scores$motif.scores[motif == names(motif_library$matrix)[6], list(log_lik_ref, log_lik_snp)])
+score_diff <- apply(scores, 1, function(x) abs(diff(x)))
 
 test_score <- test_pwm
 for(i in seq(nrow(test_score))) {
@@ -66,7 +67,7 @@ get_freq <- function(sample) {
 
 test_that("Error: quantile function computing are not equivalent.", {
   for(p in c(1, 10, 50, 90, 99) / 100) {
-    delta <- .Call("test_find_percentile_diff", scores, p, package = "MotifAnalysis")
+    delta <- .Call("test_find_percentile_diff", score_diff, p, package = "MotifAnalysis")
     delta.r <- as.double(sort(apply(scores, 1, function(x) abs(diff(x))))[as.integer((1 - p) * nrow(scores)) + 1])
     expect_equal(delta, delta.r)
   }
@@ -75,7 +76,7 @@ test_that("Error: quantile function computing are not equivalent.", {
 test_that("Error: the scores for samples are not equivalent.", {
 
   p <- 0.1
-  delta <- .Call("test_find_percentile_diff", scores, p, package = "MotifAnalysis")
+  delta <- .Call("test_find_percentile_diff", score_diff, p, package = "MotifAnalysis")
   theta <- .Call("test_find_theta_diff", test_score, adj_mat, snpInfo$prior, snpInfo$transition, delta, package = "MotifAnalysis")
 
   ## Use R code to generate a random sample
@@ -125,7 +126,7 @@ test_that("Error: compute the normalizing constant.", {
   
   ## parameters
   p <- 0.1
-  delta <- .Call("test_find_percentile_diff", scores, p, package = "MotifAnalysis")
+  delta <- .Call("test_find_percentile_diff", score_diff, p, package = "MotifAnalysis")
   theta <- .Call("test_find_theta_diff", test_score, adj_mat, snpInfo$prior, snpInfo$transition, delta, package = "MotifAnalysis")
   
   ##
@@ -146,7 +147,7 @@ test_that("Error: sample distributions are not expected.", {
   
   ## parameters
   p <- 0.1
-  delta <- .Call("test_find_percentile_diff", scores, p, package = "MotifAnalysis")
+  delta <- .Call("test_find_percentile_diff", score_diff, p, package = "MotifAnalysis")
   theta <- .Call("test_find_theta_diff", test_score, adj_mat, snpInfo$prior, snpInfo$transition, delta, package = "MotifAnalysis")
 
   ## construct the delta matrix
@@ -210,7 +211,7 @@ test_that("Error: the chosen pvalues should have the smaller variance.", {
   }
   
   for(p in c(0.05, 0.1, 0.2, 0.5)) {
-    p_values <- .Call("test_p_value_diff", test_pwm, test_score, adj_mat, snpInfo$prior, snpInfo$transition, scores, p, package = "MotifAnalysis")
+    p_values <- .Call("test_p_value_diff", test_pwm, test_score, adj_mat, snpInfo$prior, snpInfo$transition, score_diff, quantile(score_diff, 1 - p), package = "MotifAnalysis")
     p_values_s <- .structure_diff(p_values)
     expect_equal(p_values_s[, 2], apply(p_values[, c(2, 4)], 1, min))
   }
@@ -224,8 +225,8 @@ if(FALSE) {
 
 ## test the theta
 
-  p_values_9 <- .Call("test_p_value_diff", test_pwm, test_score, adj_mat, snpInfo$prior, snpInfo$transition, scores, 0.9, package = "MotifAnalysis")
-  p_values_8 <- .Call("test_p_value_diff", test_pwm, test_score, adj_mat, snpInfo$prior, snpInfo$transition, scores, 0.2, package = "MotifAnalysis")
+  p_values_9 <- .Call("test_p_value_diff", test_pwm, test_score, adj_mat, snpInfo$prior, snpInfo$transition, score_diff, quantile(score_diff, 0.9), package = "MotifAnalysis")
+  p_values_8 <- .Call("test_p_value_diff", test_pwm, test_score, adj_mat, snpInfo$prior, snpInfo$transition, score_diff, quantile(score_diff, 0.8), package = "MotifAnalysis")
 
   plot(log(p_values_9[, 1])- log(p_values_9[, 3]), cex = 0.1)
 
@@ -242,18 +243,16 @@ if(FALSE) {
 
   p_values <- cbind(p_values_9[, 1], p_values_8[, 1], p_values_9[, 3], p_values_8[, 3])[cbind(seq(nrow(p_values_9)), apply(cbind(p_values_9[, 2], p_values_8[, 2], p_values_9[, 4], p_values_8[, 4]), 1, which.min))]
   
-  score_diff <- apply(scores, 1, function(x) abs(diff(x)))
-  
   par(mfrow = c(1, 3))
   plot(log(p_values_9[, 1]) ~ score_diff, ylim = c(-5, 0))
   plot(log(p_values_8[, 1]) ~ score_diff, ylim = c(-5, 0))
   plot(log(p_values) ~ score_diff, ylim = c(-5, 0))
   
-  p_values_9 <- .Call("test_p_value_diff", test_pwm, test_score, adj_mat, snpInfo$prior, trans_mat, scores, 0.1, package = "MotifAnalysis")
-  p_values_8 <- .Call("test_p_value_diff", test_pwm, test_score, adj_mat, snpInfo$prior, trans_mat, scores, 0.2, package = "MotifAnalysis")
+  p_values_9 <- .Call("test_p_value_diff", test_pwm, test_score, adj_mat, snpInfo$prior, trans_mat, score_diff, quantile(score_diff, 0.9), package = "MotifAnalysis")
+  p_values_8 <- .Call("test_p_value_diff", test_pwm, test_score, adj_mat, snpInfo$prior, trans_mat, score_diff, quantile(score_diff, 0.8), package = "MotifAnalysis")
   
   pval_test <- function(x) {
-      delta <- .Call("test_find_percentile_diff", scores, x, package = "MotifAnalysis")
+      delta <- .Call("test_find_percentile_diff", score_diff, x, package = "MotifAnalysis")
       theta <- .Call("test_find_theta_diff", test_score, adj_mat, snpInfo$prior, trans_mat, delta, package = "MotifAnalysis")
       const <- .Call("test_func_delta_diff", test_score, adj_mat, snpInfo$prior, trans_mat, theta, package = "MotifAnalysis")
       message("Constant value: ", const)
