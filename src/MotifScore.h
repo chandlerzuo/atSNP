@@ -48,5 +48,18 @@ RcppExport SEXP test_importance_sample_diff(SEXP, SEXP, SEXP, SEXP, SEXP);
 RcppExport SEXP test_compute_sample_score_diff(SEXP, SEXP, SEXP, SEXP, SEXP, SEXP);
 
 
+NumericMatrix p_value_change(NumericMatrix, NumericMatrix, NumericMatrix, NumericVector, NumericMatrix, NumericVector, double);
+double func_delta_change(NumericMatrix, NumericMatrix, double);
+double find_theta_change(NumericMatrix, NumericMatrix, double);
+IntegerVector importance_sample_change(NumericMatrix, NumericVector, NumericMatrix, NumericMatrix, double);
+NumericVector compute_sample_score_change(NumericMatrix, NumericMatrix, NumericMatrix, IntegerVector, NumericVector, NumericMatrix, int, double);
+double find_percentile_change(NumericVector, double);
+RcppExport SEXP test_find_percentile_change(SEXP, SEXP);
+RcppExport SEXP test_p_value_change(SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP);
+RcppExport SEXP test_find_theta_change(SEXP, SEXP, SEXP);
+RcppExport SEXP test_func_delta_change(SEXP, SEXP, SEXP);
+RcppExport SEXP test_importance_sample_change(SEXP, SEXP, SEXP, SEXP, SEXP);
+RcppExport SEXP test_compute_sample_score_change(SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP);
+
 
 #endif
