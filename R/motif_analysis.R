@@ -454,7 +454,7 @@ ComputePValues <- function(motif.lib, snp.info, motif.scores, ncores = 1, getPlo
       } else if(l <= length(allp)) {
           score.upp = score.p[l - 1]
       } else {
-          score.upp = quantile(c(score), 0.2)
+          score.upp = quantile(c(scores), 0.2)
       }
       if(l >= length(allp)) {
         score.low = min(scores) - 1
@@ -466,7 +466,7 @@ ComputePValues <- function(motif.lib, snp.info, motif.scores, ncores = 1, getPlo
         next
       }
       if(l < length(allp) + 1) {
-          theta <- .Call("test_find_theta", pwm, snp.info$prior, snp.info$transition, scores.p[l], package = "atSNP")
+          theta <- .Call("test_find_theta", pwm, snp.info$prior, snp.info$transition, score.p[l], package = "atSNP")
       } else {
           theta <- 0
       }
