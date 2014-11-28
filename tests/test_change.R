@@ -20,12 +20,12 @@ motif_len <- nrow(test_pwm)
 
 ## these are functions for this test only
 drawonesample <- function(theta) {
-    prob_start <- rev(apply(test_score ^ theta * adj_mat, 1, sum))
+    prob_start <- rev(apply(test_score ^ theta * adj_mat, 1, sum) / apply(adj_mat, 1, sum))
     id <- sample(seq(motif_len), 1, prob = prob_start)
     sample <- sample(1:4, 2 * motif_len - 1, replace = TRUE, prob = snpInfo$prior)
     delta <- adj_mat
     delta[motif_len - id + 1, ] <- delta[motif_len - id + 1, ] * test_score[motif_len - id + 1, ] ^ theta
-    sample[id + seq(motif_len)] <- apply(delta, 1, function(x) sample(seq(4), 1, prob = x))
+    sample[id - 1 + seq(motif_len)] <- apply(delta, 1, function(x) sample(seq(4), 1, prob = x))
     ## compute weight
     sc <- 0
     for(s in seq(motif_len)) {
@@ -123,61 +123,47 @@ test_that("Error: compute the normalizing constant.", {
 })
 
 test_that("Error: sample distributions are not expected.", {
-  
   ## parameters
   p <- 0.1
   delta <- .Call("test_find_percentile_change", score_diff, p, package = "atSNP")
   theta <- .Call("test_find_theta_change", test_score, adj_mat, delta, package = "atSNP")
-
-  prob_start <- apply(adj_mat * test_score ^ theta, 1, sum)
-  
+  prob_start <- rev(apply(adj_mat * test_score ^ theta, 1, sum) / apply(adj_mat, 1, sum))
   ## construct the delta matrix
   delta <- matrix(1, nrow = 4 * motif_len, ncol = 2 * motif_len - 1)
   for(pos in seq(motif_len)) {
     delta[seq(4) + 4 * (pos - 1), ] <- snpInfo$prior
     delta[seq(4) + 4 * (pos - 1), pos - 1 + seq(motif_len)] <- t(test_pwm)
     delta[seq(4) + 4 * (pos - 1), motif_len] <- delta[seq(4) + 4 * (pos - 1), motif_len] * test_score[motif_len + 1 - pos, ] ^ theta
+    delta[seq(4) + 4 * (pos - 1), ] <- delta[seq(4) + 4 * (pos - 1),] / rep(apply(delta[seq(4) + 4 * (pos - 1), ], 2, sum), each = 4)
   }
-  
   target_freq <- matrix(0, nrow = 4, ncol = 2 * motif_len - 1)
   for(pos in seq(motif_len)) {
     target_freq <- target_freq + delta[seq(4) + 4 * (pos - 1), ] * prob_start[pos]
   }
-  
+  target_freq <- t(target_freq)
   target_freq <- target_freq / apply(target_freq, 1, sum)
-  
   registerDoMC(4)
-  
   results <- foreach(i = seq(20)) %dopar% {
-
     ## generate 1000 samples
     sample1 <- sapply(seq(1000), function(x)
                      .Call("test_importance_sample_change",
                            adj_mat, snpInfo$prior, trans_mat, test_score, theta, package = "atSNP"))
     emp_freq1 <- get_freq(sample1)
-    
     sample2 <- sapply(rep(theta, 1000), drawonesample)
-    sample2 <- matrix(unlist(sample2), ncol = 1000)
     emp_freq2 <- get_freq(sample2 - 1)
-
 ##    print(rbind(emp_freq1[10, ], emp_freq2[10, ], target_freq[10, ]))
     max(abs(emp_freq1 - target_freq)) > max(abs(emp_freq2 - target_freq))
-    
   }
   print(sum(unlist(results)))
-
   print(pbinom(sum(unlist(results)), size = 20, prob = 0.5))
-  
 })
 
 test_that("Error: the chosen pvalues should have the smaller variance.", {
-
   .structure_diff <- function(pval_mat) {
     id <- apply(pval_mat[, c(2, 4)], 1, which.min)
     return(cbind(pval_mat[, c(1, 3)][cbind(seq_along(id), id)],
                  pval_mat[, c(2, 4)][cbind(seq_along(id), id)]))
   }
-  
   for(p in c(0.05, 0.1, 0.2, 0.5)) {
     p_values <- .Call("test_p_value_change", test_pwm, test_score, adj_mat, snpInfo$prior, snpInfo$transition, score_diff, quantile(score_diff, 1 - p), package = "atSNP")
     p_values_s <- .structure_diff(p_values)
@@ -192,7 +178,6 @@ if(FALSE) {
             .Call("test_func_delta_change", test_score, adj_mat, x, package = "atSNP"))))
 
 ## test the theta
-
   p_values_9 <- .Call("test_p_value_change", test_pwm, test_score, adj_mat, snpInfo$prior, snpInfo$transition, score_diff, quantile(score_diff, 0.9), package = "atSNP")
   p_values_8 <- .Call("test_p_value_change", test_pwm, test_score, adj_mat, snpInfo$prior, snpInfo$transition, score_diff, quantile(score_diff, 0.8), package = "atSNP")
 

@@ -406,22 +406,22 @@ MatchSubsequence <- function(snp.tbl, motif.scores, motif.lib, snpids = NULL, mo
 #' @useDynLib atSNP
 #' @export
 ComputePValues <- function(motif.lib, snp.info, motif.scores, ncores = 1, getPlot = FALSE) {
-  registerDoMC(ncores)
-  results <- as.list(seq_along(motif.lib$matrix))
-  nsets <- as.integer(length(motif.lib$matrix) / ncores)
-  if(FALSE) {
-    for(i in seq(nsets)) {
-      message(i)
-      if(i < nsets) {
-        ids <- seq(ncores) + (i - 1) * ncores
-      } else {
-        ids <- ((nsets - 1) * ncores + 1) : length(motif.lib$matrix)
-      }
+    registerDoMC(ncores)
+    results <- as.list(seq_along(motif.lib$matrix))
+    nsets <- as.integer(length(motif.lib$matrix) / ncores)
+    if(FALSE) {
+        for(i in seq(nsets)) {
+            message(i)
+            if(i < nsets) {
+                ids <- seq(ncores) + (i - 1) * ncores
+            } else {
+                ids <- ((nsets - 1) * ncores + 1) : length(motif.lib$matrix)
+            }
+        }
     }
-  }
-  results <- foreach(motifid = seq_along(motif.lib$matrix)) %dopar% {
-    rowids <- which(motif.scores$motif == names(motif.lib$matrix)[motifid])
-    scores <- cbind(motif.scores$log_lik_ref[rowids],
+    results <- foreach(motifid = seq_along(motif.lib$matrix)) %dopar% {
+        rowids <- which(motif.scores$motif == names(motif.lib$matrix)[motifid])
+        scores <- cbind(motif.scores$log_lik_ref[rowids],
                     motif.scores$log_lik_snp[rowids])
     pwm <- motif.lib$matrix[[motifid]]
     pwm[pwm < 1e-10] <- 1e-10
@@ -448,13 +448,15 @@ ComputePValues <- function(motif.lib, snp.info, motif.scores, ncores = 1, getPlo
     score.p <- quantile(c(scores), 1 - allp)
     
     pval_a <- matrix(1, nrow = nrow(scores), ncol = 4)
-    for(l in seq_along(allp)) {
+    for(l in seq(length(allp) + 1)) {
       if(l == 1) {
         score.upp = max(scores) + 1
+      } else if(l <= length(allp)) {
+          score.upp = score.p[l - 1]
       } else {
-        score.upp = score.p[l - 1]
+          score.upp = quantile(c(score), 0.2)
       }
-      if(l == length(allp)) {
+      if(l >= length(allp)) {
         score.low = min(scores) - 1
       } else {
         score.low = score.p[l + 1]
@@ -463,9 +465,13 @@ ComputePValues <- function(motif.lib, snp.info, motif.scores, ncores = 1, getPlo
       if(length(compute.id) == 0) {
         next
       }
+      if(l < length(allp) + 1) {
+          theta <- .Call("test_find_theta", pwm, snp.info$prior, snp.info$transition, scores.p[l], package = "atSNP")
+      } else {
+          theta <- 0
+      }
       pval_a.new <- .Call("test_p_value", pwm, snp.info$prior,
-                          snp.info$transition, scores[compute.id], score.p[l],
-                          package = "atSNP")
+                          snp.info$transition, scores[compute.id], theta, package = "atSNP")
       pval_a.new <- .structure(pval_a.new)
       if(FALSE) {
         update.id <- which(scores < score.p[l] & scores >= score.low)
@@ -475,7 +481,6 @@ ComputePValues <- function(motif.lib, snp.info, motif.scores, ncores = 1, getPlo
           pval_a[update.id] <- (pval_a.new[compute.id %in% update.id, 1] + pval_a[update.id]) / 2
         }
       }
-      
       if(TRUE) {
         update.id <- which(pval_a.new[, 2] < pval_a[, 3:4][compute.id])
         pval_a[compute.id[update.id]] <- pval_a.new[update.id, 1]
@@ -515,8 +520,8 @@ ComputePValues <- function(motif.lib, snp.info, motif.scores, ncores = 1, getPlo
       if(length(compute.id) == 0) {
         next
       }
-      pval_diff.new <- .Call("test_p_value_diff", pwm,
-                             wei.mat, pwm + apply(pwm, 1, mean), snp.info$prior,
+      pval_diff.new <- .Call("test_p_value_change", pwm,
+                             wei.mat, pwm, snp.info$prior,
                              snp.info$transition, score_diff[compute.id],
                              score.p[l], package = "atSNP")
       pval_diff.new <- .structure_diff(pval_diff.new)

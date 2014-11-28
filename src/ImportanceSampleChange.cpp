@@ -77,9 +77,8 @@ NumericMatrix p_value_change(NumericMatrix pwm, NumericMatrix wei_mat, NumericMa
 			}
 		}
 	}
-	printf("Mean weight : %lf \n", moments(0, 0) / 3 / n_sample);
+	printf("Mean weight : %lf \n", wei_sum / n_sample);
 	printf("Mean diff score : %lf \n", mean_change / 3 / n_sample);
-	printf("Mean score : %lf \n", wei_sum / n_sample);
 	wei2_sum /= n_sample;
 	wei_sum /= n_sample;
 	double var2 = wei2_sum - wei_sum * wei_sum;
@@ -119,7 +118,7 @@ double func_delta_change(NumericMatrix wei_mat, NumericMatrix adj_mat, double th
 	for(int i = 0; i < motif_len; i ++) {
 		tmp = 0;
 		for(int j = 0; j < 4; j ++) {
-			tmp += wei_mat(i, j) * adj_mat(i, j);
+			tmp += adj_mat(i, j) * exp(log(wei_mat(i, j)) * theta);
 		}
 		// two stationary sequences, one with length i, one with length motif_len - i - 1
 		norm_const += tmp / adj_sum[i];
@@ -164,10 +163,13 @@ IntegerVector importance_sample_change(NumericMatrix adj_mat, NumericVector stat
 	// note: the last digit is for sampling the start position
 	// 1. sample the starting position
 	double prob_start[motif_len];
+	double tmp;
 	for(int i = 0; i < motif_len; i ++) {
 		prob_start[i] = 0;
+		tmp = 0;
 		for(int j = 0; j < 4; j ++) {
-			prob_start[i] += wei_mat(motif_len - 1 - i, j);
+			prob_start[i] += adj_mat(motif_len - 1 - i, j) * exp(log(wei_mat(motif_len - 1 - i, j)) * theta);
+			tmp += adj_mat(motif_len - 1 - i, j);
 		}
 		if(i > 0)
 			prob_start[i] += prob_start[i - 1];

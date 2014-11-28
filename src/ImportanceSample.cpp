@@ -13,11 +13,11 @@ Compute the probability that a random sequence can get a score higher than 'scor
 @arg p The upper percentile of the scores which is used as the mean of the importance sampling distribution.
 @return A matrix with 3 columns. The first two columns are the p-values for the log-likelihood scores of each allele. The third column are the p-values for the likelihood ratios.
 */
-NumericMatrix p_value(NumericMatrix pwm, NumericVector stat_dist, NumericMatrix trans_mat, NumericVector scores, double score_percentile) {
+NumericMatrix p_value(NumericMatrix pwm, NumericVector stat_dist, NumericMatrix trans_mat, NumericVector scores, double theta) {
 	// double score_percentile = find_percentile(scores, p);
 	// printf("percentile:%3.3f\n", score_percentile);
 	// find the tilting parameter
-	double theta = find_theta(pwm, stat_dist, trans_mat, score_percentile);
+	// double theta = find_theta(pwm, stat_dist, trans_mat, score_percentile);
 	printf("theta:%3.3f\n", theta);
 	NumericMatrix p_values(scores.size(), 4);
 
@@ -370,14 +370,14 @@ SEXP test_find_percentile(SEXP _scores, SEXP _p) {
 	return(wrap(ret));
 }
 
-SEXP test_p_value(SEXP _pwm, SEXP _stat_dist, SEXP _trans_mat, SEXP _scores, SEXP _perc) {
+SEXP test_p_value(SEXP _pwm, SEXP _stat_dist, SEXP _trans_mat, SEXP _scores, SEXP _theta) {
 	NumericMatrix pwm(_pwm);
 	NumericVector stat_dist(_stat_dist);
 	NumericMatrix trans_mat(_trans_mat);
 	NumericVector scores(_scores);
-	double perc = as<double>(_perc);
+	double theta = as<double>(_theta);
 	
-	NumericMatrix p_values = p_value(pwm, stat_dist, trans_mat, scores, perc);
+	NumericMatrix p_values = p_value(pwm, stat_dist, trans_mat, scores, theta);
 	return(wrap(p_values));
 }
 

@@ -1,5 +1,4 @@
 library(atSNP)
-
 data(example)
 
 trans_mat <- matrix(rep(snpInfo$prior, each = 4), nrow = 4)
@@ -139,7 +138,8 @@ test_that("Error: the chosen pvalues should have the smaller variance.", {
            )
   }
   for(p in c(0.01, 0.05, 0.1)) {
-    p_values <- .Call("test_p_value", test_pwm, snpInfo$prior, snpInfo$transition, c(scores), quantile(c(scores), 1 - p), package = "atSNP")
+      theta <- .Call("test_find_theta", test_pwm, snpInfo$prior, trans_mat, quantile(c(scores), 1 - p), package = "atSNP")
+      p_values <- .Call("test_p_value", test_pwm, snpInfo$prior, snpInfo$transition, c(scores), theta, package = "atSNP")
     p_values_s <- .structure(p_values)
     expect_equal(p_values_s[, 2], apply(p_values[, c(2, 4)], 1, min))
   }
@@ -153,19 +153,22 @@ if(FALSE) {
 
 ## test the theta
 
-  p_values_1 <- .Call("test_p_value", test_pwm, snpInfo$prior, snpInfo$transition, c(scores), quantile(scores, 0.01), package = "atSNP")
-  
-  p_values_9 <- .Call("test_p_value", test_pwm, snpInfo$prior, snpInfo$transition, c(scores), quantile(scores, 0.9), package = "atSNP")
-  
-  p_values_99 <- .Call("test_p_value", test_pwm, snpInfo$prior, snpInfo$transition, c(scores), quantile(scores, 0.99), package = "atSNP")
+  theta <- .Call("test_find_theta", test_pwm, snpInfo$prior, trans_mat, quantile(c(scores), 0.01), package = "atSNP")
+  p_values_1 <- .Call("test_p_value", test_pwm, snpInfo$prior, snpInfo$transition, c(scores), theta, package = "atSNP")
+  theta <- .Call("test_find_theta", test_pwm, snpInfo$prior, trans_mat, quantile(c(scores), 0.9), package = "atSNP")
+  p_values_9 <- .Call("test_p_value", test_pwm, snpInfo$prior, snpInfo$transition, c(scores), theta, package = "atSNP")
+  theta <- .Call("test_find_theta", test_pwm, snpInfo$prior, trans_mat, quantile(c(scores), 0.99), package = "atSNP")
+  p_values_99 <- .Call("test_p_value", test_pwm, snpInfo$prior, snpInfo$transition, c(scores), theta, package = "atSNP")
   
   par(mfrow = c(1, 3))
   plot(log(p_values_1[, 1]) ~ c(scores))
   plot(log(p_values_9[, 1]) ~ c(scores))
   plot(log(p_values_99[, 1]) ~ c(scores))
 
-  p_values_9 <- .Call("test_p_value", test_pwm, snpInfo$prior, trans_mat, c(scores), quantile(scores, 0.9), package = "atSNP")
-  p_values_99 <- .Call("test_p_value", test_pwm, snpInfo$prior, trans_mat, c(scores), quantile(scores, 0.99), package = "atSNP")
+  theta <- .Call("test_find_theta", test_pwm, snpInfo$prior, trans_mat, quantile(c(scores), 0.9), package = "atSNP")
+  p_values_9 <- .Call("test_p_value", test_pwm, snpInfo$prior, trans_mat, c(scores), theta, package = "atSNP")
+  theta <- .Call("test_find_theta", test_pwm, snpInfo$prior, trans_mat, quantile(c(scores), 0.99), package = "atSNP")
+  p_values_99 <- .Call("test_p_value", test_pwm, snpInfo$prior, trans_mat, c(scores), theta, package = "atSNP")
   
   pval_test <- function(x) {
     delta <- .Call("test_find_percentile", c(scores), x, package = "atSNP")
