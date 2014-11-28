@@ -21,7 +21,7 @@ NumericMatrix p_value_change(NumericMatrix pwm, NumericMatrix wei_mat, NumericMa
 	printf("theta:%3.3f\n", theta);
 	NumericMatrix p_values(scores.size(), 4);
 	NumericMatrix moments(scores.size(), 4);
-	NumericVector sample_score(4);
+	NumericVector sample_score(5);
 	int start_pos;
 
 	double tol = 1e-10;
@@ -50,7 +50,7 @@ NumericMatrix p_value_change(NumericMatrix pwm, NumericMatrix wei_mat, NumericMa
 	int n_sample = 1e4;
 	double wei = 0;
 	double mean_change = 0;
-	//	double mean_score = 0;
+	double mean_score = 0;
 	double wei_sum = 0;
 	double wei2_sum = 0;
 	for(int i = 0; i < n_sample; i ++) {
@@ -61,6 +61,7 @@ NumericMatrix p_value_change(NumericMatrix pwm, NumericMatrix wei_mat, NumericMa
 		start_pos = sample[2 * motif_len - 1];
 		sample_score = compute_sample_score_change(pwm, wei_mat, adj_mat, sample_vec, stat_dist, trans_mat, start_pos, theta);
 		wei = norm_const / sample_score[0];
+		mean_score += sample_score[4];
 		//		mean_score += sample_score[0];
 		wei_sum += wei;
 		wei2_sum += wei * wei;
@@ -79,6 +80,7 @@ NumericMatrix p_value_change(NumericMatrix pwm, NumericMatrix wei_mat, NumericMa
 	}
 	printf("Mean weight : %lf \n", wei_sum / n_sample);
 	printf("Mean diff score : %lf \n", mean_change / 3 / n_sample);
+	printf("Mean tilting score : %lf \n", mean_score / n_sample);
 	wei2_sum /= n_sample;
 	wei_sum /= n_sample;
 	double var2 = wei2_sum - wei_sum * wei_sum;
@@ -118,7 +120,7 @@ double func_delta_change(NumericMatrix wei_mat, NumericMatrix adj_mat, double th
 	for(int i = 0; i < motif_len; i ++) {
 		tmp = 0;
 		for(int j = 0; j < 4; j ++) {
-			tmp += adj_mat(i, j) * exp(log(wei_mat(i, j)) * theta);
+			tmp += exp(log(wei_mat(i, j)) * theta);
 		}
 		// two stationary sequences, one with length i, one with length motif_len - i - 1
 		norm_const += tmp / adj_sum[i];
@@ -136,19 +138,32 @@ double func_delta_change(NumericMatrix wei_mat, NumericMatrix adj_mat, double th
 */
 double find_theta_change(NumericMatrix wei_mat, NumericMatrix adj_mat, double score) {
 	double theta = 0;
-	double low_delta = log(func_delta_change(wei_mat, adj_mat, theta - 0.005));
-	double upp_delta = log(func_delta_change(wei_mat, adj_mat, theta + 0.005));
-	if(upp_delta - low_delta < score * 0.01) {
-		while(upp_delta - low_delta < score * 0.01 && theta < 1) {
-			theta += 0.01;
+	double tol = 0.01;
+	double low_delta = log(func_delta_change(wei_mat, adj_mat, theta - tol / 2));
+	double upp_delta = log(func_delta_change(wei_mat, adj_mat, theta + tol / 2));
+	if(upp_delta - low_delta < score * tol) {
+		while(upp_delta - low_delta < score * tol && theta < 1) {
+			theta += tol;
 			low_delta = upp_delta;
-			upp_delta = log(func_delta_change(wei_mat, adj_mat, theta + 0.005));
+			upp_delta = log(func_delta_change(wei_mat, adj_mat, theta + tol / 2));
+			if(upp_delta - low_delta >= score * tol && tol > 1e-4) {
+				theta -= tol;
+				tol /= 10;
+				low_delta = log(func_delta_change(wei_mat, adj_mat, theta - tol / 2));
+				upp_delta = log(func_delta_change(wei_mat, adj_mat, theta + tol / 2));;
+			}
 		}
 	} else {
-		while(upp_delta - low_delta > score * 0.01 && theta > -1) {
-			theta -= 0.01;
+		while(upp_delta - low_delta > score * tol && theta > -1) {
+			theta -= tol;
 			upp_delta = low_delta;
-			low_delta = log(func_delta_change(wei_mat, adj_mat, theta - 0.005));
+			low_delta = log(func_delta_change(wei_mat, adj_mat, theta - tol / 2));
+			if(upp_delta - low_delta <= score * tol && tol > 1e-4) {
+				theta += tol;
+				tol /= 10;
+				low_delta = log(func_delta_change(wei_mat, adj_mat, theta - tol / 2));
+				upp_delta = log(func_delta_change(wei_mat, adj_mat, theta + tol / 2));;
+			}
 		}
 	}
 	return(theta);
@@ -168,9 +183,10 @@ IntegerVector importance_sample_change(NumericMatrix adj_mat, NumericVector stat
 		prob_start[i] = 0;
 		tmp = 0;
 		for(int j = 0; j < 4; j ++) {
-			prob_start[i] += adj_mat(motif_len - 1 - i, j) * exp(log(wei_mat(motif_len - 1 - i, j)) * theta);
+			prob_start[i] += exp(log(wei_mat(motif_len - 1 - i, j)) * theta);
 			tmp += adj_mat(motif_len - 1 - i, j);
 		}
+		prob_start[i] /= tmp;
 		if(i > 0)
 			prob_start[i] += prob_start[i - 1];
 	}
@@ -209,9 +225,10 @@ IntegerVector importance_sample_change(NumericMatrix adj_mat, NumericVector stat
 	for(int i = start_pos; i < start_pos + motif_len; i ++) {
 		double cond_prob[4];
 		for(int j = 0; j < 4; j ++) {
-			cond_prob[j] = adj_mat(i - start_pos, j);
 			if(i == motif_len - 1) {
-				cond_prob[j] *= exp(log(wei_mat(i - start_pos, j)) * theta);
+				cond_prob[j] = exp(log(wei_mat(i - start_pos, j)) * theta);
+			} else {
+				cond_prob[j] = adj_mat(i - start_pos, j);
 			}
 			if(j > 0) {
 				cond_prob[j] += cond_prob[j - 1];
@@ -271,7 +288,11 @@ NumericVector compute_sample_score_change(NumericMatrix pwm, NumericMatrix wei_m
 	for(int s = 0; s < motif_len; s ++) {
 		adj_s = 0;
 		for(int i = 0; i < motif_len; i ++) {
-			adj_s += log(adj_mat(i, sample_vec[s + i]));
+			if(i == motif_len - 1 - s) {
+				adj_s += theta * log(wei_mat(motif_len - 1 - s, sample_vec[motif_len - 1]));
+			} else {
+				adj_s += log(adj_mat(i, sample_vec[s + i]));
+			}
 			if(s + i == 0) {
 				adj_s -= log(stat_dist[sample_vec[s + i]]);
 			} else {
@@ -282,15 +303,15 @@ NumericVector compute_sample_score_change(NumericMatrix pwm, NumericMatrix wei_m
 			adj_s += log(stat_dist[sample_vec[s + motif_len]]) -
 				log(trans_mat(sample_vec[s + motif_len - 1], sample_vec[s + motif_len]));
 		}
-		adj_s += theta * log(wei_mat(motif_len - 1 - s, sample_vec[motif_len - 1]));
 		adj_score += exp(adj_s);
 	}
 	// return value
-	NumericVector ret(4);
+	NumericVector ret(5);
 	ret[0] = adj_score;
 	ret[1] = snp_score[0];
 	ret[2] = snp_score[1];
 	ret[3] = snp_score[2];
+	ret[4] = log(wei_mat(motif_len - 1 - start_pos, sample_vec[motif_len - 1]));
 	//	printf("score:%3.3f\tweight:%3.3f\tconstant:%3.3f\n", ret[0], ret[1], log(delta(0, 3)));
 	return(ret);
 }

@@ -2,8 +2,8 @@ library(atSNP)
 data(example)
 
 trans_mat <- matrix(rep(snpInfo$prior, each = 4), nrow = 4)
-id <- 6
-test_pwm <- motif_library$matrix[[6]]
+id <- 1
+test_pwm <- motif_library$matrix[[id]]
 scores <- as.matrix(motif_scores$motif.scores[motif == names(motif_library$matrix)[6], list(log_lik_ref, log_lik_snp)])
 score_diff <- apply(scores, 1, function(x) abs(diff(x)))
 
@@ -14,23 +14,23 @@ for(i in seq(nrow(test_score))) {
   }
 }
 
-adj_mat <- test_pwm
+adj_mat <- test_pwm + 0.25
 
 motif_len <- nrow(test_pwm)
 
 ## these are functions for this test only
 drawonesample <- function(theta) {
-    prob_start <- rev(apply(test_score ^ theta * adj_mat, 1, sum) / apply(adj_mat, 1, sum))
+    prob_start <- rev(apply(test_score ^ theta, 1, sum) / apply(adj_mat, 1, sum))
     id <- sample(seq(motif_len), 1, prob = prob_start)
     sample <- sample(1:4, 2 * motif_len - 1, replace = TRUE, prob = snpInfo$prior)
     delta <- adj_mat
-    delta[motif_len - id + 1, ] <- delta[motif_len - id + 1, ] * test_score[motif_len - id + 1, ] ^ theta
+    delta[motif_len - id + 1, ] <- test_score[motif_len - id + 1, ] ^ theta
     sample[id - 1 + seq(motif_len)] <- apply(delta, 1, function(x) sample(seq(4), 1, prob = x))
     ## compute weight
     sc <- 0
     for(s in seq(motif_len)) {
       delta <- adj_mat
-      delta[motif_len + 1 - s, ] <- delta[motif_len + 1 - s, ] * test_score[motif_len + 1 - s, ] ^ theta
+      delta[motif_len + 1 - s, ] <- test_score[motif_len + 1 - s, ] ^ theta
       sc <- sc + prod(delta[cbind(seq(motif_len), sample[s - 1 + seq(motif_len)])]) /
         prod(snpInfo$prior[sample[s - 1 + seq(motif_len)]])
     }
@@ -89,7 +89,7 @@ test_that("Error: the scores for samples are not equivalent.", {
       log(c(maxjointprob(sample1[seq(2 * motif_len - 1)]),
             maxjointprob(sample2[seq(2 * motif_len - 1)]),
             maxjointprob(sample3[seq(2 * motif_len - 1)])))
-    expect_equal(sample_score_r, sample_score[-1])
+    expect_equal(sample_score_r, sample_score[2:4])
   }
   
   ## Use C code to generate a random sample
@@ -100,7 +100,8 @@ test_that("Error: the scores for samples are not equivalent.", {
     for(s in seq_len(motif_len)) {
       adj_s <- sum(log(adj_mat[cbind(seq(motif_len), sample[s - 1 + seq(motif_len)] + 1)]) -
                    log(snpInfo$prior[sample[s - 1 + seq(motif_len)] + 1]))
-      adj_s <- adj_s + theta * log(test_score[motif_len + 1 - s, sample[motif_len] + 1])
+      adj_s <- adj_s + theta * log(test_score[motif_len + 1 - s, sample[motif_len] + 1]) -
+          log(adj_mat[motif_len + 1 - s, sample[motif_len] + 1])
       adj_score <- adj_score + exp(adj_s)
     }
     sample_score <- .Call("test_compute_sample_score_change", test_pwm, test_score, adj_mat, sample[seq(2 * motif_len - 1)], snpInfo$prior, trans_mat, sample[2 * motif_len], theta, package = "atSNP")
@@ -116,7 +117,7 @@ test_that("Error: compute the normalizing constant.", {
     const <- .Call("test_func_delta_change", test_score, adj_mat, theta, package = "atSNP")
     ## in R
     adj_sum <- apply(adj_mat, 1, sum)
-    wei_sum <- apply(test_score ^ theta * adj_mat, 1, sum)
+    wei_sum <- apply(test_score ^ theta, 1, sum)
     const.r <- prod(adj_sum) * sum(wei_sum / adj_sum)
     expect_equal(const, const.r)
   }
@@ -127,13 +128,13 @@ test_that("Error: sample distributions are not expected.", {
   p <- 0.1
   delta <- .Call("test_find_percentile_change", score_diff, p, package = "atSNP")
   theta <- .Call("test_find_theta_change", test_score, adj_mat, delta, package = "atSNP")
-  prob_start <- rev(apply(adj_mat * test_score ^ theta, 1, sum) / apply(adj_mat, 1, sum))
+  prob_start <- rev(apply(test_score ^ theta, 1, sum) / apply(adj_mat, 1, sum))
   ## construct the delta matrix
   delta <- matrix(1, nrow = 4 * motif_len, ncol = 2 * motif_len - 1)
   for(pos in seq(motif_len)) {
     delta[seq(4) + 4 * (pos - 1), ] <- snpInfo$prior
     delta[seq(4) + 4 * (pos - 1), pos - 1 + seq(motif_len)] <- t(test_pwm)
-    delta[seq(4) + 4 * (pos - 1), motif_len] <- delta[seq(4) + 4 * (pos - 1), motif_len] * test_score[motif_len + 1 - pos, ] ^ theta
+    delta[seq(4) + 4 * (pos - 1), motif_len] <- test_score[motif_len + 1 - pos, ] ^ theta
     delta[seq(4) + 4 * (pos - 1), ] <- delta[seq(4) + 4 * (pos - 1),] / rep(apply(delta[seq(4) + 4 * (pos - 1), ], 2, sum), each = 4)
   }
   target_freq <- matrix(0, nrow = 4, ncol = 2 * motif_len - 1)
@@ -173,22 +174,32 @@ test_that("Error: the chosen pvalues should have the smaller variance.", {
          
 ## Visual checks
 if(FALSE) {
-  
-  plot(log(y <- sapply(seq(200) / 100 - 1, function(x)
-            .Call("test_func_delta_change", test_score, adj_mat, x, package = "atSNP"))))
 
-## test the theta
+  plot(diff(log(y <- sapply(seq(100) / 10000 - 0.035, function(x)
+            .Call("test_func_delta_change", test_score, adj_mat, x, package = "atSNP"))))* 10000)
+
+  func_delta <- function(theta) {
+      log(.Call("test_func_delta_change", test_score, adj_mat, theta, package = "atSNP"))
+  }
+
+  1e4 * (func_delta(-0.165 + 1e-4 / 2) - func_delta(-0.165 - 1e-4 / 2))
+
+  ## test the theta
   p_values_9 <- .Call("test_p_value_change", test_pwm, test_score, adj_mat, snpInfo$prior, snpInfo$transition, score_diff, quantile(score_diff, 0.9), package = "atSNP")
   p_values_8 <- .Call("test_p_value_change", test_pwm, test_score, adj_mat, snpInfo$prior, snpInfo$transition, score_diff, quantile(score_diff, 0.8), package = "atSNP")
+
+  p_values_1 <- .Call("test_p_value_change", test_pwm, test_score, adj_mat, snpInfo$prior, snpInfo$transition, score_diff, quantile(score_diff, 0.1), package = "atSNP")
+
+  test <- .Call("test_p_value_change", test_pwm, test_score, (adj_mat +0.25) / 2, snpInfo$prior, snpInfo$transition, score_diff, 0, package = "atSNP")
 
   plot(log(p_values_9[, 1])- log(p_values_9[, 3]), cex = 0.1)
 
   plot(p_values_9[, 1], p_values_9[, 2])
   
-  plot(p_values_9[, 2], p_values_9[, 4])
+  plot(p_values_9[, 2], p_values_9[, 4], xlim = range(p_values_9[, c(2, 4)]), ylim = range(p_values_9[, c(2, 4)]))
   abline(0, 1)
   
-  plot(p_values_8[, 2], p_values_8[, 4])
+  plot(p_values_8[, 2], p_values_8[, 4], xlim = range(p_values_8[, c(2, 4)]), ylim = range(p_values_8[, c(2, 4)]))
   abline(0, 1)
 
   plot(p_values_8[, 2], p_values_9[, 2])
@@ -209,10 +220,12 @@ if(FALSE) {
       theta <- .Call("test_find_theta_change", test_score, adj_mat, delta, package = "atSNP")
       const <- .Call("test_func_delta_change", test_score, adj_mat, theta, package = "atSNP")
       message("Constant value: ", const)
-      log_diff <- rep(0, 3000)
-      wei <- rep(0, 1000)
+      nrep <- 1000
+      log_diff <- rep(0, 3 * nrep)
+      wei <- rep(0, nrep)
+      sc <- rep(0, nrep)
 ##      set.seed(0)
-      for(i in seq(1000)) {
+      for(i in seq(nrep)) {
           sample <- drawonesample(theta)
           sample_score <- .Call("test_compute_sample_score_change", test_pwm, test_score, adj_mat, sample[seq(2 * motif_len - 1)] - 1, snpInfo$prior, trans_mat, sample[2 * motif_len] - 1, theta, package = "atSNP")
 
@@ -225,15 +238,17 @@ if(FALSE) {
           pr3 <- maxjointprob(sample3[seq(2 * motif_len - 1)])
           pr <- maxjointprob(sample[seq(2 * motif_len - 1)])
           sample_score_r <- c(sample[2 * motif_len + 1], log(pr) - log(c(pr1, pr2, pr3)))
-          expect_equal(sample_score, sample_score_r)
+          expect_equal(sample_score[1:4], sample_score_r)
           ## if use sample_score[-1], the result is the same as .Call
           ## if use sample_score_r[-1], the result is the same as pval_test
-          log_diff[seq(3) + 3 * (i - 1)] <- sample_score[-1]
+          log_diff[seq(3) + 3 * (i - 1)] <- sample_score[2:4]
           wei[i] <- const / sample_score[1]
+          sc[i] <- log(test_score[motif_len + 1 - sample[2 * motif_len], sample[motif_len]])
       }
       message("Mean weight: ", mean(wei))
       message("Mean diff score: ", mean(log_diff))
       pval <- sapply(score_diff, function(x) sum(rep(wei, each = 3)[abs(log_diff) >= x]) / length(log_diff))
+      message("Mean tilting score: ", mean(sc))
       return(pval)
   }
 

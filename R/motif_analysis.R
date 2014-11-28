@@ -521,12 +521,13 @@ ComputePValues <- function(motif.lib, snp.info, motif.scores, ncores = 1, getPlo
         next
       }
       pval_diff.new <- .Call("test_p_value_change", pwm,
-                             wei.mat, pwm, snp.info$prior,
+                             wei.mat, pwm + 0.25, snp.info$prior,
                              snp.info$transition, score_diff[compute.id],
                              score.p[l], package = "atSNP")
       pval_diff.new <- .structure_diff(pval_diff.new)
       update.id <- which(pval_diff.new[, 2] < pval_diff[compute.id, 2])
       pval_diff[compute.id[update.id], ] <- pval_diff.new[update.id, ]
+      print(summary(pval_diff.new[,1]))
     }
     
     ## Force the p-values to be increasing
