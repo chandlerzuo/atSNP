@@ -561,7 +561,6 @@ ComputePValues <- function(motif.lib, snp.info, motif.scores, ncores = 1, getPlo
       print(ggplot(aes(x = score, y = p.value), data = plotdat[plotdat$Allele == "ref", ], environment = localenv) + geom_point() + scale_y_log10() + geom_errorbar(aes(ymax = p.value + sqrt(var), ymin = p.value - sqrt(var))) + ggtitle(paste(names(motif_library$matrix)[motifid], "ref"))) 
       id <- which(rank(plotdat$p.value[plotdat$Allele == "snp"]) <= 500)
       print(ggplot(aes(x = score, y = p.value), data = plotdat[plotdat$Allele == "snp", ], environment = localenv) + geom_point() + scale_y_log10() + geom_errorbar(aes(ymax = p.value + sqrt(var), ymin = p.value - sqrt(var))) + ggtitle(paste(names(motif_library$matrix)[motifid], "SNP")))
-      id <- which(rank(plotdat.diff$p.value) <= 500)
       print(ggplot(aes(x = score, y = p.value), data = plotdat.diff, environment = localenv) + geom_point() + scale_y_log10() + geom_errorbar(aes(ymax = p.value + sqrt(var), ymin = p.value - sqrt(var))) + ggtitle(paste(names(motif_library$matrix)[motifid], "Change")))
       dev.off()
     }

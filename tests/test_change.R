@@ -2,7 +2,7 @@ library(atSNP)
 data(example)
 
 trans_mat <- matrix(rep(snpInfo$prior, each = 4), nrow = 4)
-id <- 1
+id <- 6
 test_pwm <- motif_library$matrix[[id]]
 scores <- as.matrix(motif_scores$motif.scores[motif == names(motif_library$matrix)[6], list(log_lik_ref, log_lik_snp)])
 score_diff <- apply(scores, 1, function(x) abs(diff(x)))
