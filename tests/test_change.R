@@ -2,7 +2,7 @@ library(atSNP)
 data(example)
 
 trans_mat <- matrix(rep(snpInfo$prior, each = 4), nrow = 4)
-id <- 6
+id <- 5
 test_pwm <- motif_library$matrix[[id]]
 scores <- as.matrix(motif_scores$motif.scores[motif == names(motif_library$matrix)[6], list(log_lik_ref, log_lik_snp)])
 score_diff <- apply(scores, 1, function(x) abs(diff(x)))
@@ -15,7 +15,6 @@ for(i in seq(nrow(test_score))) {
 }
 
 adj_mat <- test_pwm + 0.25
-
 motif_len <- nrow(test_pwm)
 
 ## these are functions for this test only
@@ -195,6 +194,8 @@ if(FALSE) {
   plot(log(p_values_9[, 1])- log(p_values_9[, 3]), cex = 0.1)
 
   plot(p_values_9[, 1], p_values_9[, 2])
+
+  plot(p_values_9[, 1], p_values_9[, 3])
   
   plot(p_values_9[, 2], p_values_9[, 4], xlim = range(p_values_9[, c(2, 4)]), ylim = range(p_values_9[, c(2, 4)]))
   abline(0, 1)

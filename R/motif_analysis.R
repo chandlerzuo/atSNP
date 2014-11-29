@@ -557,10 +557,10 @@ ComputePValues <- function(motif.lib, snp.info, motif.scores, ncores = 1, getPlo
       options(warn = -1)
       pdf(paste("/p/keles/ENCODE-CHARGE/volume2/SNP/test/motif", motifid, ".pdf", sep = ""), width = 10, height = 10)
       id <- which(rank(plotdat$p.value[plotdat$Allele == "ref"]) <= 500)
-      print(ggplot(aes(x = score, y = p.value), data = plotdat[plotdat$Allele == "ref", ], environment = localenv) + geom_point() + scale_y_log10() + geom_errorbar(aes(ymax = p.value + sqrt(var), ymin = p.value - sqrt(var))) + ggtitle(paste(names(motif_library$matrix)[motifid], "ref"))) 
+      print(ggplot(aes(x = score, y = p.value), data = plotdat[plotdat$Allele == "ref", ], environment = localenv) + geom_point() + scale_y_log10(breaks = 10 ^ seq(-8, 0)) + geom_errorbar(aes(ymax = p.value + sqrt(var), ymin = p.value - sqrt(var))) + ggtitle(paste(names(motif_library$matrix)[motifid], "ref"))) 
       id <- which(rank(plotdat$p.value[plotdat$Allele == "snp"]) <= 500)
-      print(ggplot(aes(x = score, y = p.value), data = plotdat[plotdat$Allele == "snp", ], environment = localenv) + geom_point() + scale_y_log10() + geom_errorbar(aes(ymax = p.value + sqrt(var), ymin = p.value - sqrt(var))) + ggtitle(paste(names(motif_library$matrix)[motifid], "SNP")))
-      print(ggplot(aes(x = score, y = p.value), data = plotdat.diff, environment = localenv) + geom_point() + scale_y_log10() + geom_errorbar(aes(ymax = p.value + sqrt(var), ymin = p.value - sqrt(var))) + ggtitle(paste(names(motif_library$matrix)[motifid], "Change")))
+      print(ggplot(aes(x = score, y = p.value), data = plotdat[plotdat$Allele == "snp", ], environment = localenv) + geom_point() + scale_y_log10(breaks = 10 ^ seq(-8, 0)) + geom_errorbar(aes(ymax = p.value + sqrt(var), ymin = p.value - sqrt(var))) + ggtitle(paste(names(motif_library$matrix)[motifid], "SNP")))
+      print(ggplot(aes(x = score, y = p.value), data = plotdat.diff, environment = localenv) + geom_point() + scale_y_log10(breaks = 10 ^ seq(-8, 0)) + geom_errorbar(aes(ymax = p.value + sqrt(var), ymin = p.value - sqrt(var))) + ggtitle(paste(names(motif_library$matrix)[motifid], " Change")))
       dev.off()
     }
     
