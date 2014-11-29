@@ -533,7 +533,6 @@ ComputePValues <- function(motif.lib, snp.info, motif.scores, ncores = 1, getPlo
     ## Force the p-values to be increasing
     pval_a[, 1] <- sort(pval_a[, 1])[rank(-scores[,1])]
     pval_a[, 2] <- sort(pval_a[, 2])[rank(-scores[,2])]
-    score_diff <- abs(scores[,1] - scores[,2])
     pval_diff[, 1] <- sort(pval_diff[,1])[rank(-score_diff)]
     pval_a[pval_a[, 1] > 1, 1] <- 1
     pval_a[pval_a[, 2] > 1, 2] <- 1
