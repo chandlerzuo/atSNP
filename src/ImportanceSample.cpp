@@ -18,7 +18,7 @@ NumericMatrix p_value(NumericMatrix pwm, NumericVector stat_dist, NumericMatrix 
 	// printf("percentile:%3.3f\n", score_percentile);
 	// find the tilting parameter
 	// double theta = find_theta(pwm, stat_dist, trans_mat, score_percentile);
-	printf("theta:%3.3f\n", theta);
+	//printf("theta:%3.3f\n", theta);
 	NumericMatrix p_values(scores.size(), 4);
 
 	double tol = 1e-10;
@@ -98,7 +98,7 @@ NumericMatrix p_value(NumericMatrix pwm, NumericVector stat_dist, NumericMatrix 
 			}
 		}
 	}
-	printf("Mean sample : %lf \t adj_score : %lf \t weight : %lf \n", mean_sample / n_sample, mean_adj_score / n_sample, mean_wei / n_sample);
+	//printf("Mean sample : %lf \t adj_score : %lf \t weight : %lf \n", mean_sample / n_sample, mean_adj_score / n_sample, mean_wei / n_sample);
 	mean_wei /= n_sample;
 	mean_wei2 /= n_sample;
 	double var_wei = mean_wei2 - mean_wei * mean_wei;

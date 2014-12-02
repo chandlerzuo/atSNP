@@ -174,6 +174,7 @@ ComputeMotifScore <- function(motif.lib, snp.info, ncores = 1) {
   motif_tbl <- data.table(motif = motifs,
                           motif_len = sapply(motif.lib$matrix, nrow))
 
+  ncores <- min(c(ncores, length(snp.info$ref_base)))
   registerDoMC(ncores)
 
   motif_score_par <- foreach(i = seq(ncores)) %dopar% {
@@ -304,8 +305,11 @@ MatchSubsequence <- function(snp.tbl, motif.scores, motif.lib, snpids = NULL, mo
   if(is.null(motifs)) {
     motifs <- unique(motif.scores$motif)
   }
-  if(sum(! motifs %in% names(motif_library$matrix)) > 0) {
-    stop("Error: some motifs are not included in 'motif_library'.")
+  if(sum(! motifs %in% names(motif.lib$matrix)) > 0) {
+    stop("Error: some motifs are not included in 'motif.lib'.")
+  }
+  if(sum(! snpids %in% motif.scores$snpid) > 0) {
+    stop("Error: some snpids are not included in 'motif.scores'.")
   }
   snpids <- unique(snpids)
   motifs <- unique(motifs)
@@ -316,11 +320,12 @@ MatchSubsequence <- function(snp.tbl, motif.scores, motif.lib, snpids = NULL, mo
   ## get the IUPAC subsequence for the motifs
   motif.tbl <- data.table(
     motif = motifs,
-    IUPAC = sapply(motif_library$matrix[motifs],
+    IUPAC = sapply(motif.lib$matrix[motifs],
       function(x) GetIUPACSequence(x, prob = 0.25))
   )
   setkey(motif.tbl, motif)
 
+  ncores <- min(c(ncores, length(snpids)))
   registerDoMC(ncores)
 
   motif_score_par <- foreach(i = seq(ncores)) %dopar% {
@@ -406,6 +411,7 @@ MatchSubsequence <- function(snp.tbl, motif.scores, motif.lib, snpids = NULL, mo
 #' @useDynLib atSNP
 #' @export
 ComputePValues <- function(motif.lib, snp.info, motif.scores, ncores = 1, getPlot = FALSE) {
+  ncores <- min(c(ncores, length(motif.lib$matrix)))
     registerDoMC(ncores)
     results <- as.list(seq_along(motif.lib$matrix))
     nsets <- as.integer(length(motif.lib$matrix) / ncores)
@@ -527,7 +533,7 @@ ComputePValues <- function(motif.lib, snp.info, motif.scores, ncores = 1, getPlo
       pval_diff.new <- .structure_diff(pval_diff.new)
       update.id <- which(pval_diff.new[, 2] < pval_diff[compute.id, 2])
       pval_diff[compute.id[update.id], ] <- pval_diff.new[update.id, ]
-      print(summary(pval_diff.new[,1]))
+      ## print(summary(pval_diff.new[,1]))
     }
     
     ## Force the p-values to be increasing
@@ -557,10 +563,10 @@ ComputePValues <- function(motif.lib, snp.info, motif.scores, ncores = 1, getPlo
       options(warn = -1)
       pdf(paste("/p/keles/ENCODE-CHARGE/volume2/SNP/test/motif", motifid, ".pdf", sep = ""), width = 10, height = 10)
       id <- which(rank(plotdat$p.value[plotdat$Allele == "ref"]) <= 500)
-      print(ggplot(aes(x = score, y = p.value), data = plotdat[plotdat$Allele == "ref", ], environment = localenv) + geom_point() + scale_y_log10(breaks = 10 ^ seq(-8, 0)) + geom_errorbar(aes(ymax = p.value + sqrt(var), ymin = p.value - sqrt(var))) + ggtitle(paste(names(motif_library$matrix)[motifid], "ref"))) 
+      print(ggplot(aes(x = score, y = p.value), data = plotdat[plotdat$Allele == "ref", ], environment = localenv) + geom_point() + scale_y_log10(breaks = 10 ^ seq(-8, 0)) + geom_errorbar(aes(ymax = p.value + sqrt(var), ymin = p.value - sqrt(var))) + ggtitle(paste(names(motif.lib$matrix)[motifid], "ref"))) 
       id <- which(rank(plotdat$p.value[plotdat$Allele == "snp"]) <= 500)
-      print(ggplot(aes(x = score, y = p.value), data = plotdat[plotdat$Allele == "snp", ], environment = localenv) + geom_point() + scale_y_log10(breaks = 10 ^ seq(-8, 0)) + geom_errorbar(aes(ymax = p.value + sqrt(var), ymin = p.value - sqrt(var))) + ggtitle(paste(names(motif_library$matrix)[motifid], "SNP")))
-      print(ggplot(aes(x = score, y = p.value), data = plotdat.diff, environment = localenv) + geom_point() + scale_y_log10(breaks = 10 ^ seq(-8, 0)) + geom_errorbar(aes(ymax = p.value + sqrt(var), ymin = p.value - sqrt(var))) + ggtitle(paste(names(motif_library$matrix)[motifid], " Change")))
+      print(ggplot(aes(x = score, y = p.value), data = plotdat[plotdat$Allele == "snp", ], environment = localenv) + geom_point() + scale_y_log10(breaks = 10 ^ seq(-8, 0)) + geom_errorbar(aes(ymax = p.value + sqrt(var), ymin = p.value - sqrt(var))) + ggtitle(paste(names(motif.lib$matrix)[motifid], "SNP")))
+      print(ggplot(aes(x = score, y = p.value), data = plotdat.diff, environment = localenv) + geom_point() + scale_y_log10(breaks = 10 ^ seq(-8, 0)) + geom_errorbar(aes(ymax = p.value + sqrt(var), ymin = p.value - sqrt(var))) + ggtitle(paste(names(motif.lib$matrix)[motifid], " Change")))
       dev.off()
     }
     

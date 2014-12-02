@@ -18,7 +18,7 @@ NumericMatrix p_value_change(NumericMatrix pwm, NumericMatrix wei_mat, NumericMa
 	//	printf("percentile:%3.3f\n", score_percentile);
 	// find the tilting parameter
 	double theta = find_theta_change(wei_mat, adj_mat, score_percentile);
-	printf("theta:%3.3f\n", theta);
+	//printf("theta:%3.3f\n", theta);
 	NumericMatrix p_values(scores.size(), 4);
 	NumericMatrix moments(scores.size(), 4);
 	NumericVector sample_score(5);
@@ -39,7 +39,7 @@ NumericMatrix p_value_change(NumericMatrix pwm, NumericMatrix wei_mat, NumericMa
 	
 
 	double norm_const = func_delta_change(wei_mat, adj_mat, theta);
-	printf("Constant value : %3.10f\n", norm_const);
+	//printf("Constant value : %3.10f\n", norm_const);
 
 	for(int i = 0; i < p_values.nrow(); i ++) {
 		for(int j = 0; j < 4; j ++) {
@@ -78,9 +78,9 @@ NumericMatrix p_value_change(NumericMatrix pwm, NumericMatrix wei_mat, NumericMa
 			}
 		}
 	}
-	printf("Mean weight : %lf \n", wei_sum / n_sample);
-	printf("Mean diff score : %lf \n", mean_change / 3 / n_sample);
-	printf("Mean tilting score : %lf \n", mean_score / n_sample);
+	//printf("Mean weight : %lf \n", wei_sum / n_sample);
+	//printf("Mean diff score : %lf \n", mean_change / 3 / n_sample);
+	//printf("Mean tilting score : %lf \n", mean_score / n_sample);
 	wei2_sum /= n_sample;
 	wei_sum /= n_sample;
 	double var2 = wei2_sum - wei_sum * wei_sum;

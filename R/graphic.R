@@ -110,7 +110,7 @@ dtMotifMatch<-function(snp.tbl, motif.scores, snpids=NULL, motifs=NULL, ncores=1
 #' @author Sunyoung Shin\email{shin@@stat.wisc.edu}
 #' @examples
 #' data(example)
-#' plotMotifMatch(motif_scores$snp.tbl, motif_scores$motif.scores, motif_scores$snp.tbl$snpid[86], motif_scores$motif.scores$motif[1])
+#' plotMotifMatch(motif_scores$snp.tbl, motif_scores$motif.scores, motif_scores$snp.tbl$snpid[50], motif_scores$motif.scores$motif[1])
 #' @import data.table motifStack doMC
 #' @export
 plotMotifMatch<-function(snp.tbl, motif.scores, snpid, motif, motif.lib=motif_library) {
