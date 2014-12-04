@@ -41,7 +41,7 @@
 #' dtMotifMatch(motif_scores$snp.tbl, motif_scores$motif.scores, motif_scores$snp.tbl$snpid[1:100], motif_scores$motif.scores$motif[1])
 #' @import data.table doMC
 #' @export
-dtMotifMatch<-function(snp.tbl, motif.scores, snpids=NULL, motifs=NULL, ncores=10, motif.lib) {
+dtMotifMatch<-function(snp.tbl, motif.scores, motif.lib, snpids=NULL, motifs=NULL, ncores=10) {
   if (all(any(class(snpids) != "character",  length(snpids)==0), is.null(snpids)==FALSE)) {
     stop("snpids must be a vector of class character or NULL.")
   } else if (all(any(class(motifs) != "character",  length(motifs)==0), is.null(motifs)==FALSE)) {
@@ -49,7 +49,7 @@ dtMotifMatch<-function(snp.tbl, motif.scores, snpids=NULL, motifs=NULL, ncores=1
   }
   ncores.v2 <- min(ncores, length(snpids) * length(motifs))
   sequence.half.window.size <- (nchar(snp.tbl[1, ref_seq]) - 1) / 2
-  motif.match.dt <- MatchSubsequence(snp.tbl = snp.tbl, motif.scores = motif.scores, snpids = snpids, motifs = motifs, ncores = ncores.v2, motif.lib = motif.lib)
+  motif.match.dt <- MatchSubsequence(snp.tbl = snp.tbl, motif.scores = motif.scores, motif.lib = motif.lib, snpids = snpids, motifs = motifs, ncores = ncores.v2)
 
   ##Augmentation of SNP and reference sequences###
   motif.match.dt[, len_seq := nchar(ref_seq)]
