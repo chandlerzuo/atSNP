@@ -426,8 +426,8 @@ ComputePValues <- function(motif.lib, snp.info, motif.scores, ncores = 1, getPlo
         }
     }
     results <- foreach(motifid = seq_along(motif.lib$matrix)) %dopar% {
-        rowids <- which(motif.scores$motif == names(motif.lib$matrix)[motifid])
-        scores <- cbind(motif.scores$log_lik_ref[rowids],
+      rowids <- which(motif.scores$motif == names(motif.lib$matrix)[motifid])
+      scores <- cbind(motif.scores$log_lik_ref[rowids],
                     motif.scores$log_lik_snp[rowids])
     pwm <- motif.lib$matrix[[motifid]]
     pwm[pwm < 1e-10] <- 1e-10
@@ -453,7 +453,7 @@ ComputePValues <- function(motif.lib, snp.info, motif.scores, ncores = 1, getPlo
     
     score.p <- quantile(c(scores), 1 - allp)
     
-    pval_a <- matrix(1, nrow = nrow(scores), ncol = 4)
+    pval_a <- pval_cond <- matrix(1, nrow = nrow(scores), ncol = 4)
     for(l in seq(length(allp) + 1)) {
       if(l == 1) {
         score.upp = max(scores) + 1
@@ -476,9 +476,9 @@ ComputePValues <- function(motif.lib, snp.info, motif.scores, ncores = 1, getPlo
       } else {
           theta <- 0
       }
-      pval_a.new <- .Call("test_p_value", pwm, snp.info$prior,
-                          snp.info$transition, scores[compute.id], theta, package = "atSNP")
-      pval_a.new <- .structure(pval_a.new)
+      pval_a.new <- .Call("test_p_value", pwm, snp.info$prior, snp.info$transition, scores[compute.id], theta, package = "atSNP")
+      pval_cond.new <- .structure(pval_a.new[, 4 + seq(4)])
+      pval_a.new <- .structure(pval_a.new[, seq(4)])
       if(FALSE) {
         update.id <- which(scores < score.p[l] & scores >= score.low)
         pval_a[update.id] <- pval_a.new[compute.id %in% update.id, 1]
@@ -491,6 +491,9 @@ ComputePValues <- function(motif.lib, snp.info, motif.scores, ncores = 1, getPlo
         update.id <- which(pval_a.new[, 2] < pval_a[, 3:4][compute.id])
         pval_a[compute.id[update.id]] <- pval_a.new[update.id, 1]
         pval_a[compute.id[update.id] + 2 * nrow(pval_a)] <- pval_a.new[update.id, 2]
+        update.id <- which(pval_cond.new[, 2] < pval_cond[, 3:4][compute.id])
+        pval_cond[compute.id[update.id]] <- pval_cond.new[update.id, 1]
+        pval_cond[compute.id[update.id] + 2 * nrow(pval_cond)] <- pval_cond.new[update.id, 2]
       }
       if(FALSE) {
         if(length(update.id) > 0) {
@@ -539,9 +542,13 @@ ComputePValues <- function(motif.lib, snp.info, motif.scores, ncores = 1, getPlo
     ## Force the p-values to be increasing
     pval_a[, 1] <- sort(pval_a[, 1])[rank(-scores[,1])]
     pval_a[, 2] <- sort(pval_a[, 2])[rank(-scores[,2])]
+    pval_cond[, 1] <- sort(pval_cond[, 1])[rank(-scores[,1])]
+    pval_cond[, 2] <- sort(pval_cond[, 2])[rank(-scores[,2])]
     pval_diff[, 1] <- sort(pval_diff[,1])[rank(-score_diff)]
     pval_a[pval_a[, 1] > 1, 1] <- 1
     pval_a[pval_a[, 2] > 1, 2] <- 1
+    pval_cond[pval_cond[, 1] > 1, 1] <- 1
+    pval_cond[pval_cond[, 2] > 1, 2] <- 1
     pval_diff[pval_diff[, 1] > 1, 1] <- 1
     message("Finished testing the ", motifid, "th motif")
     ##    save(list = ls(), file = paste("/p/keles/ENCODE-CHARGE/volume2/SNP/test/motif", motifid, ".Rda", sep= ""))
@@ -572,12 +579,15 @@ ComputePValues <- function(motif.lib, snp.info, motif.scores, ncores = 1, getPlo
     
     list(rowids = rowids,
          pval_a = pval_a,
+         pval_cond = pval_cond,
          pval_diff = pval_diff)
   }
   
   for(i in seq(length(results))) {
     motif.scores[results[[i]]$rowids, pval_ref := results[[i]]$pval_a[, 1]]
     motif.scores[results[[i]]$rowids, pval_snp := results[[i]]$pval_a[, 2]]
+    motif.scores[results[[i]]$rowids, pval_cond_ref := results[[i]]$pval_cond[, 1]]
+    motif.scores[results[[i]]$rowids, pval_cond_snp := results[[i]]$pval_cond[, 2]]
     motif.scores[results[[i]]$rowids, pval_diff := results[[i]]$pval_diff[, 1]]
   }
   return(motif.scores)

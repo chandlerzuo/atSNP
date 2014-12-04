@@ -19,7 +19,7 @@ NumericMatrix p_value(NumericMatrix pwm, NumericVector stat_dist, NumericMatrix 
 	// find the tilting parameter
 	// double theta = find_theta(pwm, stat_dist, trans_mat, score_percentile);
 	//printf("theta:%3.3f\n", theta);
-	NumericMatrix p_values(scores.size(), 4);
+	NumericMatrix p_values(scores.size(), 8);
 
 	double tol = 1e-10;
 	int motif_len = pwm.nrow();
@@ -80,6 +80,7 @@ NumericMatrix p_value(NumericMatrix pwm, NumericVector stat_dist, NumericMatrix 
 	double mean_wei = 0;
 	double mean_wei2 = 0;
 	double wei = 0;
+	double wei_cond = 0, mean_wei_cond = 0, mean_wei_cond2 = 0;
 	for(int i = 0; i < n_sample; i ++) {
 		sample = importance_sample(delta, stat_dist, trans_mat, pwm, theta);
 		for(int j = 0; j < sample.size() - 1; j ++) {
@@ -88,21 +89,30 @@ NumericMatrix p_value(NumericMatrix pwm, NumericVector stat_dist, NumericMatrix 
 		sample_score = compute_sample_score(pwm, sample_vec, sample[2 * motif_len - 1], theta);
 		mean_sample += sample_score[0];
 		wei = norm_const / sample_score[1];
+		wei_cond = norm_const / sample_score[2] / motif_len;
 		mean_wei += wei;
 		mean_wei2 += wei * wei;
+		mean_wei_cond += wei_cond;
+		mean_wei_cond2 += wei_cond * wei_cond;
 		mean_adj_score += log(sample_score[1]);
 		for(int j = 0; j < scores.size(); j ++) {
 			if(scores(j) <= sample_score[0]) {
 				p_values(j, 0) += wei;
 				p_values(j, 1) += wei * wei;
+				p_values(j, 4) += wei_cond;
+				p_values(j, 5) += wei_cond * wei_cond;
 			}
 		}
 	}
 	//printf("Mean sample : %lf \t adj_score : %lf \t weight : %lf \n", mean_sample / n_sample, mean_adj_score / n_sample, mean_wei / n_sample);
 	mean_wei /= n_sample;
 	mean_wei2 /= n_sample;
+	mean_wei_cond /= n_sample;
+	mean_wei_cond2 /= n_sample;
 	double var_wei = mean_wei2 - mean_wei * mean_wei;
+	double var_wei_cond = mean_wei_cond2 - mean_wei_cond * mean_wei_cond;
 	for(int j = 0; j < scores.size(); j ++) {
+		// p values
 		p_values(j, 0) /= n_sample;
 		p_values(j, 1) /= n_sample;
 		double cov = p_values(j, 1) - mean_wei * p_values(j, 0);
@@ -111,11 +121,27 @@ NumericMatrix p_value(NumericMatrix pwm, NumericVector stat_dist, NumericMatrix 
 		double grad1 = 1 / mean_wei;
 		double grad2 = - p_values(j, 0) * grad1 * grad1;
 		p_values(j, 3) = grad1 * grad1 * p_values(j, 1) + grad2 * grad2 * var_wei + 2 * grad1 * grad2 * cov;
+		// weights and the weight * indicator are the same; discard the estimate
 		if(var_wei == p_values(j, 1)) {
 			p_values(j, 3) = n_sample - 1;
 		}
 		p_values(j, 1) /= n_sample - 1;
 		p_values(j, 3) /= n_sample - 1;
+		// conditional p values
+		p_values(j, 4) /= n_sample;
+		p_values(j, 5) /= n_sample;
+		cov = p_values(j, 5) - mean_wei_cond * p_values(j, 4);
+		p_values(j, 5) -= p_values(j, 4) * p_values(j, 4);
+		p_values(j, 6) = p_values(j, 4) / mean_wei_cond;
+		grad1 = 1 / mean_wei_cond;
+		grad2 = - p_values(j, 4) * grad1 * grad1;
+		p_values(j, 7) = grad1 * grad1 * p_values(j, 5) + grad2 * grad2 * var_wei_cond + 2 * grad1 * grad2 * cov;
+		// weights and the weight * indicator are the same; discard the estimate
+		if(var_wei_cond == p_values(j, 5)) {
+			p_values(j, 7) = n_sample - 1;
+		}
+		p_values(j, 5) /= n_sample - 1;
+		p_values(j, 7) /= n_sample - 1;
 	}
 	return(p_values);
 }
@@ -303,9 +329,10 @@ NumericVector compute_sample_score(NumericMatrix pwm, IntegerVector sample_vec, 
 		adj_score += exp(theta * pwm_log_prob(pwm, sample_vec, s));
 	}
 	// return value
-	NumericVector ret(2);
+	NumericVector ret(3);
 	ret[0] = rnd_score;
 	ret[1] = adj_score;
+	ret[2] = exp(theta * pwm_log_prob(pwm, sample_vec, start_pos));
 	//	ret[2] = snp_score[0];
 	//	ret[3] = snp_score[1];
 	//	ret[4] = snp_score[2];

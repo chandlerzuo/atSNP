@@ -16,12 +16,14 @@ drawonesample <- function(theta) {
   sample <- sample(1:4, 2 * motif_len - 1, replace = TRUE, prob = snpInfo$prior)
   id <- sample(seq(motif_len), 1)
   sample[id : (id + motif_len - 1)] <- apply(delta, 2, function(x) sample(1:4, 1, prob = x))
-  sc <- 0
+  sc <- s_cond <- 0
   for(s in seq(motif_len)) {
     sc <- sc + prod(test_pwm[cbind(seq(motif_len),
-                                   sample[s : (s + motif_len - 1)])]) ^ theta
+                                  sample[s : (s + motif_len - 1)])]) ^ theta
   }
-  sample <- c(sample, id, sc)
+  s_cond <- prod(test_pwm[cbind(seq(motif_len),
+                                sample[id : (id + motif_len - 1)])]) ^ theta
+  sample <- c(sample, id, sc, s_cond)
   return(sample)
 }
 jointprob <- function(x) prod(test_pwm[cbind(seq(motif_len), x)])
@@ -72,6 +74,7 @@ test_that("Error: the scores for samples are not equivalent.", {
     sample <- drawonesample(theta)
     sample_score <- .Call("test_compute_sample_score", test_pwm, sample[seq(2 * motif_len - 1)] - 1, sample[motif_len * 2] - 1, theta, package = "atSNP")
     expect_equal(sample[2 * motif_len + 1], sample_score[2])
+    expect_equal(sample[2 * motif_len + 2], sample_score[3])
   }
   ## Use C code to generate a random sample
   for(i in seq(10)) {
@@ -86,8 +89,10 @@ test_that("Error: the scores for samples are not equivalent.", {
       adj_score <- adj_score + prod(test_pwm[cbind(seq(motif_len),
                                                    sample[s + seq(motif_len)] + 1)]) ^ theta
     }
+    adj_score_cond <- prod(test_pwm[cbind(seq(motif_len), sample[start_pos + seq(motif_len)] + 1)]) ^ theta
     sample_score <- .Call("test_compute_sample_score", test_pwm, sample[seq(2 * motif_len - 1)], sample[motif_len * 2], theta, package = "atSNP")
     expect_equal(adj_score, sample_score[2])
+    expect_equal(adj_score_cond, sample_score[3])
   }
 })
 
@@ -178,11 +183,13 @@ if(FALSE) {
     sample <- sapply(rep(theta, 1000), drawonesample)
     pr <- apply(sample[seq(2 * motif_len - 1), ], 2, maxjointprob)
     wei <- const / sample[2 * motif_len + 1, ]
+    wei.cond <- const / motif_len / sample[2 * motif_len + 2, ]
     print(mean(log(sample[2 * motif_len + 1, ])))
     print(mean(log(pr)))
     print(mean(wei))
-    pval <- sapply(c(scores), function(x) sum(wei[log(pr) >= x]) / sum(wei))
-    return(pval)
+    pval <- sapply(c(scores), function(x) sum(wei[log(pr) >= x]) / length(wei))
+    pval.cond <- sapply(c(scores), function(x) sum(wei.cond[log(pr) >= x]) / length(wei.cond))
+    return(cbind(pval, pval.cond))
   }
 
   pval_99 <- pval_test(0.01)
@@ -193,24 +200,25 @@ if(FALSE) {
         quantile(pval_99, seq(10) / 200),
         quantile(p_values_99[, 1], seq(10) / 200))
   
-  plot(log(pval_99), log(p_values_99[, 1]))
+  plot(log(pval_99[, 1]), log(p_values_99[, 1]))
   abline(0,1)
   
-  plot(log(pval_9), log(p_values_9[, 1]))
+  plot(log(pval_9[, 1]), log(p_values_9[, 1]))
   abline(0,1)
 
-  plot(p_values_9[,1], p_values_99[,1], xlim = c(0, 0.001), ylim = c(0, 0.001))
-  abline(0, 1)
-
-  plot(pval_9, pval_99, xlim = c(0, 0.001), ylim = c(0, 0.001))
-  abline(0, 1)
+  plot(log(pval_9[, 2]), log(p_values_9[, 5]))
+  abline(0,1)
 
   plot(p_values_99[, 2], p_values_99[, 4])
+  abline(0, 1)
+
+  plot(p_values_99[, 6], p_values_99[, 8], ylim = c(0, 0.005))
   abline(0, 1)
 
   plot(p_values_99[, 1], p_values_99[, 3])
   abline(0, 1)
 
-  plot(p_values_99[, 1], p_values_99[, 2])
+  plot(p_values_99[, 1], p_values_99[, 5], xlim = c(0, 0.001), ylim = c(0, 0.001))
+  abline(0, 0.1)
 
 }
