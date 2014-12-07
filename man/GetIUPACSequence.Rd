@@ -18,7 +18,7 @@ Convert the posotion weight matrix of a motif to the IUPAC sequence.
 }
 \examples{
 data(example)
-GetIUPACSequence(motif_library$matrix[[1]], prob = 0.2)
+GetIUPACSequence(motif_library[[1]], prob = 0.2)
 }
 \author{
 Chandler Zuo\email{zuo@stat.wisc.edu}

@@ -5,7 +5,7 @@ if(FALSE) {
   motif_file <- "/p/keles/ENCODE-CHARGE/volume1/ENCODE-Motifs/encode_motifs_for_fimo.txt"
   system.time(motif_library <- LoadMotifLibrary(motif_file))
   system.time(snpInfo <- LoadSNPData("/p/keles/ENCODE-CHARGE/volume2/SNP/hg19_allinfo.bed", nrow = 2000))
-  motif_library$matrix <- motif_library$matrix[c(1:5, 1695, 595)]
+  motif_library <- motif_library[c(1:5, 1695, 595)]
   motif_scores <- ComputeMotifScore(motif_library, snpInfo, ncores = 5)
 
   motif_pval <- ComputePValues(motif_library, snpInfo, motif_scores$motif.scores, ncores = 4)
@@ -13,11 +13,11 @@ if(FALSE) {
   i <- 7
 
   par(mfrow = c(1, 3))
-  plot(log(pval_diff) ~ abs(log_lik_ratio), data = motif_pval[motif == names(motif_library$matrix)[i], ])
-  plot(log(pval_ref) ~ log_lik_ref, data = motif_pval[motif == names(motif_library$matrix)[i], ])
-  plot(log(pval_snp) ~ log_lik_snp, data = motif_pval[motif == names(motif_library$matrix)[i], ])
+  plot(log(pval_diff) ~ abs(log_lik_ratio), data = motif_pval[motif == names(motif_library)[i], ])
+  plot(log(pval_ref) ~ log_lik_ref, data = motif_pval[motif == names(motif_library)[i], ])
+  plot(log(pval_snp) ~ log_lik_snp, data = motif_pval[motif == names(motif_library)[i], ])
 
-  system.time(save(motif_library, snpInfo, motif_scores, file = "~/MotifAnalysis_git/MotifAnalysis/data/example.rda"))
+  system.time(save(motif_library, snpInfo, motif_scores, file = "~/atsnp_git/atSNP/data/example.rda"))
 }
 
 ## process the data
@@ -25,7 +25,7 @@ data(example)
 
 motif_scores <- ComputeMotifScore(motif_library, snpInfo, ncores = 5)
 
-motif_scores <- MatchSubsequence(motif_scores$snp.tbl, motif_scores$motif.scores, ncores = 3)
+motif_scores <- MatchSubsequence(motif_scores$snp.tbl, motif_scores$motif.scores, ncores = 3, motif.lib = motif_library)
 
 motif_scores[snpid == "rs2511200" & motif == "ALX3_jolma_DBD_M449", ]
 
@@ -47,7 +47,7 @@ test_that("Error: log likelihoods are not correct.", {
 
   log_lik <- sapply(seq(nrow(motif_scores)),
                         function(i) {
-                          motif_mat <- motif_library$matrix[[motif_scores$motif[i]]]
+                          motif_mat <- motif_library[[motif_scores$motif[i]]]
                           bases <- snpInfo$sequence_matrix[motif_scores$ref_start[i]:motif_scores$ref_end[i], motif_scores$snpid[i]]
                           if(motif_scores$ref_strand[i] == "-")
                             bases <- 5 - rev(bases)
@@ -62,7 +62,7 @@ test_that("Error: log likelihoods are not correct.", {
   snp_mat[cbind(snp_pos, seq(ncol(snp_mat)))] <- snpInfo$snp_base
   log_lik <- sapply(seq(nrow(motif_scores)),
                     function(i) {
-                      motif_mat <- motif_library$matrix[[motif_scores$motif[i]]]
+                      motif_mat <- motif_library[[motif_scores$motif[i]]]
                       bases <- snp_mat[motif_scores$snp_start[i]:motif_scores$snp_end[i], motif_scores$snpid[i]]
                       if(motif_scores$snp_strand[i] == "-")
                         bases <- 5 - rev(bases)
@@ -90,8 +90,8 @@ test_that("Error: log_enhance_odds not correct.", {
   ref_base[neg_ids] <- 5 - ref_base[neg_ids]
   my_log_reduce_odds <- sapply(seq(nrow(motif_scores)),
                                function(i)
-                               log(motif_library$matrix[[motif_scores$motif[i]]][pos_in_pwm[i], ref_base[i]]) -
-                               log(motif_library$matrix[[motif_scores$motif[i]]][pos_in_pwm[i], snp_base[i]])
+                               log(motif_library[[motif_scores$motif[i]]][pos_in_pwm[i], ref_base[i]]) -
+                               log(motif_library[[motif_scores$motif[i]]][pos_in_pwm[i], snp_base[i]])
                                )
 
   expect_equal(my_log_reduce_odds, motif_scores$log_reduce_odds)
@@ -107,8 +107,8 @@ test_that("Error: log_enhance_odds not correct.", {
   ref_base[neg_ids] <- 5 - ref_base[neg_ids]
   my_log_enhance_odds <- sapply(seq(nrow(motif_scores)),
                                 function(i)
-                                log(motif_library$matrix[[motif_scores$motif[i]]][pos_in_pwm[i], snp_base[i]]) -
-                                log(motif_library$matrix[[motif_scores$motif[i]]][pos_in_pwm[i], ref_base[i]]) 
+                                log(motif_library[[motif_scores$motif[i]]][pos_in_pwm[i], snp_base[i]]) -
+                                log(motif_library[[motif_scores$motif[i]]][pos_in_pwm[i], ref_base[i]]) 
                                )
 
   expect_equal(my_log_enhance_odds, motif_scores$log_enhance_odds)
@@ -147,7 +147,7 @@ test_that("Error: the maximum log likelihood computation is not correct.", {
   my_log_lik_ref <- sapply(seq(nrow(motif_scores)),
                            function(x) {
                              seq_vec<- snpInfo$sequence_matrix[, motif_scores$snpid[x]]
-                             pwm <- motif_library$matrix[[motif_scores$motif[x]]]
+                             pwm <- motif_library[[motif_scores$motif[x]]]
                              return(.findMaxLog(seq_vec, pwm))
                            })
 
@@ -156,7 +156,7 @@ test_that("Error: the maximum log likelihood computation is not correct.", {
   my_log_lik_snp <- sapply(seq(nrow(motif_scores)),
                            function(x) {
                              seq_vec<- snp_mat[, motif_scores$snpid[x]]
-                             pwm <- motif_library$matrix[[motif_scores$motif[x]]]
+                             pwm <- motif_library[[motif_scores$motif[x]]]
                              return(.findMaxLog(seq_vec, pwm))
                            })
   

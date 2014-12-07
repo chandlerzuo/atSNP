@@ -2,43 +2,71 @@
 #' @title Load position weight matrices.
 #' @description Load the file for position weight matrices for motifs.
 #' @param filename A file containing MEME format: http://meme.nbcr.net/meme/doc/meme-format.html.
-#' @details This function reads the MEME formatted file containing motif information and convert them into a list of position weight matrices.
-#' @return A list object of two components:
-#' \tabular{ll}{
-#' matrix \tab A list of position weight matrices.\cr
-#' prior \tab A vector of the prior distribution for ACGT.\cr}
+#' @param tag A string that marks the description line of the position weight matrix.
+#' @param skiprows Number of description lines before each position weight matrix.
+#' @param skipcols Number of columns to be skipped in the position weight matrix. 
+#' @param transpose If TRUE (default), then the position weight matrix should have 4 columns. Otherwise, it should have 4 rows.
+#' @param field The index of the field in the description line, seperated by space, that indicates the motif name.
+#' @param sep The string seperator to separate each lines of the matrix. Default: " ".
+#' @details This function reads the formatted file containing motif information and convert them into a list of position weight matrices. The list of arguments should provide enough flexibility of importing a varying number of formats. Som eexamples are the following:
+#' For MEME format, the suggested arguments are: tag = 'Motif', skiprows = 2, skipcols = 0, transpose = FALSE, field = 2, sep = " ";
+#' For motif files from JOHNSON lab (i.e. http://johnsonlab.ucsf.edu/mochi_files/JASPAR_motifs_H_sapiens.txt), the suggested arguments are: tag = '/NAME', skiprows = 1, skipcols = 0, transpose = FALSE, field = 2, sep = "\t";
+#' For JASPAR pfm matrices (i.e. http://jaspar.genereg.net/html/DOWNLOAD/JASPAR_CORE/pfm/nonredundant/pfm_vertebrates.txt), the suggested arguments are: tag = ">", skiprows = 1, skipcols = 0, transpose = TRUE, field = 1, sep = "\t";
+#' For the TRANSFAC library provided by UCF bioinformatics groups (i.e. http://gibbs.biomed.ucf.edu/PreDREM/download/nonredundantmotif.transfac), the suggested arguments are: tag = "DE", skiprows = 1, skipcols = 1, transpose = FALSE, field = 2, sep = "\t".
+#' @return A list object of position weight matrices.
 #' @author Chandler Zuo \email{zuo@@stat.wisc.edu}
 #' @examples
 #' \dontrun{
 #' pwms <- LoadMotifLibrary("/p/keles/ENCODE-CHARGE/volume1/ENCODE-Motifs/encode_motifs_for_fimo.txt")
+#' pwms <- LoadMotifLibrary("http://johnsonlab.ucsf.edu/mochi_files/JASPAR_motifs_H_sapiens.txt", tag = "/NAME", skiprows = 1, skipcols = 0, transpose = FALSE, field = 2, sep = "\t")
+#' pwms <- LoadMotifLibrary("http://jaspar.genereg.net/html/DOWNLOAD/JASPAR_CORE/pfm/nonredundant/pfm_vertebrates.txt", tag = ">", skiprows = 1, skipcols = 0, transpose = TRUE, field = 1, sep = "\t")
+#' pwms <- LoadMotifLibrary("http://gibbs.biomed.ucf.edu/PreDREM/download/nonredundantmotif.transfac", tag = "DE", skiprows = 1, skipcols = 1, transpose = FALSE, field = 2, sep = "\t")
 #' }
 #' @useDynLib atSNP
 #' @export
-LoadMotifLibrary <- function(filename) {
-    lines <- readLines(filename)
-    bkngLineNum <- grep("Background letter frequencies", lines) + 1
-    priorProb <- as.numeric(strsplit(lines[bkngLineNum], " ")[[1]][seq(4) * 2])
-    motifLineNums <- grep("MOTIF", lines)
+LoadMotifLibrary <- function(filename, tag = "MOTIF", transpose = FALSE, field = 2, sep = " ", skipcols = 0, skiprows = 2) {
+  lines <- readLines(filename)
+  motifLineNums <- grep(tag, lines)
+  if(length(strsplit(lines[motifLineNums[1]], " ")[[1]]) > 1) {
     motifnames <-
-        sapply(strsplit(lines[motifLineNums], " "), function(x) x[2])
-    allmats <- as.list(seq_along(motifnames))
-
-    for(matrixId in seq_along(motifLineNums)) {
-        motifLineNum <- motifLineNums[matrixId]
-        nrows <- as.integer(strsplit(lines[motifLineNum + 1], " ")[[1]][6])
-        pwm <-
-          t(matrix(as.numeric(unlist(strsplit(lines[seq(nrows) + motifLineNum + 1], " "))), nrow = 4))
-        pwm <- t(apply(pwm, 1,
-                     function(x) {
+      sapply(strsplit(lines[motifLineNums], " "), function(x) x[field])
+  } else {
+    motifnames <-
+      sapply(strsplit(lines[motifLineNums], "\t"), function(x) x[field])
+  }
+  allmats <- as.list(seq_along(motifnames))
+  
+  for(matrixId in seq_along(motifLineNums)) {
+    motifLineNum <- motifLineNums[matrixId] + skiprows
+    if(!transpose) {
+      pwm <- NULL
+      nrows <- 0
+      while(length(tmp <- strsplit(lines[nrows + motifLineNum], split = sep)[[1]]) >= 4 + skipcols) {
+        tmp <- as.numeric(tmp[skipcols + seq(4)])
+        if(sum(is.na(tmp)) == 0) {
+          pwm <- rbind(pwm, tmp)
+          nrows <- nrows + 1
+        }
+      }
+    } else {
+      nrows <- 4
+      pwm <-
+        matrix(as.numeric(unlist(strsplit(lines[seq(nrows) + motifLineNum - 1], split = sep))), ncol = 4)
+      if(skipcols > 0) {
+        pwm <- pwm[-seq(skipcols), ]
+      }
+    }
+    pwm <- pwm / apply(pwm, 1, sum)
+    pwm <- t(apply(pwm, 1,
+                   function(x) {
                      x[x < 1e-10] <- 1e-10 / (1 - 1e-10 * sum(x < 1e-10)) * sum(x)
                      return(x / sum(x))
                    }))
-        allmats[[matrixId]] <- pwm
-    }
-    names(allmats) <- motifnames
-    return(
-        list(matrix = allmats,
-             prior = priorProb))
+    rownames(pwm) <- NULL
+    allmats[[matrixId]] <- pwm
+  }
+  names(allmats) <- motifnames
+  return(allmats)
 }
 
 
@@ -147,11 +175,8 @@ LoadSNPData <- function(filename, genome.lib = "BSgenome.Hsapiens.UCSC.hg19",
 #' @export
 ComputeMotifScore <- function(motif.lib, snp.info, ncores = 1) {
   ## check arguments
-  if(sum(!c("prior", "matrix") %in% names(motif.lib)) > 0) {
-    stop("Error: 'motif.lib' must contain both 'matrix' and'prior'.")
-  }
-  if(sum(!unlist(sapply(motif.lib$matrix, is.matrix))) > 0 | sum(unlist(sapply(motif.lib$matrix, ncol)) != 4) > 0) {
-    stop("Error: 'motif.lib$matrix' must be a list of numeric matrices each with 4 columns.")
+  if(sum(!unlist(sapply(motif.lib, is.matrix))) > 0 | sum(unlist(sapply(motif.lib, ncol)) != 4) > 0) {
+    stop("Error: 'motif.lib' must be a list of numeric matrices each with 4 columns.")
   }
   if(sum(!c("sequence_matrix", "snp_base", "ref_base") %in% names(snp.info)) > 0) {
     stop("Error: 'snp.info' must contain three components: 'ref_base', 'snp_base', 'sequence_matrix'.")
@@ -166,13 +191,13 @@ ComputeMotifScore <- function(motif.lib, snp.info, ncores = 1) {
     stop("Error: 'snp.info$sequence_matrix' must have an odd number of rows so that the central row refers to the SNP nucleotide.")
   }
 
-  motifs <- names(motif.lib$matrix)
+  motifs <- names(motif.lib)
   snpids <- colnames(snp.info$sequence_matrix)
   nsnps <- ncol(snp.info$sequence_matrix)
-  nmotifs <- length(motif.lib$matrix)
+  nmotifs <- length(motif.lib)
   
   motif_tbl <- data.table(motif = motifs,
-                          motif_len = sapply(motif.lib$matrix, nrow))
+                          motif_len = sapply(motif.lib, nrow))
 
   ncores <- min(c(ncores, length(snp.info$ref_base)))
   registerDoMC(ncores)
@@ -305,7 +330,7 @@ MatchSubsequence <- function(snp.tbl, motif.scores, motif.lib, snpids = NULL, mo
   if(is.null(motifs)) {
     motifs <- unique(motif.scores$motif)
   }
-  if(sum(! motifs %in% names(motif.lib$matrix)) > 0) {
+  if(sum(! motifs %in% names(motif.lib)) > 0) {
     stop("Error: some motifs are not included in 'motif.lib'.")
   }
   if(sum(! snpids %in% motif.scores$snpid) > 0) {
@@ -320,7 +345,7 @@ MatchSubsequence <- function(snp.tbl, motif.scores, motif.lib, snpids = NULL, mo
   ## get the IUPAC subsequence for the motifs
   motif.tbl <- data.table(
     motif = motifs,
-    IUPAC = sapply(motif.lib$matrix[motifs],
+    IUPAC = sapply(motif.lib[motifs],
       function(x) GetIUPACSequence(x, prob = 0.25))
   )
   setkey(motif.tbl, motif)
@@ -411,25 +436,25 @@ MatchSubsequence <- function(snp.tbl, motif.scores, motif.lib, snpids = NULL, mo
 #' @useDynLib atSNP
 #' @export
 ComputePValues <- function(motif.lib, snp.info, motif.scores, ncores = 1, getPlot = FALSE) {
-  ncores <- min(c(ncores, length(motif.lib$matrix)))
+  ncores <- min(c(ncores, length(motif.lib)))
     registerDoMC(ncores)
-    results <- as.list(seq_along(motif.lib$matrix))
-    nsets <- as.integer(length(motif.lib$matrix) / ncores)
+    results <- as.list(seq_along(motif.lib))
+    nsets <- as.integer(length(motif.lib) / ncores)
     if(FALSE) {
         for(i in seq(nsets)) {
             message(i)
             if(i < nsets) {
                 ids <- seq(ncores) + (i - 1) * ncores
             } else {
-                ids <- ((nsets - 1) * ncores + 1) : length(motif.lib$matrix)
+                ids <- ((nsets - 1) * ncores + 1) : length(motif.lib)
             }
         }
     }
-    results <- foreach(motifid = seq_along(motif.lib$matrix)) %dopar% {
-      rowids <- which(motif.scores$motif == names(motif.lib$matrix)[motifid])
+    results <- foreach(motifid = seq_along(motif.lib)) %dopar% {
+      rowids <- which(motif.scores$motif == names(motif.lib)[motifid])
       scores <- cbind(motif.scores$log_lik_ref[rowids],
                     motif.scores$log_lik_snp[rowids])
-    pwm <- motif.lib$matrix[[motifid]]
+    pwm <- motif.lib[[motifid]]
     pwm[pwm < 1e-10] <- 1e-10
     wei.mat <- pwm
     for(i in seq(nrow(wei.mat))) {
@@ -570,10 +595,10 @@ ComputePValues <- function(motif.lib, snp.info, motif.scores, ncores = 1, getPlo
       options(warn = -1)
       pdf(paste("/p/keles/ENCODE-CHARGE/volume2/SNP/test/motif", motifid, ".pdf", sep = ""), width = 10, height = 10)
       id <- which(rank(plotdat$p.value[plotdat$Allele == "ref"]) <= 500)
-      print(ggplot(aes(x = score, y = p.value), data = plotdat[plotdat$Allele == "ref", ], environment = localenv) + geom_point() + scale_y_log10(breaks = 10 ^ seq(-8, 0)) + geom_errorbar(aes(ymax = p.value + sqrt(var), ymin = p.value - sqrt(var))) + ggtitle(paste(names(motif.lib$matrix)[motifid], "ref"))) 
+      print(ggplot(aes(x = score, y = p.value), data = plotdat[plotdat$Allele == "ref", ], environment = localenv) + geom_point() + scale_y_log10(breaks = 10 ^ seq(-8, 0)) + geom_errorbar(aes(ymax = p.value + sqrt(var), ymin = p.value - sqrt(var))) + ggtitle(paste(names(motif.lib)[motifid], "ref"))) 
       id <- which(rank(plotdat$p.value[plotdat$Allele == "snp"]) <= 500)
-      print(ggplot(aes(x = score, y = p.value), data = plotdat[plotdat$Allele == "snp", ], environment = localenv) + geom_point() + scale_y_log10(breaks = 10 ^ seq(-8, 0)) + geom_errorbar(aes(ymax = p.value + sqrt(var), ymin = p.value - sqrt(var))) + ggtitle(paste(names(motif.lib$matrix)[motifid], "SNP")))
-      print(ggplot(aes(x = score, y = p.value), data = plotdat.diff, environment = localenv) + geom_point() + scale_y_log10(breaks = 10 ^ seq(-8, 0)) + geom_errorbar(aes(ymax = p.value + sqrt(var), ymin = p.value - sqrt(var))) + ggtitle(paste(names(motif.lib$matrix)[motifid], " Change")))
+      print(ggplot(aes(x = score, y = p.value), data = plotdat[plotdat$Allele == "snp", ], environment = localenv) + geom_point() + scale_y_log10(breaks = 10 ^ seq(-8, 0)) + geom_errorbar(aes(ymax = p.value + sqrt(var), ymin = p.value - sqrt(var))) + ggtitle(paste(names(motif.lib)[motifid], "SNP")))
+      print(ggplot(aes(x = score, y = p.value), data = plotdat.diff, environment = localenv) + geom_point() + scale_y_log10(breaks = 10 ^ seq(-8, 0)) + geom_errorbar(aes(ymax = p.value + sqrt(var), ymin = p.value - sqrt(var))) + ggtitle(paste(names(motif.lib)[motifid], " Change")))
       dev.off()
     }
     
@@ -602,7 +627,7 @@ ComputePValues <- function(motif.lib, snp.info, motif.scores, ncores = 1, getPlo
 #' @author Chandler Zuo\email{zuo@@stat.wisc.edu}
 #' @examples
 #' data(example)
-#' GetIUPACSequence(motif_library$matrix[[1]], prob = 0.2)
+#' GetIUPACSequence(motif_library[[1]], prob = 0.2)
 #' @export
 GetIUPACSequence <- function(pwm, prob = 0.25) {
   iupac.table <-

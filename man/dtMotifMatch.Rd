@@ -4,7 +4,7 @@
 \title{Compute the augmented matching subsequence on SNP and reference alleles.}
 \usage{
 dtMotifMatch(snp.tbl, motif.scores, snpids = NULL, motifs = NULL,
-  ncores = 10)
+  ncores = 10, motif.lib)
 }
 \arguments{
 \item{snp.tbl}{A data.table with the following information:

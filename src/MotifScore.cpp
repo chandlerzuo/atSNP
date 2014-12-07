@@ -11,9 +11,7 @@ a2: A vector for the nucleobases after SNP.
 */
 SEXP motif_score(SEXP _motif_library, SEXP _snpinfo) {
 	//parse the _motif_library
-	Rcpp::List motif_library(_motif_library);
-	SEXP _pwms = motif_library["matrix"];
-	Rcpp::List pwms(_pwms);
+	Rcpp::List pwms(_motif_library);
 
 	//parse _snpinfo
 	Rcpp::List snpinfo(_snpinfo);

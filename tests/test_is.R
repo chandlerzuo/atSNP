@@ -3,9 +3,9 @@ data(example)
 
 trans_mat <- matrix(rep(snpInfo$prior, each = 4), nrow = 4)
 id <- 7
-test_pwm <- motif_library$matrix[[id]]
-##test_pwm <- motif_library$matrix[["ALX3_jolma_DBD_M449"]]
-scores <- as.matrix(motif_scores$motif.scores[motif == names(motif_library$matrix)[id], list(log_lik_ref, log_lik_snp)])
+test_pwm <- motif_library[[id]]
+##test_pwm <- motif_library[["ALX3_jolma_DBD_M449"]]
+scores <- as.matrix(motif_scores$motif.scores[motif == names(motif_library)[id], list(log_lik_ref, log_lik_snp)])
 
 motif_len <- nrow(test_pwm)
 
