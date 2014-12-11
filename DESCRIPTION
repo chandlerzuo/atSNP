@@ -12,4 +12,5 @@ Depends:
     Rcpp,
     data.table,
     doMC,
-    testthat
+    testthat,
+    motifStack

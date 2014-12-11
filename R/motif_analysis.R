@@ -27,7 +27,7 @@
 LoadMotifLibrary <- function(filename, tag = "MOTIF", transpose = FALSE, field = 2, sep = " ", skipcols = 0, skiprows = 2) {
   lines <- readLines(filename)
   motifLineNums <- grep(tag, lines)
-  if(length(strsplit(lines[motifLineNums[1]], " ")[[1]]) > 1) {
+  if(length(strsplit(lines[motifLineNums[1]], " ")[[1]]) > field) {
     motifnames <-
       sapply(strsplit(lines[motifLineNums], " "), function(x) x[field])
   } else {
@@ -50,10 +50,12 @@ LoadMotifLibrary <- function(filename, tag = "MOTIF", transpose = FALSE, field =
       }
     } else {
       nrows <- 4
-      pwm <-
-        matrix(as.numeric(unlist(strsplit(lines[seq(nrows) + motifLineNum - 1], split = sep))), ncol = 4)
-      if(skipcols > 0) {
-        pwm <- pwm[-seq(skipcols), ]
+      if(skipcols == 0) {
+        pwm <-
+          matrix(as.numeric(unlist(strsplit(lines[seq(nrows) + motifLineNum - 1], split = sep))), ncol = 4)
+      } else {
+        pwm <-
+          matrix(as.numeric(unlist(sapply(strsplit(lines[seq(nrows) + motifLineNum - 1], split = sep), function(x) x[-seq(skipcols)]))), ncol = 4)
       }
     }
     pwm <- pwm / apply(pwm, 1, sum)
@@ -209,7 +211,7 @@ ComputeMotifScore <- function(motif.lib, snp.info, ncores = 1) {
     } else {
       ids <- (k * (ncores - 1) + 1):length(snp.info$ref_base) 
     }
-    this.snp.info <- list(sequence_matrix = snp.info$sequence_matrix[, ids],
+    this.snp.info <- list(sequence_matrix = t(t(snp.info$sequence_matrix[, ids])),
                           ref_base = snp.info$ref_base[ids], snp_base = snp.info$snp_base[ids])
     motif.scores <- .Call("motif_score", motif.lib, this.snp.info, package = "atSNP")
     for(i in seq_along(motif.scores)) {
@@ -531,11 +533,13 @@ ComputePValues <- function(motif.lib, snp.info, motif.scores, ncores = 1, getPlo
     
     score_diff <- apply(scores, 1, function(x) abs(diff(x)))
     score.p <- round(quantile(score_diff, c((seq(8) + 1) / 10, 0.9 + seq(9) / 100)))
-    score.p <- c(score.p,
-                 seq(round(quantile(score_diff, 0.1) + 1),
-                     round(quantile(score_diff, 0.9)),
-                     by = 2)
-                 )
+      if(round(quantile(score_diff, 0.1) + 1) < round(quantile(score_diff, 0.9))) {
+        score.p <- c(score.p,
+                     seq(round(quantile(score_diff, 0.1) + 1),
+                         round(quantile(score_diff, 0.9)),
+                         by = 2)
+                     )
+      }
     score.p <- rev(sort(unique(score.p)))
     
     pval_diff <- matrix(1, nrow = length(score_diff), ncol = 2)
@@ -558,7 +562,7 @@ ComputePValues <- function(motif.lib, snp.info, motif.scores, ncores = 1, getPlo
                              wei.mat, pwm + 0.25, snp.info$prior,
                              snp.info$transition, score_diff[compute.id],
                              score.p[l], package = "atSNP")
-      pval_diff.new <- .structure_diff(pval_diff.new)
+      pval_diff.new <- .structure(pval_diff.new)
       update.id <- which(pval_diff.new[, 2] < pval_diff[compute.id, 2])
       pval_diff[compute.id[update.id], ] <- pval_diff.new[update.id, ]
       ## print(summary(pval_diff.new[,1]))
