@@ -1,6 +1,7 @@
 #' @name dtMotifMatch
 #' @title Compute the augmented matching subsequence on SNP and reference alleles.
 #' @description Calculate the best matching augmented subsequences on both SNP and reference alleles for motifs. Obtain extra unmatching position on the best matching augmented subsequence of the reference and SNP alleles.
+#' @param motif.lib A list of named position weight matrices.
 #' @param snp.tbl A data.table with the following information:
 #' \tabular{cc}{
 #' snpid \tab SNP id.\cr
@@ -43,7 +44,7 @@
 #' dtMotifMatch(motif_scores$snp.tbl, motif_scores$motif.scores, motif_scores$snp.tbl$snpid[1:100], motif_scores$motif.scores$motif[1], motif.lib = motif_library)
 #' @import data.table doMC
 #' @export
-dtMotifMatch<-function(snp.tbl, motif.scores, snpids=NULL, motifs=NULL, ncores=10, motif.lib) {
+dtMotifMatch<-function(motif.lib, snp.tbl, motif.scores, snpids=NULL, motifs=NULL, ncores=10) {
   if (all(any(class(snpids) != "character",  length(snpids)==0), is.null(snpids)==FALSE)) {
     stop("snpids must be a vector of class character or NULL.")
   } else if (all(any(class(motifs) != "character",  length(motifs)==0), is.null(motifs)==FALSE)) {
