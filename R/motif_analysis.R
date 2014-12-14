@@ -86,7 +86,8 @@ LoadMotifLibrary <- function(filename, tag = "MOTIF", transpose = FALSE, field =
 #' @param genome.lib A string of the library name for the genome version. Default: "BSgenome.Hsapiens.UCSC.hg19".
 #' @param half.window.size An integer for the half window size around the SNP within which the motifs are matched. Default: 30.
 #' @param ... Other parameters passed to 'read.table'.
-#' @details TODO.
+#' @details This function extracts the nucleobase sequence within a window around each SNP and code them using 1-A, 2-C, 3-G, 4-T. The sequences are extracted using the Bioconductor annotation package specified by 'genome.lib'. Users should make sure that this annotation package corresponds to the correct species and genome version of the actual data.\cr
+#' This function compares the nucleobase at the SNP location on the reference genome with both a1 and a2 to distinguish between the reference allele and the SNP allele. If the nucleobase extracted from the reference genome does not match either a1 or a2, the SNP is discarded.
 #' @return A list object containing the following components:
 #' \tabular{ll}{
 #' sequence_matrix \tab A list of integer vectors representing the deroxyribose sequence around each SNP.\cr
@@ -148,7 +149,7 @@ LoadSNPData <- function(filename, genome.lib = "BSgenome.Hsapiens.UCSC.hg19",
 #' @param motif.lib A list object with the output format of function 'LoadMotifLibrary'.
 #' @param snp.info A list object with the output format of function 'LoadSNPData'.
 #' @param ncores An integer for the number of parallel process. Default: 1.
-#' @details TODO.
+#' @details This function computes the binding affinity scores for both alleles at each SNP window. For each pair of SNP and motif, it finds the subsequence from both strand that maximizes the affinity binding score. It returns both the matching positions and the maximized affinity scores.
 #' @return A list of two data.table's. Field 'snp.tbl' contains:
 #' \tabular{cc}{
 #' snpid \tab SNP id.\cr
@@ -287,7 +288,7 @@ ComputeMotifScore <- function(motif.lib, snp.info, ncores = 1) {
 
 #' @name MatchSubsequence
 #' @title Compute the matching subsequence.
-#' @description TODO.
+#' @description This function combines the SNP set, the motif library and the affinity score table and produce the matching subsequence found at each SNP location for each motif.
 #' @param snp.tbl A data.table with the following information:
 #' \tabular{cc}{
 #' snpid \tab SNP id.\cr
@@ -413,7 +414,7 @@ MatchSubsequence <- function(snp.tbl, motif.scores, motif.lib, snpids = NULL, mo
 
 #' @name ComputePValues
 #' @title Compute p values.
-#' @description TODO.
+#' @description This function computes the p-values for allele-specific affinity scores and between-allele affinity score changes using the importance sampling technique.
 #' @param motif.lib A list object with the output format of function 'LoadMotifLibrary'.
 #' @param snp.info A list object with the output format of function 'LoadSNPData'.
 #' @param motif.scores A data.table object containing at least the following columns:
@@ -423,7 +424,6 @@ MatchSubsequence <- function(snp.tbl, motif.scores, motif.lib, snpids = NULL, mo
 #' log_lik_snp \tab The log-likelihood score for the SNP allele.\cr
 #' }
 #' @param ncores An integer for the number of parallel process. Default: 1.
-#' @details TODO.
 #' @return A data.table extending 'motif.scores' by the following additional columns:
 #' \tabular{ll}{
 #' pval_ref \tab P values for scores on the reference allele.\cr
