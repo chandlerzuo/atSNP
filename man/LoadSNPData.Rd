@@ -35,7 +35,8 @@ The results are coded as: "A"-1, "C"-2, "G"-3, "T"-4.
 Load the SNP data.
 }
 \details{
-TODO.
+This function extracts the nucleobase sequence within a window around each SNP and code them using 1-A, 2-C, 3-G, 4-T. The sequences are extracted using the Bioconductor annotation package specified by 'genome.lib'. Users should make sure that this annotation package corresponds to the correct species and genome version of the actual data.\cr
+This function compares the nucleobase at the SNP location on the reference genome with both a1 and a2 to distinguish between the reference allele and the SNP allele. If the nucleobase extracted from the reference genome does not match either a1 or a2, the SNP is discarded.
 }
 \examples{
 \dontrun{LoadSNPData("/p/keles/ENCODE-CHARGE/volume2/SNP/hg19_allinfo.bed")}

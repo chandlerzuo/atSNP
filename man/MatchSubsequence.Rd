@@ -46,7 +46,7 @@ snp_seq_ref_match \tab Subsequence on the SNP allele corresponding to the best m
 }
 }
 \description{
-TODO.
+This function combines the SNP set, the motif library and the affinity score table and produce the matching subsequence found at each SNP location for each motif.
 }
 \examples{
 data(example)

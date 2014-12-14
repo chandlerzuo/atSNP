@@ -9,9 +9,10 @@
 
 \title{atSNP: affinity tests for regulatory SNP detection}
 
-\author{Chandler Zuo\footnote{Department of Statistics and of Biostatistics and Medical Informatics, 1300 University Avenue, Madison, WI, 53706, USA.}  \\
-\author{Sunyoung Shin\footnote{Department of Statistics and of Biostatistics and Medical Informatics, 1300 University Avenue, Madison, WI, 53706, USA.}  \\
+\author{Chandler Zuo\footnote{Department of Statistics and of Biostatistics and Medical Informatics, 1300 University Avenue, Madison, WI, 53706, USA.}\\
+Sunyoung Shin\footnote{Department of Statistics and of Biostatistics and Medical Informatics, 1300 University Avenue, Madison, WI, 53706, USA.}  \\
 S\"und\"uz Kele\c{s}\footnote{Departments of Statistics and of Biostatistics and Medical Informatics, 1300 University Avenue, Madison, WI, 53706, USA.}}
+  
 \date{}
 
 \usepackage{Sweave}
@@ -30,7 +31,7 @@ This document provides an introduction to the affinity test for large sets of SN
 \item Computing the p-values for affinity score changes between the two alleles for each SNP.
 \end{enumerate}
 
-\texttt{atSNP} implements the importance sampling algorithm in \citep{isample} to compute the p-values. Compared to other bioinformatics tools, such as FIMO \citep{fimo} and is-rSNP \citep{isrsnp}, that provides similar functionalities, \texttt{atSNP} avoides computing the p-values analytically. This reduces the execution time drastically because the probability sample space is a exponential order of the motif length. In one of our research projects, we have used atSNP to evaluate interactions between 26K SNPs and 2K motifs within 5 hours. We found no other existing tool can finish the analysis of such a scale.
+\texttt{atSNP} implements the importance sampling algorithm in \cite{isample} to compute the p-values. Compared to other bioinformatics tools, such as FIMO \cite{fimo} and is-rSNP \cite{is-rsnp}, that provides similar functionalities, \texttt{atSNP} avoides computing the p-values analytically. This reduces the execution time drastically because the probability sample space is a exponential order of the motif length. In one of our research projects, we have used atSNP to evaluate interactions between 26K SNPs and 2K motifs within 5 hours. We found no other existing tool can finish the analysis of such a scale.
 
 \section{Installation}
 
@@ -117,7 +118,7 @@ motif_score$motif.scores[, list(snpid, motif, log_lik_ref,
                                 log_lik_snp, log_lik_ratio)]
 @ 
 
-The affinity scores for the reference and the SNP alleles are represented by the 'log_lik_ref' and 'log_lik_snp' columns in '\$motif.scores'. The affinity score change is included in the 'log_lik_ratio' column. These three affinity scores are tested in the subsequent steps. '\$motif.scores' also include other columns for the position of the best matching subsequence on each allele. For a complete description on all these columns, users can look up the help documentation.
+The affinity scores for the reference and the SNP alleles are represented by the 'log\_lik\_ref' and 'log\_lik\_snp' columns in '\$motif.scores'. The affinity score change is included in the 'log\_lik\_ratio' column. These three affinity scores are tested in the subsequent steps. '\$motif.scores' also include other columns for the position of the best matching subsequence on each allele. For a complete description on all these columns, users can look up the help documentation.
 
 After we have computed the binding affinity scores, they can be tested using the 'ComputePValues' function. The result is a data.table extending the affinity score table by three columns: 'pval\_ref' is the p-value for the reference allele affinity score; 'pval\_snp' is the p-value for the SNP allele affinity score; and 'pval\_diff' is the p-value for the affinity score change between the two alleles.
 
@@ -154,12 +155,8 @@ plotMotifMatch(snp.tbl = motif_scores$snp.tbl,
 
 \section{Session Information}
 
-<<12,eval=TRUE,echo=FALSE,results=verbatim,cache=FALSE>>=
+<<eval=TRUE,echo=FALSE,results=verbatim,cache=FALSE>>=
 print(sessionInfo())
-@
-
-<<final,eval=TRUE,echo=FALSE,results=hide>>=
-setwd(mydir)
 @
 
 \bibliographystyle{apalike}

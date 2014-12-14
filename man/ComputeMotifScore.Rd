@@ -37,7 +37,7 @@ log_reduce_odds \tab Difference in log-likelihood ratio between reference allele
 Compute the log-likelihood scores for motifs.
 }
 \details{
-TODO.
+This function computes the binding affinity scores for both alleles at each SNP window. For each pair of SNP and motif, it finds the subsequence from both strand that maximizes the affinity binding score. It returns both the matching positions and the maximized affinity scores.
 }
 \examples{
 data(example)

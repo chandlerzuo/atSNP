@@ -38,8 +38,10 @@ log_reduce_odds \tab Difference in log-likelihood ratio between reference allele
 A data.table containing all columns from the function, 'MatchSubsequence'. Refer 'MatchSubsequence' for more details. In addition, the following columns are added:
 \tabular{ll}{
 snp_ref_start, snp_ref_end, snp_ref_length \tab Location and Length of the best matching augmented subsequence on both the reference and SNP allele.\cr
-ref_aug_match_seq \tab Best matching augmented subsequence on the reference allele.\cr
-snp_aug_match_seq \tab Best matching augmented subsequence on the SNP allele.\cr
+ref_aug_match_seq_forward \tab Best matching augmented subsequence or its corresponding sequence to the forward strand on the reference allele.\cr
+snp_aug_match_seq_forward \tab Best matching augmented subsequence or its corresponding sequence to the forward strand on the SNP allele.\cr
+ref_aug_match_seq_reverse \tab Best matching augmented subsequence or its corresponding sequence to the reverse strand on the reference allele.\cr
+snp_aug_match_seq_reverse \tab Best matching augmented subsequence or its corresponding sequence to the reverse strand on the SNP allele.\cr
 ref_location \tab SNP location of the best matching augmented subsequence on the reference allele. Starting from zero. \cr
 snp_location \tab SNP location of the best matching augmented subsequence on the SNP allele. Starting from zero. \cr
 ref_extra_pwm_left \tab Left extra unmatching position on the best matching augmented subsequence of the reference allele. \cr
@@ -53,7 +55,7 @@ Calculate the best matching augmented subsequences on both SNP and reference all
 }
 \examples{
 data(example)
-dtMotifMatch(motif_scores$snp.tbl, motif_scores$motif.scores, motif_scores$snp.tbl$snpid[1:100], motif_scores$motif.scores$motif[1])
+dtMotifMatch(motif_scores$snp.tbl, motif_scores$motif.scores, motif_scores$snp.tbl$snpid[1:100], motif_scores$motif.scores$motif[1], motif.lib = motif_library)
 }
 \author{
 Sunyoung Shin\email{shin@stat.wisc.edu}

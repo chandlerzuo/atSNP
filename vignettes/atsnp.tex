@@ -1,0 +1,337 @@
+%% \VignetteIndexEntry{CSSP: ChIP-Seq Statistical Power}
+\documentclass[a4paper,10pt]{article}
+\usepackage{amsmath,mathrsfs,graphicx}
+\usepackage[top=2cm,bottom=2cm,left=2cm,right=2cm]{geometry}
+\usepackage[utf8]{inputenc}
+\usepackage{hyperref}
+\usepackage{color}
+%\usepackage{natbib}
+
+\title{atSNP: affinity tests for regulatory SNP detection}
+
+\author{Chandler Zuo\footnote{Department of Statistics and of Biostatistics and Medical Informatics, 1300 University Avenue, Madison, WI, 53706, USA.}\\
+Sunyoung Shin\footnote{Department of Statistics and of Biostatistics and Medical Informatics, 1300 University Avenue, Madison, WI, 53706, USA.}  \\
+S\"und\"uz Kele\c{s}\footnote{Departments of Statistics and of Biostatistics and Medical Informatics, 1300 University Avenue, Madison, WI, 53706, USA.}}
+  
+\date{}
+
+\usepackage{Sweave}
+\begin{document}
+\maketitle
+
+\tableofcontents
+
+\section{Introduction}
+
+This document provides an introduction to the affinity test for large sets of SNP-motif interactions using the \texttt{atSNP} package(\textbf{a}ffinity \textbf{t}est for regulatory \textbf{SNP} detection) \cite{zuo14}. \texttt{atSNP} implements in-silico methods for identifying SNPs that potentially may affect binding affinity of transcription factors. Given a set of SNPs and a library of motif position weight matrices (PWMs), \texttt{atSNP} provides three main functions for analyzing SNP effects:
+
+\begin{enumerate}
+\item Computing the binding affinity score for each allele and each PWM;
+\item Computing the p-values for allele-specific binding affinity scores;
+\item Computing the p-values for affinity score changes between the two alleles for each SNP.
+\end{enumerate}
+
+\texttt{atSNP} implements the importance sampling algorithm in \cite{isample} to compute the p-values. Compared to other bioinformatics tools, such as FIMO \cite{fimo} and is-rSNP \cite{is-rsnp}, that provides similar functionalities, \texttt{atSNP} avoides computing the p-values analytically. This reduces the execution time drastically because the probability sample space is a exponential order of the motif length. In one of our research projects, we have used atSNP to evaluate interactions between 26K SNPs and 2K motifs within 5 hours. We found no other existing tool can finish the analysis of such a scale.
+
+\section{Installation}
+
+We are working to make the package available through bioconductor. The developing version can be installed from the Github repository:
+
+\begin{Schunk}
+\begin{Sinput}
+> library( devtools )
+> install_github( "chandlerzuo/atSNP" )
+\end{Sinput}
+\end{Schunk}
+
+The following dependent \texttt{R} packages are required:
+
+\begin{itemize}
+\item \texttt{data.table} is used for formatting results that are easy for users to query;
+\item \texttt{motifStack} is relied upon to draw sequence logo plots;
+\item \texttt{doMC} is used for parallel computation;
+\item \texttt{Rcpp} interfaces the C++ codes that implements the importance sampling algorithm;
+\item \texttt{testthat} is used for unit testing.
+\end{itemize}
+  
+In addition, users also need to install the annotation package from \url{www.bioconductor.org/packages/3.0/data/annotation/} that corresponds to the species type and genome version. Our example SNP data set in the subsequent sections corresponds to the hg19 version of human genome. To repeat the sample codes in this vignette, the \texttt{BSgenome.Hsapiens.UCSC.hg19} package is required.
+
+\section{Example}
+
+\subsection{Load motif and SNP data}
+
+A text file including the PWMs of all motifs can be loaded via the 'LoadMotifLibrary' function. In this function, 'tag' specifies the string that marks the start of each block of PWM; 'skiprows' is the number of description lines before the PWM; 'skipcols' is the number of columns to be skipped in the PWM matrix; 'transpose' is TRUE if the PWM has 4 rows representing A, C, G, T or FALSE if otherwise; 'field' is the position of the motif name within the description line; 'sep' is the separator in the PWM. These arguments provide the flexibility of loading a number of varying formatted files. The PWMs are returned as a list object. Some examples are the following:
+
+
+The data set for the SNP information must be a table including five columns:
+
+\begin{itemize}
+\item chr: the chromosome ID;
+\item snp: the genome coordinate of the SNP;
+\item snpid: the string for the SNP name;
+\item a1, a2: nucleobases for the two alleles at the SNP position.
+\end{itemize}
+  
+This data set can be loaded using the 'LoadSNPData' function. The 'genome.lib' argument specifies the annotation package name corresponding to the SNP data set, with the default as 'BSgenome.Hsapiens.UCSC.hg19'. Each side of the SNP is extended by a number of base pairs specified by the 'half.window.size' argument. 'LoadSNPData' extracts the genome sequence within such windows around each SNP using the 'genome.lib' package. An example is the following:
+
+
+'LoadSNPData' simultaneously estimates the parameters for the first order Markov model in the reference genome using the nucleobases within the SNP windows. It returns a list object with five fields:
+
+\begin{itemize}
+\item \$sequence\_matrix: a matrix with (2$\times$'half.window.size' + 1), with each column corresponding to one SNP. The entries 1-4 represent the A, C, G, T nucleobases;
+\item \$ref\_base: a vector coding the reference allele nucleobases for all SNPs;
+\item \$snp\_base: a vector coding the SNP allele nucleobases for all SNPs;
+\item \$prior: the stationary distribution parameters for the Markov model;
+\item \$transition: the transition matrix for the first order Markov model.
+\end{itemize}
+
+A sample data set including a preloaded motif library and a SNP set is included in the package:
+
+\begin{Schunk}
+\begin{Sinput}
+> library(atSNP)
+> data(example)
+> str(motif_library)
+\end{Sinput}
+\begin{Soutput}
+List of 7
+ $ SIX5_GM12878_encode-Myers_seq_hsa_r1:MEME#1#Intergenic  : num [1:10, 1:4] 8.51e-03 9.02e-01 4.55e-01 2.51e-01 1.00e-10 ...
+ $ USF2_K562_encode-Snyder_seq_hsa_r1:MDscan#1#Intergenic  : num [1:10, 1:4] 1.74e-01 1.00e-10 1.00e-10 1.00 1.00e-10 ...
+ $ SRF_H1-hESC_encode-Myers_seq_hsa_r1:MDscan#2#Intergenic : num [1:10, 1:4] 1.00e-10 1.00e-10 4.95e-01 2.61e-01 1.00 ...
+ $ JUND_K562_encode-Snyder_seq_hsa_r1:MEME#1#Intergenic    : num [1:10, 1:4] 4.18e-01 1.00e-10 1.00e-10 9.81e-01 4.81e-03 ...
+ $ SIX5_H1-hESC_encode-Myers_seq_hsa_r1:MDscan#1#Intergenic: num [1:10, 1:4] 1.00e-10 1.00e-10 1.00e-10 9.47e-01 4.65e-01 ...
+ $ ALX3_jolma_DBD_M449                                     : num [1:10, 1:4] 0.257 0.1356 0.0699 0.8527 0.9408 ...
+ $ AFP1_transfac_M00616                                    : num [1:11, 1:4] 1 0.2 0.2 1 1 ...
+\end{Soutput}
+\begin{Sinput}
+> str(snpInfo)
+\end{Sinput}
+\begin{Soutput}
+List of 5
+ $ sequence_matrix: int [1:61, 1:1997] 4 3 1 4 3 2 2 1 3 3 ...
+  ..- attr(*, "dimnames")=List of 2
+  .. ..$ : NULL
+  .. ..$ : chr [1:1997] "rs10910078" "rs4486391" "rs3748816" "rs2843401" ...
+ $ ref_base       : int [1:1997] 4 1 1 4 4 4 4 1 1 4 ...
+ $ snp_base       : int [1:1997] 2 4 3 2 2 2 2 2 3 2 ...
+ $ transition     : num [1:4, 1:4] 0.317 0.354 0.292 0.214 0.177 ...
+  ..- attr(*, "dimnames")=List of 2
+  .. ..$ : chr [1:4] "A" "C" "G" "T"
+  .. ..$ : chr [1:4] "A" "C" "G" "T"
+ $ prior          : Named num [1:4] 0.289 0.207 0.207 0.297
+  ..- attr(*, "names")= chr [1:4] "A" "C" "G" "T"
+\end{Soutput}
+\end{Schunk}
+
+\subsection{Affinity score tests}
+
+The binding affinity scores for all pairs of SNP and PWM can be computed by the 'ComputeMotifScore' function. It returns a list of two fields: 'snp.tbl' is a data.table containing the nucleobase sequences for each SNP; 'motif.scores' is a data.table containing the binding affinity scores for each SNP-motif pair.
+
+\begin{Schunk}
+\begin{Sinput}
+> motif_score <- ComputeMotifScore(motif_library, snpInfo, ncores = 2)
+> motif_score$snp.tbl
+\end{Sinput}
+\begin{Soutput}
+           snpid                                                       ref_seq
+   1: rs10910078 TGATGCCAGGTGGTCAGTGGGTTTTTGCCATCCGCCAGGAGCTTCACTGGGCCTCCCGTTG
+   2:  rs4486391 ATGGAGAATTCCACAGCTGATTGGAACCTAAACGAGAGAACCAAATGGACATCCCAGGGCT
+   3:  rs3748816 TTGGAGTACTCCTCGTCCAGGCGCCTGTTCATCTCCTCCAGGATGTAGTCAGGGTGCCCGA
+   4:  rs2843401 TCCTCCACCATTGTGCCAAACAGCGCCTGGTGGGGCCACCCGATCATCCCACGGGCCCCCA
+   5:  rs2843402 CACCTTCTGGGCTGCAGGACTTCCTGCCCTTTAGGAAAGGGAGGCAGCCCTTTCTTCCTCC
+  ---                                                                         
+1993:  rs3003207 CACCAAAACAGCTATGTCATTTTAGAAATGCAAATTGGACCCTAGAGTTTGATTATCAGCA
+1994:  rs1173830 ATATAATCTATTCTTTCTTTCCCTTTCCTTCTCCAGAAACAGCTCAAATTATGAAATAACT
+1995:   rs654873 GCTTCAGTAAAATTAACATTGATGAGTACCCTTATGGAATCTATCATGCATGTTCCAATTT
+1996:  rs1768071 GGTGTCAGGGAATGCCAATCTCGCTGGTTCCGGTTTATTAGCTCGGGGAATCTCGTTAGAT
+1997:  rs1538961 CTACCAGGTGCCAGTTGAGGATAGTCTAAACTACATTCTCAGCTTGAAATATTTTTGACCA
+                                                            snp_seq
+   1: TGATGCCAGGTGGTCAGTGGGTTTTTGCCACCCGCCAGGAGCTTCACTGGGCCTCCCGTTG
+   2: ATGGAGAATTCCACAGCTGATTGGAACCTATACGAGAGAACCAAATGGACATCCCAGGGCT
+   3: TTGGAGTACTCCTCGTCCAGGCGCCTGTTCGTCTCCTCCAGGATGTAGTCAGGGTGCCCGA
+   4: TCCTCCACCATTGTGCCAAACAGCGCCTGGCGGGGCCACCCGATCATCCCACGGGCCCCCA
+   5: CACCTTCTGGGCTGCAGGACTTCCTGCCCTCTAGGAAAGGGAGGCAGCCCTTTCTTCCTCC
+  ---                                                              
+1993: CACCAAAACAGCTATGTCATTTTAGAAATGTAAATTGGACCCTAGAGTTTGATTATCAGCA
+1994: ATATAATCTATTCTTTCTTTCCCTTTCCTTTTCCAGAAACAGCTCAAATTATGAAATAACT
+1995: GCTTCAGTAAAATTAACATTGATGAGTACCTTTATGGAATCTATCATGCATGTTCCAATTT
+1996: GGTGTCAGGGAATGCCAATCTCGCTGGTTCTGGTTTATTAGCTCGGGGAATCTCGTTAGAT
+1997: CTACCAGGTGCCAGTTGAGGATAGTCTAAATTACATTCTCAGCTTGAAATATTTTTGACCA
+                                                        ref_seq_rev
+   1: CAACGGGAGGCCCAGTGAAGCTCCTGGCGGATGGCAAAAACCCACTGACCACCTGGCATCA
+   2: AGCCCTGGGATGTCCATTTGGTTCTCTCGTTTAGGTTCCAATCAGCTGTGGAATTCTCCAT
+   3: TCGGGCACCCTGACTACATCCTGGAGGAGATGAACAGGCGCCTGGACGAGGAGTACTCCAA
+   4: TGGGGGCCCGTGGGATGATCGGGTGGCCCCACCAGGCGCTGTTTGGCACAATGGTGGAGGA
+   5: GGAGGAAGAAAGGGCTGCCTCCCTTTCCTAAAGGGCAGGAAGTCCTGCAGCCCAGAAGGTG
+  ---                                                              
+1993: TGCTGATAATCAAACTCTAGGGTCCAATTTGCATTTCTAAAATGACATAGCTGTTTTGGTG
+1994: AGTTATTTCATAATTTGAGCTGTTTCTGGAGAAGGAAAGGGAAAGAAAGAATAGATTATAT
+1995: AAATTGGAACATGCATGATAGATTCCATAAGGGTACTCATCAATGTTAATTTTACTGAAGC
+1996: ATCTAACGAGATTCCCCGAGCTAATAAACCGGAACCAGCGAGATTGGCATTCCCTGACACC
+1997: TGGTCAAAAATATTTCAAGCTGAGAATGTAGTTTAGACTATCCTCAACTGGCACCTGGTAG
+                                                        snp_seq_rev
+   1: CAACGGGAGGCCCAGTGAAGCTCCTGGCGGGTGGCAAAAACCCACTGACCACCTGGCATCA
+   2: AGCCCTGGGATGTCCATTTGGTTCTCTCGTATAGGTTCCAATCAGCTGTGGAATTCTCCAT
+   3: TCGGGCACCCTGACTACATCCTGGAGGAGACGAACAGGCGCCTGGACGAGGAGTACTCCAA
+   4: TGGGGGCCCGTGGGATGATCGGGTGGCCCCGCCAGGCGCTGTTTGGCACAATGGTGGAGGA
+   5: GGAGGAAGAAAGGGCTGCCTCCCTTTCCTAGAGGGCAGGAAGTCCTGCAGCCCAGAAGGTG
+  ---                                                              
+1993: TGCTGATAATCAAACTCTAGGGTCCAATTTACATTTCTAAAATGACATAGCTGTTTTGGTG
+1994: AGTTATTTCATAATTTGAGCTGTTTCTGGAAAAGGAAAGGGAAAGAAAGAATAGATTATAT
+1995: AAATTGGAACATGCATGATAGATTCCATAAAGGTACTCATCAATGTTAATTTTACTGAAGC
+1996: ATCTAACGAGATTCCCCGAGCTAATAAACCAGAACCAGCGAGATTGGCATTCCCTGACACC
+1997: TGGTCAAAAATATTTCAAGCTGAGAATGTAATTTAGACTATCCTCAACTGGCACCTGGTAG
+\end{Soutput}
+\begin{Sinput}
+> motif_score$motif.scores[, list(snpid, motif, log_lik_ref,
++                                 log_lik_snp, log_lik_ratio)]
+\end{Sinput}
+\begin{Soutput}
+            snpid                                                  motif
+    1: rs10910078                                   AFP1_transfac_M00616
+    2:  rs4486391                                   AFP1_transfac_M00616
+    3:  rs3748816                                   AFP1_transfac_M00616
+    4:  rs2843401                                   AFP1_transfac_M00616
+    5:  rs2843402                                   AFP1_transfac_M00616
+   ---                                                                  
+13975:  rs3003207 USF2_K562_encode-Snyder_seq_hsa_r1:MDscan#1#Intergenic
+13976:  rs1173830 USF2_K562_encode-Snyder_seq_hsa_r1:MDscan#1#Intergenic
+13977:   rs654873 USF2_K562_encode-Snyder_seq_hsa_r1:MDscan#1#Intergenic
+13978:  rs1768071 USF2_K562_encode-Snyder_seq_hsa_r1:MDscan#1#Intergenic
+13979:  rs1538961 USF2_K562_encode-Snyder_seq_hsa_r1:MDscan#1#Intergenic
+       log_lik_ref log_lik_snp log_lik_ratio
+    1:  -117.69581  -116.93812    -0.7576857
+    2:   -73.54122   -95.18078    21.6395566
+    3:   -73.94669   -96.74940    22.8027074
+    4:  -139.33536  -141.41480     2.0794415
+    5:   -95.07542   -95.40392     0.3285041
+   ---                                      
+13975:   -97.42420   -95.28965    -2.1345441
+13976:   -94.64204  -115.49770    20.8556528
+13977:   -75.86532   -94.23625    18.3709332
+13978:  -117.30407  -119.09290     1.7888356
+13979:   -98.55470   -75.52885   -23.0258509
+\end{Soutput}
+\end{Schunk}
+
+The affinity scores for the reference and the SNP alleles are represented by the 'log\_lik\_ref' and 'log\_lik\_snp' columns in '\$motif.scores'. The affinity score change is included in the 'log\_lik\_ratio' column. These three affinity scores are tested in the subsequent steps. '\$motif.scores' also include other columns for the position of the best matching subsequence on each allele. For a complete description on all these columns, users can look up the help documentation.
+
+After we have computed the binding affinity scores, they can be tested using the 'ComputePValues' function. The result is a data.table extending the affinity score table by three columns: 'pval\_ref' is the p-value for the reference allele affinity score; 'pval\_snp' is the p-value for the SNP allele affinity score; and 'pval\_diff' is the p-value for the affinity score change between the two alleles.
+
+\begin{Schunk}
+\begin{Sinput}
+> motif.scores <- ComputePValues(motif.lib = motif_library,
++                                snp.info = snpInfo,
++                                motif.scores = motif_scores$motif.scores,
++                                ncores = 7)
+> motif.scores[, list(snpid, motif, pval_ref, pval_snp, pval_diff)]
+\end{Sinput}
+\begin{Soutput}
+            snpid                                                  motif
+    1: rs10910078                                   AFP1_transfac_M00616
+    2:  rs4486391                                   AFP1_transfac_M00616
+    3:  rs3748816                                   AFP1_transfac_M00616
+    4:  rs2843401                                   AFP1_transfac_M00616
+    5:  rs2843402                                   AFP1_transfac_M00616
+   ---                                                                  
+13975:  rs3003207 USF2_K562_encode-Snyder_seq_hsa_r1:MDscan#1#Intergenic
+13976:  rs1173830 USF2_K562_encode-Snyder_seq_hsa_r1:MDscan#1#Intergenic
+13977:   rs654873 USF2_K562_encode-Snyder_seq_hsa_r1:MDscan#1#Intergenic
+13978:  rs1768071 USF2_K562_encode-Snyder_seq_hsa_r1:MDscan#1#Intergenic
+13979:  rs1538961 USF2_K562_encode-Snyder_seq_hsa_r1:MDscan#1#Intergenic
+        pval_ref  pval_snp pval_diff
+    1: 0.9774000 0.9634000 0.7867244
+    2: 0.3883116 0.7523780 0.3120905
+    3: 0.4399325 0.8721000 0.1914366
+    4: 0.9995000 0.9998000 0.5894549
+    5: 0.7468201 0.7859574 0.8601430
+   ---                              
+13975: 0.6630776 0.4690842 0.6505726
+13976: 0.4348056 0.8260000 0.3578960
+13977: 0.2578003 0.4060862 0.4883657
+13978: 0.9006000 0.9705000 0.6926110
+13979: 0.7130457 0.2417652 0.1857757
+\end{Soutput}
+\end{Schunk}
+
+\subsection{Additional analysis}
+
+atSNP provides additional functions to extract the matched nucleobase subsequences that match to the motifs. Function 'MatchSubsequence' adds the subsequence matches to the affinity score table by using the motif library and the SNP set. The subsequences matching to the motif in the two alleles are returned in the 'ref\_match\_seq' and 'snp\_match\_seq' columns. The 'IUPAC' column returns the IUPAC letters of the motifs. Notice that if you have a large number of SNPs and motifs, the returned table can be very large.
+
+\begin{Schunk}
+\begin{Sinput}
+> match_result <- MatchSubsequence(snp.tbl = motif_scores$snp.tbl,
++                                  motif.scores = motif.scores,
++                                  motif.lib = motif_library,
++                                  snpids = list("rs10910078", "rs4486391"),
++                                  motifs = names(motif_library)[1:2],
++                                  ncores = 2)
+> match_result[, list(snpid, motif, IUPAC, ref_match_seq, snp_match_seq)]
+\end{Sinput}
+\begin{Soutput}
+        snpid                                                  motif      IUPAC
+1: rs10910078 SIX5_GM12878_encode-Myers_seq_hsa_r1:MEME#1#Intergenic GARWTGTAGT
+2: rs10910078 USF2_K562_encode-Snyder_seq_hsa_r1:MDscan#1#Intergenic GTCACGTGAC
+3:  rs4486391 SIX5_GM12878_encode-Myers_seq_hsa_r1:MEME#1#Intergenic GARWTGTAGT
+4:  rs4486391 USF2_K562_encode-Snyder_seq_hsa_r1:MDscan#1#Intergenic GTCACGTGAC
+   ref_match_seq snp_match_seq
+1:    CTGGCGGATG    GGCGGGTGGC
+2:    GGCGGATGGC    GCCACCCGCC
+3:    CTCGTTTAGG    CTCGTATAGG
+4:    TAAACGAGAG    CTCGTATAGG
+\end{Soutput}
+\end{Schunk}
+
+We can also visualize how each motif is matched to each allele using the 'plotMotifMatch' function:
+
+\begin{Schunk}
+\begin{Sinput}
+> plotMotifMatch(snp.tbl = motif_scores$snp.tbl,
++                motif.scores = motif_scores$motif.scores,
++                snpid = motif_scores$snp.tbl$snpid[50],
++                motif = motif_scores$motif.scores$motif[1])
+\end{Sinput}
+\end{Schunk}
+\includegraphics{atsnp-008}
+
+\section{Session Information}
+
+\begin{Schunk}
+\begin{Soutput}
+R version 3.1.1 (2014-07-10)
+Platform: x86_64-redhat-linux-gnu (64-bit)
+
+locale:
+ [1] LC_CTYPE=zh_TW.UTF-8       LC_NUMERIC=C              
+ [3] LC_TIME=en_US.UTF-8        LC_COLLATE=en_US.UTF-8    
+ [5] LC_MONETARY=en_US.UTF-8    LC_MESSAGES=en_US.UTF-8   
+ [7] LC_PAPER=en_US.UTF-8       LC_NAME=C                 
+ [9] LC_ADDRESS=C               LC_TELEPHONE=C            
+[11] LC_MEASUREMENT=en_US.UTF-8 LC_IDENTIFICATION=C       
+
+attached base packages:
+[1] grid      parallel  stats     graphics  grDevices utils     datasets 
+[8] methods   base     
+
+other attached packages:
+ [1] atSNP_1.0          motifStack_1.6.5   ade4_1.6-2         MotIV_1.18.0      
+ [5] BiocGenerics_0.8.0 grImport_0.9-0     XML_3.98-1.1       testthat_0.9.1    
+ [9] doMC_1.3.3         iterators_1.0.7    foreach_1.4.2      data.table_1.9.4  
+[13] Rcpp_0.11.3       
+
+loaded via a namespace (and not attached):
+ [1] Biostrings_2.30.1    BSgenome_1.30.0      chron_2.3-45        
+ [4] codetools_0.2-8      compiler_3.1.1       GenomicRanges_1.14.4
+ [7] IRanges_1.20.7       lattice_0.20-29      plyr_1.8.1          
+[10] reshape2_1.4         rGADEM_2.10.0        seqLogo_1.28.0      
+[13] stats4_3.1.1         stringr_0.6.2        tools_3.1.1         
+[16] XVector_0.2.0       
+\end{Soutput}
+\end{Schunk}
+
+\bibliographystyle{apalike}
+%\bibliographystyle{natbib}
+
+\bibliography{document}
+
+\end{document}

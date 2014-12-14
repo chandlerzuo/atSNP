@@ -18,9 +18,9 @@
 #' @examples
 #' \dontrun{
 #' pwms <- LoadMotifLibrary("/p/keles/ENCODE-CHARGE/volume1/ENCODE-Motifs/encode_motifs_for_fimo.txt")
-#' pwms <- LoadMotifLibrary("http://johnsonlab.ucsf.edu/mochi_files/JASPAR_motifs_H_sapiens.txt", tag = "/NAME", skiprows = 1, skipcols = 0, transpose = FALSE, field = 2, sep = "\t")
-#' pwms <- LoadMotifLibrary("http://jaspar.genereg.net/html/DOWNLOAD/JASPAR_CORE/pfm/nonredundant/pfm_vertebrates.txt", tag = ">", skiprows = 1, skipcols = 0, transpose = TRUE, field = 1, sep = "\t")
-#' pwms <- LoadMotifLibrary("http://gibbs.biomed.ucf.edu/PreDREM/download/nonredundantmotif.transfac", tag = "DE", skiprows = 1, skipcols = 1, transpose = FALSE, field = 2, sep = "\t")
+#' pwms <- LoadMotifLibrary("http://johnsonlab.ucsf.edu/mochi_files/JASPAR_motifs_H_sapiens.txt", tag = "/NAME", skiprows = 1, skipcols = 0, transpose = FALSE, field = 2, sep = "\\t")
+#' pwms <- LoadMotifLibrary("http://jaspar.genereg.net/html/DOWNLOAD/JASPAR_CORE/pfm/nonredundant/pfm_vertebrates.txt", tag = ">", skiprows = 1, skipcols = 0, transpose = TRUE, field = 1, sep = "\\t")
+#' pwms <- LoadMotifLibrary("http://gibbs.biomed.ucf.edu/PreDREM/download/nonredundantmotif.transfac", tag = "DE", skiprows = 1, skipcols = 1, transpose = FALSE, field = 2, sep = "\\t")
 #' }
 #' @useDynLib atSNP
 #' @export
@@ -424,6 +424,7 @@ MatchSubsequence <- function(snp.tbl, motif.scores, motif.lib, snpids = NULL, mo
 #' log_lik_snp \tab The log-likelihood score for the SNP allele.\cr
 #' }
 #' @param ncores An integer for the number of parallel process. Default: 1.
+#' @param figdir A string for the path to print p-value plots for monitoring results. Default: NULL (no figure).
 #' @return A data.table extending 'motif.scores' by the following additional columns:
 #' \tabular{ll}{
 #' pval_ref \tab P values for scores on the reference allele.\cr
@@ -437,7 +438,7 @@ MatchSubsequence <- function(snp.tbl, motif.scores, motif.lib, snpids = NULL, mo
 #' @import doMC Rcpp data.table
 #' @useDynLib atSNP
 #' @export
-ComputePValues <- function(motif.lib, snp.info, motif.scores, ncores = 1, getPlot = FALSE) {
+ComputePValues <- function(motif.lib, snp.info, motif.scores, ncores = 1, figdir = NULL) {
   ncores <- min(c(ncores, length(motif.lib)))
     registerDoMC(ncores)
     results <- as.list(seq_along(motif.lib))
@@ -581,7 +582,10 @@ ComputePValues <- function(motif.lib, snp.info, motif.scores, ncores = 1, getPlo
     pval_diff[pval_diff[, 1] > 1, 1] <- 1
     message("Finished testing the ", motifid, "th motif")
     ##    save(list = ls(), file = paste("/p/keles/ENCODE-CHARGE/volume2/SNP/test/motif", motifid, ".Rda", sep= ""))
-    if(getPlot) {
+    if(!is.null(figdir)) {
+    if(!file.exists(figdir)) {
+    dir.create(fig.dir)
+    }
       plotdat <- data.frame(
                             score = c(scores),
                             p.value = c(pval_a[, seq(2)]),
@@ -597,7 +601,7 @@ ComputePValues <- function(motif.lib, snp.info, motif.scores, ncores = 1, getPlo
       plotdat.diff <- unique(plotdat.diff)
       localenv <- environment()
       options(warn = -1)
-      pdf(paste("/p/keles/ENCODE-CHARGE/volume2/SNP/test/motif", motifid, ".pdf", sep = ""), width = 10, height = 10)
+      pdf(file.path(figdir, paste("motif", motifid, ".pdf", sep = "")), width = 10, height = 10)
       id <- which(rank(plotdat$p.value[plotdat$Allele == "ref"]) <= 500)
       print(ggplot(aes(x = score, y = p.value), data = plotdat[plotdat$Allele == "ref", ], environment = localenv) + geom_point() + scale_y_log10(breaks = 10 ^ seq(-8, 0)) + geom_errorbar(aes(ymax = p.value + sqrt(var), ymin = p.value - sqrt(var))) + ggtitle(paste(names(motif.lib)[motifid], "ref"))) 
       id <- which(rank(plotdat$p.value[plotdat$Allele == "snp"]) <= 500)

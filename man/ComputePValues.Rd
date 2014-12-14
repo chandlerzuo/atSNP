@@ -3,8 +3,7 @@
 \alias{ComputePValues}
 \title{Compute p values.}
 \usage{
-ComputePValues(motif.lib, snp.info, motif.scores, ncores = 1,
-  getPlot = FALSE)
+ComputePValues(motif.lib, snp.info, motif.scores, ncores = 1, figdir = NULL)
 }
 \arguments{
 \item{motif.lib}{A list object with the output format of function 'LoadMotifLibrary'.}
@@ -19,6 +18,8 @@ log_lik_snp \tab The log-likelihood score for the SNP allele.\cr
 }}
 
 \item{ncores}{An integer for the number of parallel process. Default: 1.}
+
+\item{figdir}{A string for the path to print p-value plots for monitoring results. Default: NULL (no figure).}
 }
 \value{
 A data.table extending 'motif.scores' by the following additional columns:
@@ -29,10 +30,7 @@ pval_diff \tab P values for the difference in scores between the reference and t
 }
 }
 \description{
-TODO.
-}
-\details{
-TODO.
+This function computes the p-values for allele-specific affinity scores and between-allele affinity score changes using the importance sampling technique.
 }
 \examples{
 data(example)
