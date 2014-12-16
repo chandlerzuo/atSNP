@@ -175,18 +175,18 @@ plotMotifMatch<-function(snp.tbl, motif.scores, snpid, motif, motif.lib=motif_li
   
   par(mfrow=c(4,1), oma=c(1,1,4,1))
   par(mar=c(1.5, 3, 4, 2))
-  plotMotifLogo(pcm2pfm(ref_aug_pwm), "PWM match to the reference genome", yaxis=FALSE, xlab="", ylab="PWM")
+  plotMotifLogo(pcm2pfm(ref_aug_pwm), "Best match to the reference genome", yaxis=FALSE, xaxis=FALSE, xlab="", ylab="PWM")
 if(motif.match.dt$ref_strand=='+') {
-arrows((min(which(colSums(ref_aug_pwm)!=0))-1)/ncol(ref_aug_pwm), 1, max(which(colSums(ref_aug_pwm)!=0))/ncol(ref_aug_pwm), 1, length = 0.1, angle = 15, code = 2, col = "blue", lwd = 1.5)
+arrows((min(which(colSums(ref_aug_pwm)!=0))-1)/ncol(ref_aug_pwm), -0.17, max(which(colSums(ref_aug_pwm)!=0))/ncol(ref_aug_pwm), -0.17, length = 0.1, angle = 15, code = 2, col = "blue", lwd = 1.5, xpd=NA)
   mtext("5'", 1, adj=(min(which(colSums(ref_aug_pwm)!=0))-1)/ncol(ref_aug_pwm), padj=1, col="blue", cex=1) 
   mtext("3'", 1, adj=max(which(colSums(ref_aug_pwm)!=0))/ncol(ref_aug_pwm), padj=1, col="blue", cex=1)
 } else {
-arrows(max(which(colSums(ref_aug_pwm)!=0))/ncol(ref_aug_pwm), 1, (min(which(colSums(ref_aug_pwm)!=0))-1)/ncol(ref_aug_pwm), 1, length = 0.1, angle = 15, code = 2, col = "blue", lwd = 1.5)
+arrows(max(which(colSums(ref_aug_pwm)!=0))/ncol(ref_aug_pwm), -0.17, (min(which(colSums(ref_aug_pwm)!=0))-1)/ncol(ref_aug_pwm), -0.17, length = 0.1, angle = 15, code = 2, col = "blue", lwd = 1.5, xpd=NA)
   mtext("5'", 1, adj=max(which(colSums(ref_aug_pwm)!=0))/ncol(ref_aug_pwm), padj=1, col="blue", cex=1) 
   mtext("3'", 1, adj=(min(which(colSums(ref_aug_pwm)!=0))-1)/ncol(ref_aug_pwm), padj=1, col="blue", cex=1) 
 }
   par(mar = c(4, 3, 1.5, 2))
-plotMotifLogo(pcm2pfm(ref_aug_match_pwm), yaxis=FALSE, xlab="", ylab=paste("(", motif.match.dt$ref_strand, ")", sep=""))
+plotMotifLogo(pcm2pfm(ref_aug_match_pwm), font="mono,Courier", yaxis=FALSE, xlab="", ylab=paste("(", motif.match.dt$ref_strand, ")", sep=""))
 segments(motif.match.dt[,snp_loc]/motif.match.dt[,snp_ref_length], 0, motif.match.dt[,snp_loc]/motif.match.dt[,snp_ref_length], 1, col="blue", lty=3, lwd=2)
 segments(motif.match.dt[,snp_loc]/motif.match.dt[,snp_ref_length], 1, (motif.match.dt[,snp_loc]+1)/motif.match.dt[,snp_ref_length], 1, col="blue", lty=3, lwd=2)
 segments((motif.match.dt[,snp_loc]+1)/motif.match.dt[,snp_ref_length], 0, (motif.match.dt[,snp_loc]+1)/motif.match.dt[,snp_ref_length], 1, col="blue", lty=3, lwd=2)
@@ -199,7 +199,7 @@ segments(motif.match.dt[,snp_loc]/motif.match.dt[,snp_ref_length], 0, (motif.mat
   mtext("5'", 1, adj=1, padj=1, col="blue", cex=1) 
   }
 par(mar=c(1.5, 3, 4, 2))      
-plotMotifLogo(pcm2pfm(snp_aug_match_pwm), "PWM match to the SNP genome", yaxis=FALSE, xlab="", ylab=paste("(", motif.match.dt$snp_strand, ")", sep=""))
+plotMotifLogo(pcm2pfm(snp_aug_match_pwm), "Best match to the SNP genome", font="mono,Courier", yaxis=FALSE, xlab="", ylab=paste("(", motif.match.dt$snp_strand, ")", sep=""))
 segments(motif.match.dt[,snp_loc]/motif.match.dt[,snp_ref_length], 0, motif.match.dt[,snp_loc]/motif.match.dt[,snp_ref_length], 1, col="blue", lty=3, lwd=2)
 segments(motif.match.dt[,snp_loc]/motif.match.dt[,snp_ref_length], 1, (motif.match.dt[,snp_loc]+1)/motif.match.dt[,snp_ref_length], 1, col="blue", lty=3, lwd=2)
 segments((motif.match.dt[,snp_loc]+1)/motif.match.dt[,snp_ref_length], 0, (motif.match.dt[,snp_loc]+1)/motif.match.dt[,snp_ref_length], 1, col="blue", lty=3, lwd=2)
@@ -212,17 +212,17 @@ segments(motif.match.dt[,snp_loc]/motif.match.dt[,snp_ref_length], 0, (motif.mat
   mtext("5'", 1, adj=1, padj=1, col="blue", cex=1) 
   }
 par(mar=c(4, 3, 1.5, 2))
-plotMotifLogo(pcm2pfm(snp_aug_pwm), yaxis=FALSE, xlab="", ylab="PWM")
+plotMotifLogo(pcm2pfm(snp_aug_pwm), yaxis=FALSE, xaxis=FALSE, xlab="", ylab="PWM")
 if(motif.match.dt$snp_strand=='+') {
-arrows((min(which(colSums(snp_aug_pwm)!=0))-1)/ncol(snp_aug_pwm), 1, max(which(colSums(snp_aug_pwm)!=0))/ncol(snp_aug_pwm), 1, length = 0.1, angle = 15, code = 2, col = "blue", lwd = 1.5)
+arrows((min(which(colSums(snp_aug_pwm)!=0))-1)/ncol(snp_aug_pwm), -0.17, max(which(colSums(snp_aug_pwm)!=0))/ncol(snp_aug_pwm), -0.17, length = 0.1, angle = 15, code = 2, col = "blue", lwd = 1.5, xpd=NA)
   mtext("5'", 1, adj=(min(which(colSums(snp_aug_pwm)!=0))-1)/ncol(snp_aug_pwm), padj=1, col="blue", cex=1) 
   mtext("3'", 1, adj=max(which(colSums(snp_aug_pwm)!=0))/ncol(snp_aug_pwm), padj=1, col="blue", cex=1)
 } else {
-arrows(max(which(colSums(snp_aug_pwm)!=0))/ncol(snp_aug_pwm), 1, (min(which(colSums(snp_aug_pwm)!=0))-1)/ncol(snp_aug_pwm), 1, length = 0.1, angle = 15, code = 2, col = "blue", lwd = 1.5)
+arrows(max(which(colSums(snp_aug_pwm)!=0))/ncol(snp_aug_pwm), -0.17, (min(which(colSums(snp_aug_pwm)!=0))-1)/ncol(snp_aug_pwm), -0.17, length = 0.1, angle = 15, code = 2, col = "blue", lwd = 1.5, xpd=NA)
   mtext("5'", 1, adj=max(which(colSums(snp_aug_pwm)!=0))/ncol(snp_aug_pwm), padj=1, col="blue", cex=1) 
   mtext("3'", 1, adj=(min(which(colSums(snp_aug_pwm)!=0))-1)/ncol(snp_aug_pwm), padj=1, col="blue", cex=1)
 }
-title(main=paste(motif.match.dt[,motif], " PWM Scan for ", motif.match.dt[,snpid], sep=""), outer=TRUE, cex.main=2)
+title(main=paste(motif.match.dt[,motif], " Motif Scan for ", motif.match.dt[,snpid], sep=""), outer=TRUE, cex.main=2)
 }
 
 .find_reverse <- function(sequence) {
