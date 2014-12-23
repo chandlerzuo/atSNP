@@ -12,10 +12,22 @@ if(FALSE) {
   
   i <- 7
 
-  par(mfrow = c(1, 3))
+  motif_pval[, pval_ratio := abs(log(pval_ref + 1e-10) - log(pval_snp + 1e-10))]
+  
+  par(mfrow = c(2, 2))
   plot(log(pval_diff) ~ abs(log_lik_ratio), data = motif_pval[motif == names(motif_library)[i], ])
+  plot(log(pval_rank) ~ pval_ratio, data = motif_pval[motif == names(motif_library)[i], ])
   plot(log(pval_ref) ~ log_lik_ref, data = motif_pval[motif == names(motif_library)[i], ])
   plot(log(pval_snp) ~ log_lik_snp, data = motif_pval[motif == names(motif_library)[i], ])
+
+  par(mfrow = c(1, 3))
+  plot(log(pval_diff) ~ log(pval_rank), data = motif_pval[motif == names(motif_library)[i], ])
+  plot(log(pval_rank) ~ log(pval_snp), data = motif_pval[motif == names(motif_library)[i], ])
+  plot(log(pval_rank) ~ log(pval_ref), data = motif_pval[motif == names(motif_library)[i], ])
+  
+  ggplot(aes(x = pval_ref, y = pval_snp, color = pval_rank), data = motif_pval[motif == names(motif_library)[i], ]) + geom_point()
+
+  ggplot(aes(x = pval_ref, y = pval_snp, color = pval_diff), data = motif_pval[motif == names(motif_library)[i], ]) + geom_point()
 
   system.time(save(motif_library, snpInfo, motif_scores, file = "~/atsnp_git/atSNP/data/example.rda"))
 }

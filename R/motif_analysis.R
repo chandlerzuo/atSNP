@@ -27,7 +27,7 @@
 LoadMotifLibrary <- function(filename, tag = "MOTIF", transpose = FALSE, field = 2, sep = " ", skipcols = 0, skiprows = 2) {
   lines <- readLines(filename)
   motifLineNums <- grep(tag, lines)
-  if(length(strsplit(lines[motifLineNums[1]], " ")[[1]]) > field) {
+  if(length(strsplit(lines[motifLineNums[1]], " ")[[1]]) >= field) {
     motifnames <-
       sapply(strsplit(lines[motifLineNums], " "), function(x) x[field])
   } else {
@@ -430,6 +430,7 @@ MatchSubsequence <- function(snp.tbl, motif.scores, motif.lib, snpids = NULL, mo
 #' pval_ref \tab P values for scores on the reference allele.\cr
 #' pval_snp \tab P values for scores on the SNP allele.\cr
 #' pval_diff \tab P values for the difference in scores between the reference and the SNP alleles.\cr
+#' pval_rank \tab P values for the log rank ratio between the reference and the SNP alleles.\cr
 #' }
 #' @author Chandler Zuo\email{zuo@@stat.wisc.edu}
 #' @examples
@@ -531,7 +532,18 @@ ComputePValues <- function(motif.lib, snp.info, motif.scores, ncores = 1, figdir
         }
       }
     }
-    
+
+    ## Force the p-values to be increasing
+    pval_a[, 1] <- sort(pval_a[, 1])[rank(-scores[,1])]
+    pval_a[, 2] <- sort(pval_a[, 2])[rank(-scores[,2])]
+    pval_cond[, 1] <- sort(pval_cond[, 1])[rank(-scores[,1])]
+    pval_cond[, 2] <- sort(pval_cond[, 2])[rank(-scores[,2])]
+    pval_a[pval_a[, 1] > 1, 1] <- 1
+    pval_a[pval_a[, 2] > 1, 2] <- 1
+    pval_cond[pval_cond[, 1] > 1, 1] <- 1
+    pval_cond[pval_cond[, 2] > 1, 2] <- 1
+
+      rank_ratio <- abs(log(pval_a[, 1] + 1e-10) - log(pval_a[, 2] + 1e-10))
     score_diff <- apply(scores, 1, function(x) abs(diff(x)))
     score.p <- round(quantile(score_diff, c((seq(8) + 1) / 10, 0.9 + seq(9) / 100)))
       if(round(quantile(score_diff, 0.1) + 1) < round(quantile(score_diff, 0.9))) {
@@ -543,7 +555,7 @@ ComputePValues <- function(motif.lib, snp.info, motif.scores, ncores = 1, figdir
       }
     score.p <- rev(sort(unique(score.p)))
     
-    pval_diff <- matrix(1, nrow = length(score_diff), ncol = 2)
+    pval_diff <- pval_rank <- matrix(1, nrow = length(score_diff), ncol = 2)
     for(l in seq_along(score.p)) {
       if(l == 1) {
         score.upp <- max(score_diff) + 1
@@ -562,24 +574,22 @@ ComputePValues <- function(motif.lib, snp.info, motif.scores, ncores = 1, figdir
       pval_diff.new <- .Call("test_p_value_change", pwm,
                              wei.mat, pwm + 0.25, snp.info$prior,
                              snp.info$transition, score_diff[compute.id],
+                             rank_ratio[compute.id],
                              score.p[l], package = "atSNP")
-      pval_diff.new <- .structure(pval_diff.new)
+      pval_rank.new <- .structure(pval_diff.new$rank)
+      pval_diff.new <- .structure(pval_diff.new$score)
       update.id <- which(pval_diff.new[, 2] < pval_diff[compute.id, 2])
       pval_diff[compute.id[update.id], ] <- pval_diff.new[update.id, ]
+      update.id <- which(pval_rank.new[, 2] < pval_rank[compute.id, 2])
+      pval_rank[compute.id[update.id], ] <- pval_rank.new[update.id, ]
       ## print(summary(pval_diff.new[,1]))
     }
     
-    ## Force the p-values to be increasing
-    pval_a[, 1] <- sort(pval_a[, 1])[rank(-scores[,1])]
-    pval_a[, 2] <- sort(pval_a[, 2])[rank(-scores[,2])]
-    pval_cond[, 1] <- sort(pval_cond[, 1])[rank(-scores[,1])]
-    pval_cond[, 2] <- sort(pval_cond[, 2])[rank(-scores[,2])]
+      ## force the monotonicity
     pval_diff[, 1] <- sort(pval_diff[,1])[rank(-score_diff)]
-    pval_a[pval_a[, 1] > 1, 1] <- 1
-    pval_a[pval_a[, 2] > 1, 2] <- 1
-    pval_cond[pval_cond[, 1] > 1, 1] <- 1
-    pval_cond[pval_cond[, 2] > 1, 2] <- 1
     pval_diff[pval_diff[, 1] > 1, 1] <- 1
+    pval_rank[, 1] <- sort(pval_rank[,1])[rank(-rank_ratio)]
+    pval_rank[pval_rank[, 1] > 1, 1] <- 1
     message("Finished testing the ", motifid, "th motif")
     ##    save(list = ls(), file = paste("/p/keles/ENCODE-CHARGE/volume2/SNP/test/motif", motifid, ".Rda", sep= ""))
     if(!is.null(figdir)) {
@@ -613,7 +623,8 @@ ComputePValues <- function(motif.lib, snp.info, motif.scores, ncores = 1, figdir
     list(rowids = rowids,
          pval_a = pval_a,
          pval_cond = pval_cond,
-         pval_diff = pval_diff)
+         pval_diff = pval_diff,
+         pval_rank = pval_rank)
   }
   
   for(i in seq(length(results))) {
@@ -622,6 +633,7 @@ ComputePValues <- function(motif.lib, snp.info, motif.scores, ncores = 1, figdir
     motif.scores[results[[i]]$rowids, pval_cond_ref := results[[i]]$pval_cond[, 1]]
     motif.scores[results[[i]]$rowids, pval_cond_snp := results[[i]]$pval_cond[, 2]]
     motif.scores[results[[i]]$rowids, pval_diff := results[[i]]$pval_diff[, 1]]
+    motif.scores[results[[i]]$rowids, pval_rank := results[[i]]$pval_rank[, 1]]
   }
   return(motif.scores)
 }
