@@ -5,7 +5,7 @@
 \title{Load position weight matrices.}
 \usage{
 LoadMotifLibrary(filename, tag = "MOTIF", transpose = FALSE, field = 2,
-  sep = " ", skipcols = 0, skiprows = 2)
+  sep = " ", skipcols = 0, skiprows = 2, pseudocount = 0)
 }
 \arguments{
 \item{filename}{A file containing MEME format: http://meme.nbcr.net/meme/doc/meme-format.html.}
@@ -21,6 +21,8 @@ LoadMotifLibrary(filename, tag = "MOTIF", transpose = FALSE, field = 2,
 \item{skipcols}{Number of columns to be skipped in the position weight matrix.}
 
 \item{skiprows}{Number of description lines before each position weight matrix.}
+
+\item{pseudocount}{An integer for the pseudocount added to each of the original matrices. Default: 0. Recommended to be 1 if the original matrices are position frequency matrices.}
 }
 \value{
 A list object of position weight matrices.
@@ -39,7 +41,7 @@ For the TRANSFAC library provided by UCF bioinformatics groups (i.e. http://gibb
 \dontrun{
 pwms <- LoadMotifLibrary("/p/keles/ENCODE-CHARGE/volume1/ENCODE-Motifs/encode_motifs_for_fimo.txt")
 pwms <- LoadMotifLibrary("http://johnsonlab.ucsf.edu/mochi_files/JASPAR_motifs_H_sapiens.txt", tag = "/NAME", skiprows = 1, skipcols = 0, transpose = FALSE, field = 2, sep = "\\t")
-pwms <- LoadMotifLibrary("http://jaspar.genereg.net/html/DOWNLOAD/JASPAR_CORE/pfm/nonredundant/pfm_vertebrates.txt", tag = ">", skiprows = 1, skipcols = 0, transpose = TRUE, field = 1, sep = "\\t")
+pwms <- LoadMotifLibrary("http://jaspar.genereg.net/html/DOWNLOAD/JASPAR_CORE/pfm/nonredundant/pfm_vertebrates.txt", tag = ">", skiprows = 1, skipcols = 0, transpose = TRUE, field = 1, sep = "\\t", pseudocount = 1)
 pwms <- LoadMotifLibrary("http://gibbs.biomed.ucf.edu/PreDREM/download/nonredundantmotif.transfac", tag = "DE", skiprows = 1, skipcols = 1, transpose = FALSE, field = 2, sep = "\\t")
 }
 }

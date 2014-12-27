@@ -8,6 +8,7 @@
 #' @param transpose If TRUE (default), then the position weight matrix should have 4 columns. Otherwise, it should have 4 rows.
 #' @param field The index of the field in the description line, seperated by space, that indicates the motif name.
 #' @param sep The string seperator to separate each lines of the matrix. Default: " ".
+#' @param pseudocount An integer for the pseudocount added to each of the original matrices. Default: 0. Recommended to be 1 if the original matrices are position frequency matrices.
 #' @details This function reads the formatted file containing motif information and convert them into a list of position weight matrices. The list of arguments should provide enough flexibility of importing a varying number of formats. Som eexamples are the following:
 #' For MEME format, the suggested arguments are: tag = 'Motif', skiprows = 2, skipcols = 0, transpose = FALSE, field = 2, sep = " ";
 #' For motif files from JOHNSON lab (i.e. http://johnsonlab.ucsf.edu/mochi_files/JASPAR_motifs_H_sapiens.txt), the suggested arguments are: tag = '/NAME', skiprows = 1, skipcols = 0, transpose = FALSE, field = 2, sep = "\\t";
@@ -19,12 +20,12 @@
 #' \dontrun{
 #' pwms <- LoadMotifLibrary("/p/keles/ENCODE-CHARGE/volume1/ENCODE-Motifs/encode_motifs_for_fimo.txt")
 #' pwms <- LoadMotifLibrary("http://johnsonlab.ucsf.edu/mochi_files/JASPAR_motifs_H_sapiens.txt", tag = "/NAME", skiprows = 1, skipcols = 0, transpose = FALSE, field = 2, sep = "\t")
-#' pwms <- LoadMotifLibrary("http://jaspar.genereg.net/html/DOWNLOAD/JASPAR_CORE/pfm/nonredundant/pfm_vertebrates.txt", tag = ">", skiprows = 1, skipcols = 0, transpose = TRUE, field = 1, sep = "\t")
+#' pwms <- LoadMotifLibrary("http://jaspar.genereg.net/html/DOWNLOAD/JASPAR_CORE/pfm/nonredundant/pfm_vertebrates.txt", tag = ">", skiprows = 1, skipcols = 0, transpose = TRUE, field = 1, sep = "\t", pseudocount = 1)
 #' pwms <- LoadMotifLibrary("http://gibbs.biomed.ucf.edu/PreDREM/download/nonredundantmotif.transfac", tag = "DE", skiprows = 1, skipcols = 1, transpose = FALSE, field = 2, sep = "\t")
 #' }
 #' @useDynLib atSNP
 #' @export
-LoadMotifLibrary <- function(filename, tag = "MOTIF", transpose = FALSE, field = 2, sep = " ", skipcols = 0, skiprows = 2) {
+LoadMotifLibrary <- function(filename, tag = "MOTIF", transpose = FALSE, field = 2, sep = " ", skipcols = 0, skiprows = 2, pseudocount = 0) {
   lines <- readLines(filename)
   motifLineNums <- grep(tag, lines)
   if(length(strsplit(lines[motifLineNums[1]], " ")[[1]]) >= field) {
@@ -58,6 +59,7 @@ LoadMotifLibrary <- function(filename, tag = "MOTIF", transpose = FALSE, field =
           matrix(as.numeric(unlist(sapply(strsplit(lines[seq(nrows) + motifLineNum - 1], split = sep), function(x) x[-seq(skipcols)]))), ncol = 4)
       }
     }
+    pwm <- pwm + pseudocount
     pwm <- pwm / apply(pwm, 1, sum)
     pwm <- t(apply(pwm, 1,
                    function(x) {
