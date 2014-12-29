@@ -535,15 +535,29 @@ ComputePValues <- function(motif.lib, snp.info, motif.scores, ncores = 1, figdir
       }
     }
 
-    ## Force the p-values to be increasing
-    pval_a[, 1] <- sort(pval_a[, 1])[rank(-scores[,1])]
-    pval_a[, 2] <- sort(pval_a[, 2])[rank(-scores[,2])]
-    pval_cond[, 1] <- sort(pval_cond[, 1])[rank(-scores[,1])]
-    pval_cond[, 2] <- sort(pval_cond[, 2])[rank(-scores[,2])]
-    pval_a[pval_a[, 1] > 1, 1] <- 1
-    pval_a[pval_a[, 2] > 1, 2] <- 1
-    pval_cond[pval_cond[, 1] > 1, 1] <- 1
-    pval_cond[pval_cond[, 2] > 1, 2] <- 1
+      pval_a[pval_a[, seq(2)] > 1] <- 1
+      pval_cond[pval_cond[, seq(2)] > 1] <- 1
+      adjusted <- FALSE
+      ## Force the p-values to be increasing
+      while(!adjusted) {
+        pval_a.sorted <- sort(pval_a[, 1:2])[rank(-c(scores))]
+        pval_cond.sorted <- sort(pval_cond[, 1:2])[rank(-c(scores))]
+        flag1 <- flag2 <- TRUE
+        if(prod(pval_a.sorted == pval_a[, seq(2)]) != 1 |
+           prod(pval_cond.sorted == pval_cond[, seq(2)]) != 1) {
+          pval_a[, 1:2] <- pval_a.sorted
+          pval_cond[, 1:2] <- pval_cond.sorted
+          flag1 <- FALSE
+        }
+        ## force the conditional p-value <= p-value
+        adjust.id <- which(pval_a[, seq(2)] < pval_cond[, seq(2)])
+        if(length(adjust.id) > 0) {
+          flag2 <- FALSE
+          pval_cond[adjust.id] <- (pval_cond[adjust.id] + pval_a[adjust.id]) / 2
+          pval_a[adjust.id] <- pval_cond[adjust.id]
+        }
+        adjusted <- flag1 & flag2
+      }
 
       rank_ratio <- abs(log(pval_a[, 1] + 1e-10) - log(pval_a[, 2] + 1e-10))
     score_diff <- apply(scores, 1, function(x) abs(diff(x)))

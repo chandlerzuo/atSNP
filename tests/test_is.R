@@ -2,7 +2,7 @@ library(atSNP)
 data(example)
 
 trans_mat <- matrix(rep(snpInfo$prior, each = 4), nrow = 4)
-id <- 7
+id <- 1
 test_pwm <- motif_library[[id]]
 ##test_pwm <- motif_library[["ALX3_jolma_DBD_M449"]]
 scores <- as.matrix(motif_scores$motif.scores[motif == names(motif_library)[id], list(log_lik_ref, log_lik_snp)])
