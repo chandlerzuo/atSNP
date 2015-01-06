@@ -62,6 +62,24 @@ In addition, users also need to install the annotation package from \url{www.bio
 
 A text file including the PWMs of all motifs can be loaded via the 'LoadMotifLibrary' function. In this function, 'tag' specifies the string that marks the start of each block of PWM; 'skiprows' is the number of description lines before the PWM; 'skipcols' is the number of columns to be skipped in the PWM matrix; 'transpose' is TRUE if the PWM has 4 rows representing A, C, G, T or FALSE if otherwise; 'field' is the position of the motif name within the description line; 'sep' is the separator in the PWM. These arguments provide the flexibility of loading a number of varying formatted files. The PWMs are returned as a list object. Some examples are the following:
 
+\begin{Schunk}
+\begin{Sinput}
+> pwms <- 
++   LoadMotifLibrary("http://meme.nbcr.net/meme/examples/sample-dna-motif.meme-io")
+> pwms <- LoadMotifLibrary(
++            "http://johnsonlab.ucsf.edu/mochi_files/JASPAR_motifs_H_sapiens.txt",
++                          tag = "/NAME", skiprows = 1, skipcols = 0, transpose = FALSE, 
++                          field = 2, sep = "\t")
+> pwms <- LoadMotifLibrary(
++ "http://jaspar.genereg.net/html/DOWNLOAD/JASPAR_CORE/pfm/nonredundant/pfm_vertebrates.txt",
++                          tag = ">", skiprows = 1, skipcols = 0, transpose = TRUE,
++                          field = 1, sep = "\t")
+> pwms <- LoadMotifLibrary(
++            "http://gibbs.biomed.ucf.edu/PreDREM/download/nonredundantmotif.transfac",
++                          tag = "DE", skiprows = 1, skipcols = 1, transpose = FALSE,
++                          field = 2, sep = "\t")
+\end{Sinput}
+\end{Schunk}
 
 The data set for the SNP information must be a table including five columns:
 
@@ -91,17 +109,16 @@ A sample data set including a preloaded motif library and a SNP set is included 
 \begin{Sinput}
 > library(atSNP)
 > data(example)
-> str(motif_library)
+> names(motif_library)
 \end{Sinput}
 \begin{Soutput}
-List of 7
- $ SIX5_GM12878_encode-Myers_seq_hsa_r1:MEME#1#Intergenic  : num [1:10, 1:4] 8.51e-03 9.02e-01 4.55e-01 2.51e-01 1.00e-10 ...
- $ USF2_K562_encode-Snyder_seq_hsa_r1:MDscan#1#Intergenic  : num [1:10, 1:4] 1.74e-01 1.00e-10 1.00e-10 1.00 1.00e-10 ...
- $ SRF_H1-hESC_encode-Myers_seq_hsa_r1:MDscan#2#Intergenic : num [1:10, 1:4] 1.00e-10 1.00e-10 4.95e-01 2.61e-01 1.00 ...
- $ JUND_K562_encode-Snyder_seq_hsa_r1:MEME#1#Intergenic    : num [1:10, 1:4] 4.18e-01 1.00e-10 1.00e-10 9.81e-01 4.81e-03 ...
- $ SIX5_H1-hESC_encode-Myers_seq_hsa_r1:MDscan#1#Intergenic: num [1:10, 1:4] 1.00e-10 1.00e-10 1.00e-10 9.47e-01 4.65e-01 ...
- $ ALX3_jolma_DBD_M449                                     : num [1:10, 1:4] 0.257 0.1356 0.0699 0.8527 0.9408 ...
- $ AFP1_transfac_M00616                                    : num [1:11, 1:4] 1 0.2 0.2 1 1 ...
+[1] "SIX5_GM12878_encode-Myers_seq_hsa_r1:MEME#1#Intergenic"  
+[2] "USF2_K562_encode-Snyder_seq_hsa_r1:MDscan#1#Intergenic"  
+[3] "SRF_H1-hESC_encode-Myers_seq_hsa_r1:MDscan#2#Intergenic" 
+[4] "JUND_K562_encode-Snyder_seq_hsa_r1:MEME#1#Intergenic"    
+[5] "SIX5_H1-hESC_encode-Myers_seq_hsa_r1:MDscan#1#Intergenic"
+[6] "ALX3_jolma_DBD_M449"                                     
+[7] "AFP1_transfac_M00616"                                    
 \end{Soutput}
 \begin{Sinput}
 > str(snpInfo)
@@ -246,11 +263,11 @@ After we have computed the binding affinity scores, they can be tested using the
     4: 0.9995000 0.9998000 0.5894549
     5: 0.7468201 0.7859574 0.8601430
    ---                              
-13975: 0.6630776 0.4690842 0.6505726
-13976: 0.4348056 0.8260000 0.3578960
-13977: 0.2578003 0.4060862 0.4883657
+13975: 0.6682796 0.4783870 0.6505726
+13976: 0.4409608 0.8260000 0.3578960
+13977: 0.2677685 0.4092315 0.4883657
 13978: 0.9006000 0.9705000 0.6926110
-13979: 0.7130457 0.2417652 0.1857757
+13979: 0.7186609 0.2548023 0.1857757
 \end{Soutput}
 \end{Schunk}
 
@@ -323,7 +340,7 @@ loaded via a namespace (and not attached):
  [1] Biostrings_2.30.1    BSgenome_1.30.0      chron_2.3-45        
  [4] codetools_0.2-8      compiler_3.1.1       GenomicRanges_1.14.4
  [7] IRanges_1.20.7       lattice_0.20-29      plyr_1.8.1          
-[10] reshape2_1.4         rGADEM_2.10.0        seqLogo_1.28.0      
+[10] reshape2_1.4.1       rGADEM_2.10.0        seqLogo_1.28.0      
 [13] stats4_3.1.1         stringr_0.6.2        tools_3.1.1         
 [16] XVector_0.2.0       
 \end{Soutput}
