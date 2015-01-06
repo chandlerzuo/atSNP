@@ -7,7 +7,7 @@ test_pwm <- motif_library[[id]]
 scores <- as.matrix(motif_scores$motif.scores[motif == names(motif_library)[id], list(log_lik_ref, log_lik_snp)])
 score_diff <- apply(scores, 1, function(x) abs(diff(x)))
 
-pval_a <- .Call("test_p_value", test_pwm, snpInfo$prior, snpInfo$transition, scores, 0.15)
+pval_a <- .Call("test_p_value", test_pwm, snpInfo$prior, snpInfo$transition, scores, 0.15, 1000)
 pval_ratio <- abs(log(pval_a[seq(nrow(scores)),1]) - log(pval_a[seq(nrow(scores)) + nrow(scores), 1]))
 
 test_score <- test_pwm
@@ -168,7 +168,7 @@ test_that("Error: the chosen pvalues should have the smaller variance.", {
                  pval_mat[, c(2, 4)][cbind(seq_along(id), id)]))
   }
   for(p in c(0.05, 0.1, 0.2, 0.5)) {
-    p_values <- .Call("test_p_value_change", test_pwm, test_score, adj_mat, snpInfo$prior, snpInfo$transition, score_diff, pval_ratio, quantile(score_diff, 1 - p), package = "atSNP")$score
+    p_values <- .Call("test_p_value_change", test_pwm, test_score, adj_mat, snpInfo$prior, snpInfo$transition, score_diff, pval_ratio, quantile(score_diff, 1 - p), 1000, package = "atSNP")$score
     p_values_s <- .structure_diff(p_values)
     expect_equal(p_values_s[, 2], apply(p_values[, c(2, 4)], 1, min))
   }
@@ -187,12 +187,12 @@ if(FALSE) {
   1e4 * (func_delta(-0.165 + 1e-4 / 2) - func_delta(-0.165 - 1e-4 / 2))
 
   ## test the theta
-  p_values_9 <- .Call("test_p_value_change", test_pwm, test_score, adj_mat, snpInfo$prior, snpInfo$transition, score_diff, pval_ratio, quantile(score_diff, 0.9), package = "atSNP")
-  p_values_8 <- .Call("test_p_value_change", test_pwm, test_score, adj_mat, snpInfo$prior, snpInfo$transition, score_diff, pval_ratio, quantile(score_diff, 0.8), package = "atSNP")
+  p_values_9 <- .Call("test_p_value_change", test_pwm, test_score, adj_mat, snpInfo$prior, snpInfo$transition, score_diff, pval_ratio, quantile(score_diff, 0.9), 1000, package = "atSNP")
+  p_values_8 <- .Call("test_p_value_change", test_pwm, test_score, adj_mat, snpInfo$prior, snpInfo$transition, score_diff, pval_ratio, quantile(score_diff, 0.8), 1000, package = "atSNP")
 
-  p_values_1 <- .Call("test_p_value_change", test_pwm, test_score, adj_mat, snpInfo$prior, snpInfo$transition, score_diff, pval_ratio, quantile(score_diff, 0.1), package = "atSNP")
+  p_values_1 <- .Call("test_p_value_change", test_pwm, test_score, adj_mat, snpInfo$prior, snpInfo$transition, score_diff, pval_ratio, quantile(score_diff, 0.1), 1000, package = "atSNP")
 
-  test <- .Call("test_p_value_change", test_pwm, test_score, (adj_mat +0.25) / 2, snpInfo$prior, snpInfo$transition, score_diff, pval_ratio, 0, package = "atSNP")
+  test <- .Call("test_p_value_change", test_pwm, test_score, (adj_mat +0.25) / 2, snpInfo$prior, snpInfo$transition, score_diff, pval_ratio, 0, 1000, package = "atSNP")
 
   plot(p_values_9$score[, 1], p_values_9$score[, 2])
 
@@ -225,8 +225,8 @@ if(FALSE) {
   plot(log(p_values_9$rank[, 1]) ~ log(p_values_9$score[, 1]))
   plot(score_diff ~ pval_ratio)
   
-  p_values_9 <- .Call("test_p_value_change", test_pwm, test_score, adj_mat, snpInfo$prior, trans_mat, score_diff, quantile(score_diff, 0.9), package = "atSNP")
-  p_values_8 <- .Call("test_p_value_change", test_pwm, test_score, adj_mat, snpInfo$prior, trans_mat, score_diff, quantile(score_diff, 0.8), package = "atSNP")
+  p_values_9 <- .Call("test_p_value_change", test_pwm, test_score, adj_mat, snpInfo$prior, trans_mat, score_diff, quantile(score_diff, 0.9), 1000, package = "atSNP")
+  p_values_8 <- .Call("test_p_value_change", test_pwm, test_score, adj_mat, snpInfo$prior, trans_mat, score_diff, quantile(score_diff, 0.8), 1000, package = "atSNP")
   
   pval_test <- function(x) {
       delta <- .Call("test_find_percentile_change", score_diff, x, package = "atSNP")

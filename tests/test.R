@@ -30,6 +30,37 @@ if(FALSE) {
   ggplot(aes(x = pval_ref, y = pval_snp, color = pval_diff), data = motif_pval[motif == names(motif_library)[i], ]) + geom_point()
 
   system.time(save(motif_library, snpInfo, motif_scores, file = "~/atsnp_git/atSNP/data/example.rda"))
+
+  motif_encode <- LoadMotifLibrary("~/atsnp_git/data/motifs-toscan.txt", tag = ">", transpose = FALSE, field = 1, sep = " ", skipcols = 1, skiprows = 1, pseudocount = 0)
+
+  system.time(save(motif_encode, file = "~/atsnp_git/atSNP/data/encode_motif.rda"))
+
+  library(BSgenome.Hsapiens.UCSC.hg19)
+  tbl1 <- read.table("~/atsnp_git/data/gwas_snp1.txt", stringsAsFactors = FALSE)
+  names(tbl1) <- c("chr", "snp", "snpid")
+  tbl1 <- tbl1[grep("rs", tbl1$snpid), ]
+  tbl1$snp <- as.integer(tbl1$snp)
+  tbl1 <- na.omit(tbl1)
+  tbl1$chr <- paste("chr", tbl1$chr, sep = "")
+  half.window.size <- 30
+  ## ad-hocly remove rows with errors
+  
+  tbl <- tbl1[!(tbl1$snp - 30) %in% c(82128489,63678456,82727520,63223070,82727627,79864449,79013943,63731181,81244884,81261958,63666419,81714991,78897749,63786954,79632349,78152892,63717525,78655420,78831605,63037654,63778330,63264538,181168108,63696199,63718204,79813518,81287979,81629755,63686837,63712574,78649567,82450909), ]
+  tbl$chr[tbl$chr == "chr23"] <- "chrX"
+  seqvec <- getSeq(Hsapiens, as.character(tbl$chr), start = tbl$snp - half.window.size, end = tbl$snp + half.window.size, as.character = TRUE)
+
+  codes <- seq(4)
+  names(codes) <- c("A", "C", "G", "T")
+  sequences <- sapply(seqvec, function(x) codes[strsplit(x, "")[[1]]])
+  colnames(sequences) <- tbl$snpid
+  rownames(sequences) <- NULL
+  sequences <- t(na.omit(t(sequences)))
+  transition <- .Call("transition_matrix", sequences, package = "atSNP")
+  prior <- apply(transition, 1, sum)
+  prior <- prior/sum(prior)
+  transition <- transition/apply(transition, 1, sum)
+  names(prior) <- colnames(transition) <- rownames(transition) <- c("A", "C", "G", "T")
+  save(prior, transition, file = "~/atsnp_git/atSNP/data/default_par.rda")
 }
 
 ## process the data

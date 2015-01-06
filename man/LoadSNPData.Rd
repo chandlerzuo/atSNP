@@ -5,7 +5,7 @@
 \title{Load the SNP information and code the genome sequences around the SNP locations.}
 \usage{
 LoadSNPData(filename, genome.lib = "BSgenome.Hsapiens.UCSC.hg19",
-  half.window.size = 30, ...)
+  half.window.size = 30, default.par = FALSE, ...)
 }
 \arguments{
 \item{filename}{A table containing the SNP information. Must contain at least four columns:
@@ -20,6 +20,8 @@ a2 \tab The deoxyribose at the SNP genome.\cr
 \item{genome.lib}{A string of the library name for the genome version. Default: "BSgenome.Hsapiens.UCSC.hg19".}
 
 \item{half.window.size}{An integer for the half window size around the SNP within which the motifs are matched. Default: 30.}
+
+\item{default.par}{A boolean for whether using the default Markov parameters. Default: FALSE.}
 
 \item{...}{Other parameters passed to 'read.table'.}
 }

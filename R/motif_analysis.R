@@ -87,6 +87,7 @@ LoadMotifLibrary <- function(filename, tag = "MOTIF", transpose = FALSE, field =
 #' }
 #' @param genome.lib A string of the library name for the genome version. Default: "BSgenome.Hsapiens.UCSC.hg19".
 #' @param half.window.size An integer for the half window size around the SNP within which the motifs are matched. Default: 30.
+#' @param default.par A boolean for whether using the default Markov parameters. Default: FALSE.
 #' @param ... Other parameters passed to 'read.table'.
 #' @details This function extracts the nucleobase sequence within a window around each SNP and code them using 1-A, 2-C, 3-G, 4-T. The sequences are extracted using the Bioconductor annotation package specified by 'genome.lib'. Users should make sure that this annotation package corresponds to the correct species and genome version of the actual data.\cr
 #' This function compares the nucleobase at the SNP location on the reference genome with both a1 and a2 to distinguish between the reference allele and the SNP allele. If the nucleobase extracted from the reference genome does not match either a1 or a2, the SNP is discarded.
@@ -103,7 +104,7 @@ LoadMotifLibrary <- function(filename, tag = "MOTIF", transpose = FALSE, field =
 #' @useDynLib atSNP
 #' @export
 LoadSNPData <- function(filename, genome.lib = "BSgenome.Hsapiens.UCSC.hg19",
-                        half.window.size = 30, ...) {
+                        half.window.size = 30, default.par = FALSE, ...) {
   ## load the corresponding genome version
   library(package = genome.lib, character.only = TRUE)
   tbl <- read.table(filename, header = TRUE, stringsAsFactors = FALSE, ...)
@@ -124,11 +125,21 @@ LoadSNPData <- function(filename, genome.lib = "BSgenome.Hsapiens.UCSC.hg19",
   a1 <- codes[tbl$a1]
   a2 <- codes[tbl$a2]
   names(a1) <- names(a2) <- NULL
-  transition <- .Call("transition_matrix", sequences, package = "atSNP")
-  prior <- apply(transition, 1, sum)
-  prior <- prior / sum(prior)
-  transition <- transition / apply(transition, 1, sum)
-  names(prior) <- colnames(transition) <- rownames(transition) <- c("A", "C", "G", "T")
+  remove.id <- which(apply(sequences, 2, function(x) sum(is.na(x))) > 0)
+  ## remove sequences containing non ACGT characters
+  sequences <- sequences[, -remove.id]
+  a1 <- a1[-remove.id]
+  a2 <- a2[-remove.id]
+  ## whether use the default parameters
+  if(!default.par) {
+    transition <- .Call("transition_matrix", sequences, package = "atSNP")
+    prior <- apply(transition, 1, sum)
+    prior <- prior / sum(prior)
+    transition <- transition / apply(transition, 1, sum)
+    names(prior) <- colnames(transition) <- rownames(transition) <- c("A", "C", "G", "T")
+  } else {
+    data(default_par)
+  }
   a1.ref.base.id <- which(a1 == sequences[half.window.size + 1, ])
   a2.ref.base.id <- which(a2 == sequences[half.window.size + 1, ])
   ## store SNPs that have the same base in SNP and REF alleles only once
@@ -469,8 +480,12 @@ ComputePValues <- function(motif.lib, snp.info, motif.scores, ncores = 1, figdir
       }
     }
     set.seed(motifid)
-    
-    p <- 5 / nrow(scores)
+
+      if(nrow(scores) > 5000) {
+        p <- 5 / nrow(scores)
+      } else {
+        p <- 1 / nrow(scores)
+      }
     
     m <- 20
     b <- (1 / p) ^ ( 1 / sum(seq(m)))
@@ -482,10 +497,14 @@ ComputePValues <- function(motif.lib, snp.info, motif.scores, ncores = 1, figdir
     }
     allp <- allp[-(m + 1)]
     
-    score.p <- quantile(c(scores), 1 - allp)
+    score.p <- unique(quantile(c(scores), 1 - allp))
+      if(length(score.p) > length(unique(c(scores)))) {
+        score.p <- rev(unique(sort(c(scores))))
+        allp <- seq_along(score.p) / length(c(scores))
+      }
     
     pval_a <- pval_cond <- matrix(1, nrow = nrow(scores), ncol = 4)
-    for(l in seq(length(allp) + 1)) {
+    for(l in seq_along(allp)) {
       if(l == 1) {
         score.upp = max(scores) + 1
       } else if(l <= length(allp)) {
@@ -507,32 +526,27 @@ ComputePValues <- function(motif.lib, snp.info, motif.scores, ncores = 1, figdir
       } else {
           theta <- 0
       }
-      pval_a.new <- .Call("test_p_value", pwm, snp.info$prior, snp.info$transition, scores[compute.id], theta, package = "atSNP")
+      ## set the importance sample size
+      n_sample <- 2000
+      if(l <= length(allp)) {
+        n_sample <- as.integer((1 - allp[l]) / allp[l] * 100)
+      }
+      if(n_sample > 1e5) {
+        n_sample <- 1e5
+      }
+      if(n_sample < 5000) {
+        n_sample <- 2000
+      }
+      pval_a.new <- .Call("test_p_value", pwm, snp.info$prior, snp.info$transition, scores[compute.id], theta, n_sample, package = "atSNP")
       pval_cond.new <- .structure(pval_a.new[, 4 + seq(4)])
       pval_a.new <- .structure(pval_a.new[, seq(4)])
-      if(FALSE) {
-        update.id <- which(scores < score.p[l] & scores >= score.low)
-        pval_a[update.id] <- pval_a.new[compute.id %in% update.id, 1]
-        if(l > 1) {
-          update.id <- which(scores < score.upp & scores >= score.p[l])
-          pval_a[update.id] <- (pval_a.new[compute.id %in% update.id, 1] + pval_a[update.id]) / 2
-        }
-      }
-      if(TRUE) {
-        update.id <- which(pval_a.new[, 2] < pval_a[, 3:4][compute.id])
-        pval_a[compute.id[update.id]] <- pval_a.new[update.id, 1]
-        pval_a[compute.id[update.id] + 2 * nrow(pval_a)] <- pval_a.new[update.id, 2]
-        update.id <- which(pval_cond.new[, 2] < pval_cond[, 3:4][compute.id])
-        pval_cond[compute.id[update.id]] <- pval_cond.new[update.id, 1]
-        pval_cond[compute.id[update.id] + 2 * nrow(pval_cond)] <- pval_cond.new[update.id, 2]
-      }
-      if(FALSE) {
-        if(length(update.id) > 0) {
-          pval_a[update.id] <- pval_a.new[update.id]
-          update.id <- update.id + nrow(pval_a) * 2
-          pval_a[update.id] <- pval_a.new[update.id]
-        }
-      }
+
+      update.id <- which(pval_a.new[, 2] < pval_a[, 3:4][compute.id])
+      pval_a[compute.id[update.id]] <- pval_a.new[update.id, 1]
+      pval_a[compute.id[update.id] + 2 * nrow(pval_a)] <- pval_a.new[update.id, 2]
+      update.id <- which(pval_cond.new[, 2] < pval_cond[, 3:4][compute.id])
+      pval_cond[compute.id[update.id]] <- pval_cond.new[update.id, 1]
+      pval_cond[compute.id[update.id] + 2 * nrow(pval_cond)] <- pval_cond.new[update.id, 2]
     }
 
       pval_a[pval_a[, seq(2)] > 1] <- 1
@@ -587,11 +601,24 @@ ComputePValues <- function(motif.lib, snp.info, motif.scores, ncores = 1, figdir
       if(length(compute.id) == 0) {
         next
       }
+      ## set the importance sample size
+      n_sample <- 2000
+      p <- mean(score_diff >= score.p[l])
+      if(l <= length(allp)) {
+        n_sample <- as.integer((1 - p) / p * 100)
+      }
+      if(n_sample > 1e5) {
+        n_sample <- 1e5
+      }
+      if(n_sample < 2000) {
+        n_sample <- 2000
+      }
+      
       pval_diff.new <- .Call("test_p_value_change", pwm,
                              wei.mat, pwm + 0.25, snp.info$prior,
                              snp.info$transition, score_diff[compute.id],
                              rank_ratio[compute.id],
-                             score.p[l], package = "atSNP")
+                             score.p[l], n_sample, package = "atSNP")
       pval_rank.new <- .structure(pval_diff.new$rank)
       pval_diff.new <- .structure(pval_diff.new$score)
       update.id <- which(pval_diff.new[, 2] < pval_diff[compute.id, 2])

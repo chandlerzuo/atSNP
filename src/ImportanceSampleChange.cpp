@@ -13,7 +13,7 @@ Compute the probability that a random sequence can get a score higher than 'scor
 @arg p The upper percentile of the scores which is used as the mean of the importance sampling distribution.
 @return A matrix with 3 columns. The first two columns are the p-values for the log-likelihood scores of each allele. The third column are the p-values for the likelihood ratios.
 */
-Rcpp::List p_value_change(NumericMatrix pwm, NumericMatrix wei_mat, NumericMatrix adj_mat, NumericVector stat_dist, NumericMatrix trans_mat, NumericVector scores, NumericVector pval_ratio, double score_percentile) {
+Rcpp::List p_value_change(NumericMatrix pwm, NumericMatrix wei_mat, NumericMatrix adj_mat, NumericVector stat_dist, NumericMatrix trans_mat, NumericVector scores, NumericVector pval_ratio, double score_percentile, int n_sample) {
 	// double score_percentile = find_percentile_change(scores, p);
 	//	printf("percentile:%3.3f\n", score_percentile);
 	// find the tilting parameter
@@ -45,7 +45,6 @@ Rcpp::List p_value_change(NumericMatrix pwm, NumericMatrix wei_mat, NumericMatri
 			p_values(i, j) = 0;
 		}
 	}	
-	int n_sample = 1e4;
 	double wei = 0;
 	double mean_score = 0;
 	NumericVector weights(n_sample);
@@ -440,7 +439,7 @@ SEXP test_find_percentile_change(SEXP _scores, SEXP _perc) {
 	return(wrap(ret));
 }
 
-SEXP test_p_value_change(SEXP _pwm, SEXP _wei_mat, SEXP _adj_mat, SEXP _stat_dist, SEXP _trans_mat, SEXP _scores, SEXP _pval_ratio, SEXP _perc) {
+SEXP test_p_value_change(SEXP _pwm, SEXP _wei_mat, SEXP _adj_mat, SEXP _stat_dist, SEXP _trans_mat, SEXP _scores, SEXP _pval_ratio, SEXP _perc, SEXP _n_sample) {
 	NumericMatrix pwm(_pwm);
 	NumericMatrix wei_mat(_wei_mat);
 	NumericMatrix adj_mat(_adj_mat);
@@ -449,8 +448,9 @@ SEXP test_p_value_change(SEXP _pwm, SEXP _wei_mat, SEXP _adj_mat, SEXP _stat_dis
 	NumericVector scores(_scores);
 	NumericVector pval_ratio(_pval_ratio);
 	double perc = as<double>(_perc);
+	int n_sample = as<int>(_n_sample);
 	
-	Rcpp::List p_values = p_value_change(pwm, wei_mat, adj_mat, stat_dist, trans_mat, scores, pval_ratio, perc);
+	Rcpp::List p_values = p_value_change(pwm, wei_mat, adj_mat, stat_dist, trans_mat, scores, pval_ratio, perc, n_sample);
 	return(wrap(p_values));
 }
 
