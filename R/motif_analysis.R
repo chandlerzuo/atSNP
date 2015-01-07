@@ -604,6 +604,9 @@ ComputePValues <- function(motif.lib, snp.info, motif.scores, ncores = 1, figdir
       ## set the importance sample size
       n_sample <- 2000
       p <- mean(score_diff >= score.p[l])
+      if(p == 0) {
+          p <- 1e-4
+      }
       if(l <= length(allp)) {
         n_sample <- as.integer((1 - p) / p * 100)
       }
