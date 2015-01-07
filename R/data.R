@@ -4,6 +4,7 @@
 #' @docType data
 #' @format A list object.
 #' @author Chandler Zuo zuo@@stat.wisc.edu
+#' @example data(example)
 #' @import testthat
 NULL
 
@@ -17,6 +18,7 @@ NULL
 #' }
 #' @docType data
 #' @format A list object.
+#' @example data(example)
 #' @author Chandler Zuo zuo@@stat.wisc.edu
 NULL
 
@@ -28,6 +30,34 @@ NULL
 #' motif.scores \tab A data.table containing the likelihood scores computed for each SNP and each motif.\cr
 #'}
 #' @docType data
+#' @format A data.table object.
+#' @example data(example)
+#' @author Chandler Zuo zuo@@stat.wisc.edu
+NULL
+
+#' @name motif_encode
+#' @title A motif library provided by the ENCODE consortium.
+#' @description This motif library is obtained from http://compbio.mit.edu/encode-motifs/motifs-toscan.txt.gz.
+#' @example data(encode_motif)
+#' @docType data
 #' @format A list object.
+#' @author Chandler Zuo zuo@@stat.wisc.edu
+NULL
+
+#' @name prior
+#' @title Default stationary distribution for nucleotide sequences in the reference genome.
+#' @description This parameter is fitted using 61bp windowns around the SNPs in the NHGRI catalog.
+#' @example data(default_par)
+#' @docType data
+#' @format A numeric vector.
+#' @author Chandler Zuo zuo@@stat.wisc.edu
+NULL
+
+#' @name transition
+#' @title Default transition probability matrix for nucleotide sequences in the reference genome.
+#' @description This parameter is fitted using 61bp windowns around the SNPs in the NHGRI catalog.
+#' @example data(default_par)
+#' @docType data
+#' @format A 4 by 4 numeric matrix.
 #' @author Chandler Zuo zuo@@stat.wisc.edu
 NULL
