@@ -125,11 +125,11 @@ LoadSNPData <- function(filename, genome.lib = "BSgenome.Hsapiens.UCSC.hg19",
   a1 <- codes[tbl$a1]
   a2 <- codes[tbl$a2]
   names(a1) <- names(a2) <- NULL
-  remove.id <- which(apply(sequences, 2, function(x) sum(is.na(x))) > 0)
+  keep.id <- which(apply(sequences, 2, function(x) sum(is.na(x))) == 0)
   ## remove sequences containing non ACGT characters
-  sequences <- sequences[, -remove.id]
-  a1 <- a1[-remove.id]
-  a2 <- a2[-remove.id]
+  sequences <- sequences[, keep.id]
+  a1 <- a1[keep.id]
+  a2 <- a2[keep.id]
   ## whether use the default parameters
   if(!default.par) {
     transition <- .Call("transition_matrix", sequences, package = "atSNP")
