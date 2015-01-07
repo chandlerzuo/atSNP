@@ -4,9 +4,9 @@
 \name{motif_scores}
 \alias{motif_scores}
 \title{Scores for the sample snp data computed based on the motif data.}
-\format{A list object.}
+\format{A data.table object.}
 \description{
-This list object contains two fields:
+This list object loaded by 'data(example)' contains two fields:
 \tabular{ll}{
 snp.tbl \tab A data.table containing the sequence of nucleobases around each SNP.\cr
 motif.scores \tab A data.table containing the likelihood scores computed for each SNP and each motif.\cr
