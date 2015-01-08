@@ -4,7 +4,8 @@
 \alias{plotMotifMatch}
 \title{Plot sequence logos of the position weight matrix of the motif and sequences of its corresponding best matching augmented subsequence on the reference and SNP allele.}
 \usage{
-plotMotifMatch(snp.tbl, motif.scores, snpid, motif, motif.lib = motif_library)
+plotMotifMatch(snp.tbl, motif.scores, snpid, motif, motif.lib = motif_library,
+  cex.main = 2, ...)
 }
 \arguments{
 \item{snp.tbl}{A data.table with the following information:
@@ -33,6 +34,10 @@ log_reduce_odds \tab Difference in log-likelihood ratio between reference allele
 \item{motif}{A motif to match the sequences with its position weight matrix}
 
 \item{motif.lib}{A list of position weight matrices}
+
+\item{cex.main}{The size of the main title.}
+
+\item{...}{Other parameters passed to plotMotifLogo.}
 }
 \value{
 Sequence logo stacks: Reference subsequences, sequence logo of reference allele matching potision weight matrix, SNP subsequences, sequence logo of SNP allele matching potision weight matrix

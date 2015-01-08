@@ -18,7 +18,7 @@
 #' @author Chandler Zuo \email{zuo@@stat.wisc.edu}
 #' @examples
 #' \dontrun{
-#' pwms <- LoadMotifLibrary("/p/keles/ENCODE-CHARGE/volume1/ENCODE-Motifs/encode_motifs_for_fimo.txt")
+#' pwms <- LoadMotifLibrary("http://meme.nbcr.net/meme/examples/sample-dna-motif.meme-io")
 #' pwms <- LoadMotifLibrary("http://johnsonlab.ucsf.edu/mochi_files/JASPAR_motifs_H_sapiens.txt", tag = "/NAME", skiprows = 1, skipcols = 0, transpose = FALSE, field = 2, sep = "\t")
 #' pwms <- LoadMotifLibrary("http://jaspar.genereg.net/html/DOWNLOAD/JASPAR_CORE/pfm/nonredundant/pfm_vertebrates.txt", tag = ">", skiprows = 1, skipcols = 0, transpose = TRUE, field = 1, sep = "\t", pseudocount = 1)
 #' pwms <- LoadMotifLibrary("http://gibbs.biomed.ucf.edu/PreDREM/download/nonredundantmotif.transfac", tag = "DE", skiprows = 1, skipcols = 1, transpose = FALSE, field = 2, sep = "\t")
@@ -42,12 +42,16 @@ LoadMotifLibrary <- function(filename, tag = "MOTIF", transpose = FALSE, field =
     if(!transpose) {
       pwm <- NULL
       nrows <- 0
-      while(length(tmp <- strsplit(lines[nrows + motifLineNum], split = sep)[[1]]) >= 4 + skipcols) {
+      tmp <- strsplit(lines[nrows + motifLineNum], split = sep)[[1]]
+      tmp <- tmp[nchar(tmp) > 0]
+      while(length(tmp) >= 4 + skipcols) {
         tmp <- as.numeric(tmp[skipcols + seq(4)])
         if(sum(is.na(tmp)) == 0) {
           pwm <- rbind(pwm, tmp)
-          nrows <- nrows + 1
         }
+        nrows <- nrows + 1
+        tmp <- strsplit(lines[nrows + motifLineNum], split = sep)[[1]]
+        tmp <- tmp[nchar(tmp) > 0]
       }
     } else {
       nrows <- 4
