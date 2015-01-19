@@ -19,3 +19,17 @@ CheckSameLength <- function(x) {
   }
   return(var(unlist(sapply(x, length))) == 0)
 }
+
+myStrSplit <- function(x, split) {
+  ret <- list(seq_along(x))
+  for(i in seq_along(x)) {
+    ret[[i]] <- x[i]
+    for(sp in split) {
+      ret[[i]] <- unlist(strsplit(ret[[i]], sp))
+      ret[[i]] <- ret[[i]][nchar(ret[[i]]) > 0]
+      if(length(ret[[i]]) == 0)
+        break
+    }
+  }
+  return(ret)
+}

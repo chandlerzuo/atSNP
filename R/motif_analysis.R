@@ -7,7 +7,7 @@
 #' @param skipcols Number of columns to be skipped in the position weight matrix. 
 #' @param transpose If TRUE (default), then the position weight matrix should have 4 columns. Otherwise, it should have 4 rows.
 #' @param field The index of the field in the description line, seperated by space, that indicates the motif name.
-#' @param sep The string seperator to separate each lines of the matrix. Default: " ".
+#' @param sep A vector of chars for the string separators to parse each lines of the matrix. Default: c(" ", "\t").
 #' @param pseudocount An integer for the pseudocount added to each of the original matrices. Default: 0. Recommended to be 1 if the original matrices are position frequency matrices.
 #' @details This function reads the formatted file containing motif information and convert them into a list of position weight matrices. The list of arguments should provide enough flexibility of importing a varying number of formats. Som eexamples are the following:
 #' For MEME format, the suggested arguments are: tag = 'Motif', skiprows = 2, skipcols = 0, transpose = FALSE, field = 2, sep = " ";
@@ -19,21 +19,22 @@
 #' @examples
 #' \dontrun{
 #' pwms <- LoadMotifLibrary("http://meme.nbcr.net/meme/examples/sample-dna-motif.meme-io")
-#' pwms <- LoadMotifLibrary("http://johnsonlab.ucsf.edu/mochi_files/JASPAR_motifs_H_sapiens.txt", tag = "/NAME", skiprows = 1, skipcols = 0, transpose = FALSE, field = 2, sep = "\t")
-#' pwms <- LoadMotifLibrary("http://jaspar.genereg.net/html/DOWNLOAD/JASPAR_CORE/pfm/nonredundant/pfm_vertebrates.txt", tag = ">", skiprows = 1, skipcols = 0, transpose = TRUE, field = 1, sep = "\t", pseudocount = 1)
+#' pwms <- LoadMotifLibrary("http://johnsonlab.ucsf.edu/mochi_files/JASPAR_motifs_H_sapiens.txt", tag = "/NAME", skiprows = 1, skipcols = 0, transpose = FALSE, field = 2)
+#' pwms <- LoadMotifLibrary("http://jaspar.genereg.net/html/DOWNLOAD/ARCHIVE/JASPAR2010/all_data/matrix_only/matrix.txt", tag = ">", skiprows = 1, skipcols = 1, transpose = TRUE, field = 1, sep = c("\t", " ", "\\[", "\\]", ">"), pseudocount = 1)
+#' pwms <- LoadMotifLibrary("http://jaspar.genereg.net/html/DOWNLOAD/JASPAR_CORE/pfm/nonredundant/pfm_vertebrates.txt", tag = ">", skiprows = 1, skipcols = 0, transpose = TRUE, field = 1, sep = c(">", "\t", " "), pseudocount = 1)
 #' pwms <- LoadMotifLibrary("http://gibbs.biomed.ucf.edu/PreDREM/download/nonredundantmotif.transfac", tag = "DE", skiprows = 1, skipcols = 1, transpose = FALSE, field = 2, sep = "\t")
 #' }
 #' @useDynLib atSNP
 #' @export
-LoadMotifLibrary <- function(filename, tag = "MOTIF", transpose = FALSE, field = 2, sep = " ", skipcols = 0, skiprows = 2, pseudocount = 0) {
+LoadMotifLibrary <- function(filename, tag = "MOTIF", transpose = FALSE, field = 2, sep = c("\t", " "), skipcols = 0, skiprows = 2, pseudocount = 0) {
   lines <- readLines(filename)
   motifLineNums <- grep(tag, lines)
-  if(length(strsplit(lines[motifLineNums[1]], " ")[[1]]) >= field) {
+  if(length(myStrSplit(lines[motifLineNums[1]], sep)[[1]]) >= field) {
     motifnames <-
-      sapply(strsplit(lines[motifLineNums], " "), function(x) x[field])
+      sapply(myStrSplit(lines[motifLineNums], sep), function(x) x[field])
   } else {
     motifnames <-
-      sapply(strsplit(lines[motifLineNums], "\t"), function(x) x[field])
+      sapply(myStrSplit(lines[motifLineNums], sep), function(x) x[field])
   }
   allmats <- as.list(seq_along(motifnames))
   
@@ -42,7 +43,7 @@ LoadMotifLibrary <- function(filename, tag = "MOTIF", transpose = FALSE, field =
     if(!transpose) {
       pwm <- NULL
       nrows <- 0
-      tmp <- strsplit(lines[nrows + motifLineNum], split = sep)[[1]]
+      tmp <- myStrSplit(lines[nrows + motifLineNum], split = sep)[[1]]
       tmp <- tmp[nchar(tmp) > 0]
       while(length(tmp) >= 4 + skipcols) {
         tmp <- as.numeric(tmp[skipcols + seq(4)])
@@ -50,17 +51,17 @@ LoadMotifLibrary <- function(filename, tag = "MOTIF", transpose = FALSE, field =
           pwm <- rbind(pwm, tmp)
         }
         nrows <- nrows + 1
-        tmp <- strsplit(lines[nrows + motifLineNum], split = sep)[[1]]
+        tmp <- myStrSplit(lines[nrows + motifLineNum], split = sep)[[1]]
         tmp <- tmp[nchar(tmp) > 0]
       }
     } else {
       nrows <- 4
       if(skipcols == 0) {
         pwm <-
-          matrix(as.numeric(unlist(strsplit(lines[seq(nrows) + motifLineNum - 1], split = sep))), ncol = 4)
+          matrix(as.numeric(unlist(myStrSplit(lines[seq(nrows) + motifLineNum - 1], split = sep))), ncol = 4)
       } else {
         pwm <-
-          matrix(as.numeric(unlist(sapply(strsplit(lines[seq(nrows) + motifLineNum - 1], split = sep), function(x) x[-seq(skipcols)]))), ncol = 4)
+          matrix(as.numeric(unlist(sapply(myStrSplit(lines[seq(nrows) + motifLineNum - 1], split = sep), function(x) x[-seq(skipcols)]))), ncol = 4)
       }
     }
     pwm <- pwm + pseudocount

@@ -39,8 +39,8 @@ We are working to make the package available through bioconductor. The developin
 
 \begin{Schunk}
 \begin{Sinput}
-> library( devtools )
-> install_github( "chandlerzuo/atSNP" )
+> library(devtools)
+> install_github("chandlerzuo/atSNP")
 \end{Sinput}
 \end{Schunk}
 
@@ -64,20 +64,25 @@ A text file including the PWMs of all motifs can be loaded via the 'LoadMotifLib
 
 \begin{Schunk}
 \begin{Sinput}
-> pwms <- 
-+   LoadMotifLibrary("http://meme.nbcr.net/meme/examples/sample-dna-motif.meme-io")
 > pwms <- LoadMotifLibrary(
-+            "http://johnsonlab.ucsf.edu/mochi_files/JASPAR_motifs_H_sapiens.txt",
-+                          tag = "/NAME", skiprows = 1, skipcols = 0, transpose = FALSE, 
-+                          field = 2, sep = "\t")
++ "http://meme.nbcr.net/meme/examples/sample-dna-motif.meme-io")
 > pwms <- LoadMotifLibrary(
-+ "http://jaspar.genereg.net/html/DOWNLOAD/JASPAR_CORE/pfm/nonredundant/pfm_vertebrates.txt",
-+                          tag = ">", skiprows = 1, skipcols = 0, transpose = TRUE,
-+                          field = 1, sep = "\t")
++  "http://johnsonlab.ucsf.edu/mochi_files/JASPAR_motifs_H_sapiens.txt",
++  tag = "/NAME",skiprows = 1, skipcols = 0, transpose = FALSE,
++  field = 2)
 > pwms <- LoadMotifLibrary(
-+            "http://gibbs.biomed.ucf.edu/PreDREM/download/nonredundantmotif.transfac",
-+                          tag = "DE", skiprows = 1, skipcols = 1, transpose = FALSE,
-+                          field = 2, sep = "\t")
++  "http://jaspar.genereg.net/html/DOWNLOAD/ARCHIVE/JASPAR2010/all_data/matrix_only/matrix.txt", 
++  tag = ">", skiprows = 1, skipcols = 1, transpose = TRUE, 
++  field = 1, sep = c("\t", " ", "\\[", "\\]", ">"),
++  pseudocount = 1)
+> pwms <- LoadMotifLibrary(
++  "http://jaspar.genereg.net/html/DOWNLOAD/JASPAR_CORE/pfm/nonredundant/pfm_vertebrates.txt",
++  tag = ">", skiprows = 1, skipcols = 0, transpose = TRUE, field = 1, 
++  sep = c(">", "\t", " "), pseudocount = 1)
+> pwms <- LoadMotifLibrary(
++  "http://gibbs.biomed.ucf.edu/PreDREM/download/nonredundantmotif.transfac", 
++  tag = "DE", skiprows = 1, skipcols = 1, 
++  transpose = FALSE, field = 2, sep = "\t")
 \end{Sinput}
 \end{Schunk}
 

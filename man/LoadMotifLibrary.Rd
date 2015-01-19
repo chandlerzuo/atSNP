@@ -5,7 +5,7 @@
 \title{Load position weight matrices.}
 \usage{
 LoadMotifLibrary(filename, tag = "MOTIF", transpose = FALSE, field = 2,
-  sep = " ", skipcols = 0, skiprows = 2, pseudocount = 0)
+  sep = c("\\t", " "), skipcols = 0, skiprows = 2, pseudocount = 0)
 }
 \arguments{
 \item{filename}{A file containing MEME format: http://meme.nbcr.net/meme/doc/meme-format.html.}
@@ -16,7 +16,7 @@ LoadMotifLibrary(filename, tag = "MOTIF", transpose = FALSE, field = 2,
 
 \item{field}{The index of the field in the description line, seperated by space, that indicates the motif name.}
 
-\item{sep}{The string seperator to separate each lines of the matrix. Default: " ".}
+\item{sep}{A vector of chars for the string separators to parse each lines of the matrix. Default: c(" ", "\t").}
 
 \item{skipcols}{Number of columns to be skipped in the position weight matrix.}
 
@@ -40,8 +40,9 @@ For the TRANSFAC library provided by UCF bioinformatics groups (i.e. http://gibb
 \examples{
 \dontrun{
 pwms <- LoadMotifLibrary("http://meme.nbcr.net/meme/examples/sample-dna-motif.meme-io")
-pwms <- LoadMotifLibrary("http://johnsonlab.ucsf.edu/mochi_files/JASPAR_motifs_H_sapiens.txt", tag = "/NAME", skiprows = 1, skipcols = 0, transpose = FALSE, field = 2, sep = "\\t")
-pwms <- LoadMotifLibrary("http://jaspar.genereg.net/html/DOWNLOAD/JASPAR_CORE/pfm/nonredundant/pfm_vertebrates.txt", tag = ">", skiprows = 1, skipcols = 0, transpose = TRUE, field = 1, sep = "\\t", pseudocount = 1)
+pwms <- LoadMotifLibrary("http://johnsonlab.ucsf.edu/mochi_files/JASPAR_motifs_H_sapiens.txt", tag = "/NAME", skiprows = 1, skipcols = 0, transpose = FALSE, field = 2)
+pwms <- LoadMotifLibrary("http://jaspar.genereg.net/html/DOWNLOAD/ARCHIVE/JASPAR2010/all_data/matrix_only/matrix.txt", tag = ">", skiprows = 1, skipcols = 1, transpose = TRUE, field = 1, sep = c("\\t", " ", "\\\\[", "\\\\]", ">"), pseudocount = 1)
+pwms <- LoadMotifLibrary("http://jaspar.genereg.net/html/DOWNLOAD/JASPAR_CORE/pfm/nonredundant/pfm_vertebrates.txt", tag = ">", skiprows = 1, skipcols = 0, transpose = TRUE, field = 1, sep = c(">", "\\t", " "), pseudocount = 1)
 pwms <- LoadMotifLibrary("http://gibbs.biomed.ucf.edu/PreDREM/download/nonredundantmotif.transfac", tag = "DE", skiprows = 1, skipcols = 1, transpose = FALSE, field = 2, sep = "\\t")
 }
 }
