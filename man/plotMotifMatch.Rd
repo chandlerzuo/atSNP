@@ -4,8 +4,8 @@
 \alias{plotMotifMatch}
 \title{Plot sequence logos of the position weight matrix of the motif and sequences of its corresponding best matching augmented subsequence on the reference and SNP allele.}
 \usage{
-plotMotifMatch(snp.tbl, motif.scores, snpid, motif, motif.lib = motif_library,
-  cex.main = 2, ...)
+plotMotifMatch(snp.tbl, motif.scores, snpid, motif, motif.lib, cex.main = 2,
+  ...)
 }
 \arguments{
 \item{snp.tbl}{A data.table with the following information:

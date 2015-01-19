@@ -280,7 +280,7 @@ atSNP provides additional functions to extract the matched nucleobase subsequenc
 > match_result <- MatchSubsequence(snp.tbl = motif_scores$snp.tbl,
 +                                  motif.scores = motif.scores,
 +                                  motif.lib = motif_library,
-+                                  snpids = list("rs10910078", "rs4486391"),
++                                  snpids = c("rs10910078", "rs4486391"),
 +                                  motifs = names(motif_library)[1:2],
 +                                  ncores = 2)
 > match_result[, list(snpid, motif, IUPAC, ref_match_seq, snp_match_seq)]
@@ -306,6 +306,7 @@ We can also visualize how each motif is matched to each allele using the 'plotMo
 > plotMotifMatch(snp.tbl = motif_scores$snp.tbl,
 +                motif.scores = motif_scores$motif.scores,
 +                snpid = motif_scores$snp.tbl$snpid[50],
++                motif.lib = motif_library,
 +                motif = motif_scores$motif.scores$motif[1])
 \end{Sinput}
 \end{Schunk}

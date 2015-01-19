@@ -121,7 +121,7 @@ dtMotifMatch<-function(motif.lib, snp.tbl, motif.scores, snpids=NULL, motifs=NUL
 #' plotMotifMatch(motif_scores$snp.tbl, motif_scores$motif.scores, motif_scores$snp.tbl$snpid[50], motif_scores$motif.scores$motif[1])
 #' @import data.table motifStack doMC
 #' @export
-plotMotifMatch<-function(snp.tbl, motif.scores, snpid, motif, motif.lib=motif_library, cex.main = 2, ...) {
+plotMotifMatch<-function(snp.tbl, motif.scores, snpid, motif, motif.lib, cex.main = 2, ...) {
   if (class(snpid) != "character" | length(snpid)!=1) {
     stop("snpid must be a character")
   }

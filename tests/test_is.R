@@ -221,4 +221,10 @@ if(FALSE) {
   plot(p_values_99[, 1], p_values_99[, 5], xlim = c(0, 0.001), ylim = c(0, 0.001))
   abline(0, 0.1)
 
+  test1 <- sapply(seq(1000), function(x) drawonesample(0.01))
+
+  test2 <- sapply(seq(1000), function(x) drawonesample(0.15))
+
+  hist(log(test1[22, ]) / 0.01)
+  hist(log(test2[21, ]) / 0.15)
 }
