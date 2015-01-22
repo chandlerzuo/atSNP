@@ -117,10 +117,10 @@ This data set can be loaded using the 'LoadSNPData' function. The 'genome.lib' a
 <<eval=FALSE, echo=FALSE, results=hide>>=
 LoadSNPData("/p/keles/ENCODE-CHARGE/volume2/SNP/hg19_allinfo.bed",
             genome.lib = "BSgenome.Hsapiens.UCSC.hg19",
-            half.window.size = 30)
+            half.window.size = 30, default.par = FALSE)
 @ 
 
-'LoadSNPData' simultaneously estimates the parameters for the first order Markov model in the reference genome using the nucleotides within the SNP windows. It returns a list object with five fields:
+If 'default.par = FALSE', 'LoadSNPData' simultaneously estimates the parameters for the first order Markov model in the reference genome using the nucleotides within the SNP windows. Otherwise, it loads a set of parameter values pre-fitted from sequences around all the SNPs in the NHGRI GWAS catalog (\cite{nhgri-gwas}). We recommend setting 'default.par = TRUE' when we have fewer than 1000 SNPs. 'LoadSNPData' returns a list object with five fields:
 
 \begin{itemize}
 \item \$sequence\_matrix: a matrix with (2$\times$'half.window.size' + 1), with each column corresponding to one SNP. The entries 1-4 represent the A, C, G, T nucleotides;
@@ -155,14 +155,24 @@ motif_score$motif.scores[, list(snpid, motif, log_lik_ref,
 
 The affinity scores for the reference and the SNP alleles are represented by the 'log\_lik\_ref' and 'log\_lik\_snp' columns in '\$motif.scores'. The affinity score change is included in the 'log\_lik\_ratio' column. These three affinity scores are tested in the subsequent steps. '\$motif.scores' also include other columns for the position of the best matching subsequence on each allele. For a complete description on all these columns, users can look up the help documentation.
 
-After we have computed the binding affinity scores, they can be tested using the 'ComputePValues' function. The result is a data.table extending the affinity score table by three columns: 'pval\_ref' is the p-value for the reference allele affinity score; 'pval\_snp' is the p-value for the SNP allele affinity score; and 'pval\_diff' is the p-value for the affinity score change between the two alleles.
+After we have computed the binding affinity scores, they can be tested using the 'ComputePValues' function. The result is a data.table extending the affinity score table by six columns: 
+
+\begin{itemize}
+  \item 'pval\_ref': p-value for the reference allele affinity score;
+  \item 'pval\_snp': p-value for the SNP allele affinity score;
+  \item 'pval\_cond\_ref' and 'pval\_cond\_snp': conditional p-values for the affinity scores of the reference and SNP alleles;
+  \item 'pval\_diff': p-value for the affinity score change between the two alleles;
+  \item 'pval\_rank': p-value for the rank test between the two alleles.
+  \end{itemize}
+
+We recommend using 'pval\_ref', 'pval\_snp' for assessing the significance of allele specific affinity, and using 'pval\_rank' for assessing the significance of the SNP effect on the affinity change.
 
 <<eval=TRUE,echo=TRUE,results=verbatim>>=
 motif.scores <- ComputePValues(motif.lib = motif_library,
                                snp.info = snpInfo,
                                motif.scores = motif_scores$motif.scores,
                                ncores = 7)
-motif.scores[, list(snpid, motif, pval_ref, pval_snp, pval_diff)]
+motif.scores[, list(snpid, motif, pval_ref, pval_snp, pval_rank, pval_diff)]
 @ 
 
 \subsection{Additional analysis}

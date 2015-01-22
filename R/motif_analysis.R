@@ -1,7 +1,7 @@
 #' @name LoadMotifLibrary
 #' @title Load position weight matrices.
 #' @description Load the file for position weight matrices for motifs.
-#' @param filename A file containing MEME format: http://meme.nbcr.net/meme/doc/meme-format.html.
+#' @param filename A file containing MEME format: http://memed.nbcr.net/meme/doc/meme-format.html.
 #' @param tag A string that marks the description line of the position weight matrix.
 #' @param skiprows Number of description lines before each position weight matrix.
 #' @param skipcols Number of columns to be skipped in the position weight matrix. 
@@ -94,9 +94,11 @@ LoadMotifLibrary <- function(filename, tag = "MOTIF", transpose = FALSE, field =
 #' @param genome.lib A string of the library name for the genome version. Default: "BSgenome.Hsapiens.UCSC.hg19".
 #' @param half.window.size An integer for the half window size around the SNP within which the motifs are matched. Default: 30.
 #' @param default.par A boolean for whether using the default Markov parameters. Default: FALSE.
+#' @param mutation A boolean for whether this is mutation data. See details for more information. Default: FALSE.
 #' @param ... Other parameters passed to 'read.table'.
-#' @details This function extracts the nucleobase sequence within a window around each SNP and code them using 1-A, 2-C, 3-G, 4-T. The sequences are extracted using the Bioconductor annotation package specified by 'genome.lib'. Users should make sure that this annotation package corresponds to the correct species and genome version of the actual data.\cr
-#' This function compares the nucleobase at the SNP location on the reference genome with both a1 and a2 to distinguish between the reference allele and the SNP allele. If the nucleobase extracted from the reference genome does not match either a1 or a2, the SNP is discarded.
+#' @details This function extracts the nucleotide sequence within a window around each SNP and code them using 1-A, 2-C, 3-G, 4-T. The sequences are extracted using the Bioconductor annotation package specified by 'genome.lib'. Users should make sure that this annotation package corresponds to the correct species and genome version of the actual data.\cr
+#' If 'mutation=FALSE' (default), this function assumes that the data is for SNP analysis, and the reference genome should be consistent with either the a1 or a2 nucleotide. When extracting the genome sequence around each SNP position, this function compares the nucleotide at the SNP location on the reference genome with both a1 and a2 to distinguish between the reference allele and the SNP allele. If the nucleotide extracted from the reference genome does not match either a1 or a2, the SNP is discarded.\cr
+#' Alternatively, if 'mutation=TRUE', this function assumes that the data is for general single nucleotide mutation analysis. After extracting the genome sequence around each SNP position, it replaces the nucleotide at the SNP location by the a1 nucleotide as the 'reference' allele sequence, and by the a2 nucleotide as the 'snp' allele sequence. It does NOT discard the sequence even if neither a1 or a2 matches the reference genome. When this data set is used in other functions, such as 'ComputeMotifScore', 'ComputePValues', all the results (i.e. affinity scores and their p-values) for the reference allele are indeed for the a1 allele, and results for the SNP allele are indeed for the a2 allele.
 #' @return A list object containing the following components:
 #' \tabular{ll}{
 #' sequence_matrix \tab A list of integer vectors representing the deroxyribose sequence around each SNP.\cr
@@ -110,7 +112,8 @@ LoadMotifLibrary <- function(filename, tag = "MOTIF", transpose = FALSE, field =
 #' @useDynLib atSNP
 #' @export
 LoadSNPData <- function(filename, genome.lib = "BSgenome.Hsapiens.UCSC.hg19",
-                        half.window.size = 30, default.par = FALSE, ...) {
+                        half.window.size = 30, default.par = FALSE,
+                        mutation = FALSE, ...) {
   ## load the corresponding genome version
   library(package = genome.lib, character.only = TRUE)
   tbl <- read.table(filename, header = TRUE, stringsAsFactors = FALSE, ...)
@@ -132,6 +135,10 @@ LoadSNPData <- function(filename, genome.lib = "BSgenome.Hsapiens.UCSC.hg19",
   a2 <- codes[tbl$a2]
   names(a1) <- names(a2) <- NULL
   keep.id <- which(apply(sequences, 2, function(x) sum(is.na(x))) == 0)
+  if(length(keep.id) < nrow(tbl)) {
+    message("The following rows are discarded because the reference genome sequences contain non ACGT characters:")
+    message(tbl[-keep.id, ])
+  }
   ## remove sequences containing non ACGT characters
   sequences <- sequences[, keep.id]
   a1 <- a1[keep.id]
@@ -146,10 +153,21 @@ LoadSNPData <- function(filename, genome.lib = "BSgenome.Hsapiens.UCSC.hg19",
   } else {
     data(default_par)
   }
-  a1.ref.base.id <- which(a1 == sequences[half.window.size + 1, ])
-  a2.ref.base.id <- which(a2 == sequences[half.window.size + 1, ])
-  ## store SNPs that have the same base in SNP and REF alleles only once
-  a2.ref.base.id <- a2.ref.base.id[!a2.ref.base.id %in% a1.ref.base.id]
+  if(!mutation) {
+    ## real SNP data
+    a1.ref.base.id <- which(a1 == sequences[half.window.size + 1, ])
+    a2.ref.base.id <- which(a2 == sequences[half.window.size + 1, ])
+    ## store SNPs that have the same base in SNP and REF alleles only once
+    a2.ref.base.id <- a2.ref.base.id[!a2.ref.base.id %in% a1.ref.base.id]
+    discard.id <- setdiff(seq_along(a1), c(a1.ref.base.id, a2.ref.base.id))
+    if(length(discard.id) > 0) {
+      message(length(discard.id), "sequences are discarded because the reference nucleotide matches to neither a1 nor a2.")
+    }
+  } else {
+    ## single nucleotide mutation data
+    a1.ref.base.id <- seq_along(a1)
+    a2.ref.base.id <- numeric(0)
+  }
   sequences <- sequences[, c(a1.ref.base.id, a2.ref.base.id)]
   ref.base <- c(a1[a1.ref.base.id], a2[a2.ref.base.id])
   snp.base <- c(a2[a1.ref.base.id], a1[a2.ref.base.id])
@@ -172,10 +190,10 @@ LoadSNPData <- function(filename, genome.lib = "BSgenome.Hsapiens.UCSC.hg19",
 #' @return A list of two data.table's. Field 'snp.tbl' contains:
 #' \tabular{cc}{
 #' snpid \tab SNP id.\cr
-#' ref_seq \tab Reference allele nucleobase sequence.\cr
-#' snp_seq \tab SNP allele nucleobase sequence.\cr
-#' ref_seq_rev \tab Reference allele nucleobase sequence on the reverse strand.\cr
-#' snp_seq_rev \tab SNP allele nucleobase sequence on the reverse strand.\cr}
+#' ref_seq \tab Reference allele nucleotide sequence.\cr
+#' snp_seq \tab SNP allele nucleotide sequence.\cr
+#' ref_seq_rev \tab Reference allele nucleotide sequence on the reverse strand.\cr
+#' snp_seq_rev \tab SNP allele nucleotide sequence on the reverse strand.\cr}
 #' Field 'motif.score' contains:
 #' \tabular{cc}{
 #' motif \tab Name of the motif.\cr
@@ -311,10 +329,10 @@ ComputeMotifScore <- function(motif.lib, snp.info, ncores = 1) {
 #' @param snp.tbl A data.table with the following information:
 #' \tabular{cc}{
 #' snpid \tab SNP id.\cr
-#' ref_seq \tab Reference allele nucleobase sequence.\cr
-#' snp_seq \tab SNP allele nucleobase sequence.\cr
-#' ref_seq_rev \tab Reference allele nucleobase sequence on the reverse strand.\cr
-#' snp_seq_rev \tab SNP allele nucleobase sequence on the reverse strand.\cr}
+#' ref_seq \tab Reference allele nucleotide sequence.\cr
+#' snp_seq \tab SNP allele nucleotide sequence.\cr
+#' ref_seq_rev \tab Reference allele nucleotide sequence on the reverse strand.\cr
+#' snp_seq_rev \tab SNP allele nucleotide sequence on the reverse strand.\cr}
 #' @param motif.scores A data.table with the following information:
 #' \tabular{cc}{
 #' motif \tab Name of the motif.\cr

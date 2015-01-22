@@ -11,10 +11,10 @@ MatchSubsequence(snp.tbl, motif.scores, motif.lib, snpids = NULL,
 \item{snp.tbl}{A data.table with the following information:
 \tabular{cc}{
 snpid \tab SNP id.\cr
-ref_seq \tab Reference allele nucleobase sequence.\cr
-snp_seq \tab SNP allele nucleobase sequence.\cr
-ref_seq_rev \tab Reference allele nucleobase sequence on the reverse strand.\cr
-snp_seq_rev \tab SNP allele nucleobase sequence on the reverse strand.\cr}}
+ref_seq \tab Reference allele nucleotide sequence.\cr
+snp_seq \tab SNP allele nucleotide sequence.\cr
+ref_seq_rev \tab Reference allele nucleotide sequence on the reverse strand.\cr
+snp_seq_rev \tab SNP allele nucleotide sequence on the reverse strand.\cr}}
 
 \item{motif.scores}{A data.table with the following information:
 \tabular{cc}{

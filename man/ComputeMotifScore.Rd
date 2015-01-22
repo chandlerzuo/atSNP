@@ -17,10 +17,10 @@ ComputeMotifScore(motif.lib, snp.info, ncores = 1)
 A list of two data.table's. Field 'snp.tbl' contains:
 \tabular{cc}{
 snpid \tab SNP id.\cr
-ref_seq \tab Reference allele nucleobase sequence.\cr
-snp_seq \tab SNP allele nucleobase sequence.\cr
-ref_seq_rev \tab Reference allele nucleobase sequence on the reverse strand.\cr
-snp_seq_rev \tab SNP allele nucleobase sequence on the reverse strand.\cr}
+ref_seq \tab Reference allele nucleotide sequence.\cr
+snp_seq \tab SNP allele nucleotide sequence.\cr
+ref_seq_rev \tab Reference allele nucleotide sequence on the reverse strand.\cr
+snp_seq_rev \tab SNP allele nucleotide sequence on the reverse strand.\cr}
 Field 'motif.score' contains:
 \tabular{cc}{
 motif \tab Name of the motif.\cr

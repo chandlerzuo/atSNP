@@ -8,7 +8,7 @@ LoadMotifLibrary(filename, tag = "MOTIF", transpose = FALSE, field = 2,
   sep = c("\\t", " "), skipcols = 0, skiprows = 2, pseudocount = 0)
 }
 \arguments{
-\item{filename}{A file containing MEME format: http://meme.nbcr.net/meme/doc/meme-format.html.}
+\item{filename}{A file containing MEME format: http://memed.nbcr.net/meme/doc/meme-format.html.}
 
 \item{tag}{A string that marks the description line of the position weight matrix.}
 

@@ -187,7 +187,7 @@ The data set for the SNP information must be a table including five columns:
 This data set can be loaded using the 'LoadSNPData' function. The 'genome.lib' argument specifies the annotation package name corresponding to the SNP data set, with the default as 'BSgenome.Hsapiens.UCSC.hg19'. Each side of the SNP is extended by a number of base pairs specified by the 'half.window.size' argument. 'LoadSNPData' extracts the genome sequence within such windows around each SNP using the 'genome.lib' package. An example is the following:
 
 
-'LoadSNPData' simultaneously estimates the parameters for the first order Markov model in the reference genome using the nucleotides within the SNP windows. It returns a list object with five fields:
+If 'default.par = FALSE', 'LoadSNPData' simultaneously estimates the parameters for the first order Markov model in the reference genome using the nucleotides within the SNP windows. Otherwise, it loads a set of parameter values pre-fitted from sequences around all the SNPs in the NHGRI GWAS catalog (\cite{nhgri-gwas}). We recommend setting 'default.par = TRUE' when we have fewer than 1000 SNPs. 'LoadSNPData' returns a list object with five fields:
 
 \begin{itemize}
 \item \$sequence\_matrix: a matrix with (2$\times$'half.window.size' + 1), with each column corresponding to one SNP. The entries 1-4 represent the A, C, G, T nucleotides;
@@ -331,7 +331,17 @@ The binding affinity scores for all pairs of SNP and PWM can be computed by the 
 
 The affinity scores for the reference and the SNP alleles are represented by the 'log\_lik\_ref' and 'log\_lik\_snp' columns in '\$motif.scores'. The affinity score change is included in the 'log\_lik\_ratio' column. These three affinity scores are tested in the subsequent steps. '\$motif.scores' also include other columns for the position of the best matching subsequence on each allele. For a complete description on all these columns, users can look up the help documentation.
 
-After we have computed the binding affinity scores, they can be tested using the 'ComputePValues' function. The result is a data.table extending the affinity score table by three columns: 'pval\_ref' is the p-value for the reference allele affinity score; 'pval\_snp' is the p-value for the SNP allele affinity score; and 'pval\_diff' is the p-value for the affinity score change between the two alleles.
+After we have computed the binding affinity scores, they can be tested using the 'ComputePValues' function. The result is a data.table extending the affinity score table by six columns: 
+
+\begin{itemize}
+  \item 'pval\_ref': p-value for the reference allele affinity score;
+  \item 'pval\_snp': p-value for the SNP allele affinity score;
+  \item 'pval\_cond\_ref' and 'pval\_cond\_snp': conditional p-values for the affinity scores of the reference and SNP alleles;
+  \item 'pval\_diff': p-value for the affinity score change between the two alleles;
+  \item 'pval\_rank': p-value for the rank test between the two alleles.
+  \end{itemize}
+
+We recommend using 'pval\_ref', 'pval\_snp' for assessing the significance of allele specific affinity, and using 'pval\_rank' for assessing the significance of the SNP effect on the affinity change.
 
 \begin{Schunk}
 \begin{Sinput}
@@ -339,21 +349,21 @@ After we have computed the binding affinity scores, they can be tested using the
 +                                snp.info = snpInfo,
 +                                motif.scores = motif_scores$motif.scores,
 +                                ncores = 7)
-> motif.scores[, list(snpid, motif, pval_ref, pval_snp, pval_diff)]
+> motif.scores[, list(snpid, motif, pval_ref, pval_snp, pval_rank, pval_diff)]
 \end{Sinput}
 \begin{Soutput}
-            snpid     motif  pval_ref   pval_snp  pval_diff
-    1: rs10910078     AFP_1 0.9776495 0.96265483 0.77254685
-    2:  rs4486391     AFP_1 0.3767000 0.76858447 0.25680145
-    3:  rs3748816     AFP_1 0.4267265 0.90817363 0.08460265
-    4:  rs2843401     AFP_1 0.9911095 0.99822551 0.58550863
-    5:  rs2843402     AFP_1 0.7636040 0.80776942 0.86817355
-   ---                                                     
-13975:  rs3003207 SRF_disc1 0.2372302 0.24653492 0.66522050
-13976:  rs1173830 SRF_disc1 0.2673992 0.26739919 1.00000000
-13977:   rs654873 SRF_disc1 0.2618610 0.05817295 0.25026857
-13978:  rs1768071 SRF_disc1 0.7770457 0.69299844 0.68555718
-13979:  rs1538961 SRF_disc1 0.6604981 0.24653492 0.03966129
+            snpid     motif  pval_ref   pval_snp  pval_rank  pval_diff
+    1: rs10910078     AFP_1 0.9776495 0.96265483 0.87905728 0.77254685
+    2:  rs4486391     AFP_1 0.3767000 0.76858447 0.30101164 0.25680145
+    3:  rs3748816     AFP_1 0.4267265 0.90817363 0.28624944 0.08460265
+    4:  rs2843401     AFP_1 0.9911095 0.99822551 0.89524475 0.58550863
+    5:  rs2843402     AFP_1 0.7636040 0.80776942 0.82713921 0.86817355
+   ---                                                                
+13975:  rs3003207 SRF_disc1 0.2372302 0.24653492 0.76685914 0.66522050
+13976:  rs1173830 SRF_disc1 0.2673992 0.26739919 1.00000000 1.00000000
+13977:   rs654873 SRF_disc1 0.2618610 0.05817295 0.04413835 0.25026857
+13978:  rs1768071 SRF_disc1 0.7770457 0.69299844 0.67095930 0.68555718
+13979:  rs1538961 SRF_disc1 0.6604981 0.24653492 0.17069042 0.03966129
 \end{Soutput}
 \end{Schunk}
 

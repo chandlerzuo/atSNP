@@ -5,7 +5,7 @@
 \title{Load the SNP information and code the genome sequences around the SNP locations.}
 \usage{
 LoadSNPData(filename, genome.lib = "BSgenome.Hsapiens.UCSC.hg19",
-  half.window.size = 30, default.par = FALSE, ...)
+  half.window.size = 30, default.par = FALSE, mutation = FALSE, ...)
 }
 \arguments{
 \item{filename}{A table containing the SNP information. Must contain at least five columns with exactly the following names:
@@ -23,6 +23,8 @@ a2 \tab The deoxyribose at the SNP genome.\cr
 
 \item{default.par}{A boolean for whether using the default Markov parameters. Default: FALSE.}
 
+\item{mutation}{A boolean for whether this is mutation data. See details for more information. Default: FALSE.}
+
 \item{...}{Other parameters passed to 'read.table'.}
 }
 \value{
@@ -38,8 +40,9 @@ The results are coded as: "A"-1, "C"-2, "G"-3, "T"-4.
 Load the SNP data.
 }
 \details{
-This function extracts the nucleobase sequence within a window around each SNP and code them using 1-A, 2-C, 3-G, 4-T. The sequences are extracted using the Bioconductor annotation package specified by 'genome.lib'. Users should make sure that this annotation package corresponds to the correct species and genome version of the actual data.\cr
-This function compares the nucleobase at the SNP location on the reference genome with both a1 and a2 to distinguish between the reference allele and the SNP allele. If the nucleobase extracted from the reference genome does not match either a1 or a2, the SNP is discarded.
+This function extracts the nucleotide sequence within a window around each SNP and code them using 1-A, 2-C, 3-G, 4-T. The sequences are extracted using the Bioconductor annotation package specified by 'genome.lib'. Users should make sure that this annotation package corresponds to the correct species and genome version of the actual data.\cr
+If 'mutation=FALSE' (default), this function assumes that the data is for SNP analysis, and the reference genome should be consistent with either the a1 or a2 nucleotide. When extracting the genome sequence around each SNP position, this function compares the nucleotide at the SNP location on the reference genome with both a1 and a2 to distinguish between the reference allele and the SNP allele. If the nucleotide extracted from the reference genome does not match either a1 or a2, the SNP is discarded.\cr
+Alternatively, if 'mutation=TRUE', this function assumes that the data is for general single nucleotide mutation analysis. After extracting the genome sequence around each SNP position, it replaces the nucleotide at the SNP location by the a1 nucleotide as the 'reference' allele sequence, and by the a2 nucleotide as the 'snp' allele sequence. It does NOT discard the sequence even if neither a1 or a2 matches the reference genome. When this data set is used in other functions, such as 'ComputeMotifScore', 'ComputePValues', all the results (i.e. affinity scores and their p-values) for the reference allele are indeed for the a1 allele, and results for the SNP allele are indeed for the a2 allele.
 }
 \examples{
 \dontrun{LoadSNPData("/p/keles/ENCODE-CHARGE/volume2/SNP/hg19_allinfo.bed")}
