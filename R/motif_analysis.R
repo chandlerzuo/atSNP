@@ -83,7 +83,7 @@ LoadMotifLibrary <- function(filename, tag = "MOTIF", transpose = FALSE, field =
 #' @name LoadSNPData
 #' @title Load the SNP information and code the genome sequences around the SNP locations.
 #' @description Load the SNP data.
-#' @param filename A table containing the SNP information. Must contain at least four columns:
+#' @param filename A table containing the SNP information. Must contain at least five columns with exactly the following names:
 #' \tabular{ll}{
 #' chr \tab chromosome.\cr
 #' snp \tab The nucleotide position of the SNP.\cr
@@ -432,7 +432,7 @@ MatchSubsequence <- function(snp.tbl, motif.scores, motif.lib, snpids = NULL, mo
 }
 
 #' @name ComputePValues
-#' @title Compute p values.
+#' @title Compute p-values for affinity scores.
 #' @description This function computes the p-values for allele-specific affinity scores and between-allele affinity score changes using the importance sampling technique.
 #' @param motif.lib A list object with the output format of function 'LoadMotifLibrary'.
 #' @param snp.info A list object with the output format of function 'LoadSNPData'.
@@ -446,10 +446,12 @@ MatchSubsequence <- function(snp.tbl, motif.scores, motif.lib, snpids = NULL, mo
 #' @param figdir A string for the path to print p-value plots for monitoring results. Default: NULL (no figure).
 #' @return A data.table extending 'motif.scores' by the following additional columns:
 #' \tabular{ll}{
-#' pval_ref \tab P values for scores on the reference allele.\cr
-#' pval_snp \tab P values for scores on the SNP allele.\cr
-#' pval_diff \tab P values for the difference in scores between the reference and the SNP alleles.\cr
-#' pval_rank \tab P values for the log rank ratio between the reference and the SNP alleles.\cr
+#' pval_ref \tab P-values for scores on the reference allele.\cr
+#' pval_snp \tab P-values for scores on the SNP allele.\cr
+#' pval_cond_ref \tab Conditional p-values for scores on the reference allele.\cr
+#' pval_cond_snp \tab Conditional p-values for scores on the SNP allele.\cr
+#' pval_diff \tab P-values for the difference in scores between the reference and the SNP alleles.\cr
+#' pval_rank \tab P-values for the log rank ratio between the reference and the SNP alleles.\cr
 #' }
 #' @author Chandler Zuo\email{zuo@@stat.wisc.edu}
 #' @examples

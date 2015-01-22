@@ -33,10 +33,18 @@ NULL
 NULL
 
 #' @name motif_encode
-#' @title A motif library provided by the ENCODE consortium.
-#' @description This motif library is obtained from http://compbio.mit.edu/encode-motifs/motifs-toscan.txt.gz. Loaded by 'data(encode_motif)'.
+#' @title A motif library containing 2065 motifs downloaded from http://compbio.mit.edu/encode-motifs/motifs.txt.
+#' @description This motif library can be loaded by 'data(encode_motif)'.
 #' @docType data
 #' @format A list object.
+#' @author Chandler Zuo zuo@@stat.wisc.edu
+NULL
+
+#' @name motif_info
+#' @title The information for the motif library downloaded from http://compbio.mit.edu/encode-motifs/motifs.txt.
+#' @description This is a character vector that be loaded by 'data(encode_motif)'. The names of this vector are the same as the names for 'motif_encode'. The entries of this vector are the corresponding motif information parsed from the raw file.
+#' @docType data
+#' @format A character vector.
 #' @author Chandler Zuo zuo@@stat.wisc.edu
 NULL
 

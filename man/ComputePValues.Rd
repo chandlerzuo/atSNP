@@ -2,7 +2,7 @@
 % Please edit documentation in R/motif_analysis.R
 \name{ComputePValues}
 \alias{ComputePValues}
-\title{Compute p values.}
+\title{Compute p-values for affinity scores.}
 \usage{
 ComputePValues(motif.lib, snp.info, motif.scores, ncores = 1, figdir = NULL)
 }
@@ -25,10 +25,12 @@ log_lik_snp \tab The log-likelihood score for the SNP allele.\cr
 \value{
 A data.table extending 'motif.scores' by the following additional columns:
 \tabular{ll}{
-pval_ref \tab P values for scores on the reference allele.\cr
-pval_snp \tab P values for scores on the SNP allele.\cr
-pval_diff \tab P values for the difference in scores between the reference and the SNP alleles.\cr
-pval_rank \tab P values for the log rank ratio between the reference and the SNP alleles.\cr
+pval_ref \tab P-values for scores on the reference allele.\cr
+pval_snp \tab P-values for scores on the SNP allele.\cr
+pval_cond_ref \tab Conditional p-values for scores on the reference allele.\cr
+pval_cond_snp \tab Conditional p-values for scores on the SNP allele.\cr
+pval_diff \tab P-values for the difference in scores between the reference and the SNP alleles.\cr
+pval_rank \tab P-values for the log rank ratio between the reference and the SNP alleles.\cr
 }
 }
 \description{

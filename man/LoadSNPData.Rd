@@ -8,7 +8,7 @@ LoadSNPData(filename, genome.lib = "BSgenome.Hsapiens.UCSC.hg19",
   half.window.size = 30, default.par = FALSE, ...)
 }
 \arguments{
-\item{filename}{A table containing the SNP information. Must contain at least four columns:
+\item{filename}{A table containing the SNP information. Must contain at least five columns with exactly the following names:
 \tabular{ll}{
 chr \tab chromosome.\cr
 snp \tab The nucleotide position of the SNP.\cr

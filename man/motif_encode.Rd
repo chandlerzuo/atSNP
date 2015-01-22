@@ -3,10 +3,10 @@
 \docType{data}
 \name{motif_encode}
 \alias{motif_encode}
-\title{A motif library provided by the ENCODE consortium.}
+\title{A motif library containing 2065 motifs downloaded from http://compbio.mit.edu/encode-motifs/motifs.txt.}
 \format{A list object.}
 \description{
-This motif library is obtained from http://compbio.mit.edu/encode-motifs/motifs-toscan.txt.gz. Loaded by 'data(encode_motif)'.
+This motif library can be loaded by 'data(encode_motif)'.
 }
 \author{
 Chandler Zuo zuo@stat.wisc.edu

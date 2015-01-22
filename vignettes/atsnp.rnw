@@ -58,7 +58,23 @@ In addition, users also need to install the annotation package from \url{www.bio
 
 \subsection{Load motif and SNP data}
 
-A text file including the PWMs of all motifs can be loaded via the 'LoadMotifLibrary' function. In this function, 'tag' specifies the string that marks the start of each block of PWM; 'skiprows' is the number of description lines before the PWM; 'skipcols' is the number of columns to be skipped in the PWM matrix; 'transpose' is TRUE if the PWM has 4 rows representing A, C, G, T or FALSE if otherwise; 'field' is the position of the motif name within the description line; 'sep' is the separator in the PWM. These arguments provide the flexibility of loading a number of varying formatted files. The PWMs are returned as a list object. Some examples are the following:
+\texttt{atSNP} provdes a default motif library downloaded from \url{compbio.mit.edu/encode-motifs/motifs.txt}. This library contains 2065 known and discovered motifs from ENCODE TF ChIP-seq data sets. The following commands allow you to load this motif library:
+
+<<eval=TRUE, echo=TRUE, results = verbatim>>=
+library(atSNP)
+data(encode_motif)
+length(motif_encode)
+motif_encode[seq(3)]
+@ 
+
+The data object 'encode\_motif' also contains a character vector 'motif\_info' that contains detailed information for each motif:
+
+<<eval=TRUE, echo=TRUE, results = verbatim>>=
+length(motif_info)
+head(motif_info)
+@ 
+
+Users can also provide a list of PWMs as the motif library via the 'LoadMotifLibrary' function. In this function, 'tag' specifies the string that marks the start of each block of PWM; 'skiprows' is the number of description lines before the PWM; 'skipcols' is the number of columns to be skipped in the PWM matrix; 'transpose' is TRUE if the PWM has 4 rows representing A, C, G, T or FALSE if otherwise; 'field' is the position of the motif name within the description line; 'sep' is a vector of separators in the PWM; 'pseudocount' is the number added to the raw matrices, recommended to be 1 if the matrices are in fact position frequency matrices. These arguments provide the flexibility of loading a number of varying formatted files. The PWMs are returned as a list object. This function flexibly adaps to a variety of different formats. Some examples using online accessible files from other research groups are shown below.
 
 <<eval=FALSE, echo=TRUE, results=hide>>=
 pwms <- LoadMotifLibrary(
@@ -93,7 +109,7 @@ The data set for the SNP information must be a table including five columns:
 \item chr: the chromosome ID;
 \item snp: the genome coordinate of the SNP;
 \item snpid: the string for the SNP name;
-\item a1, a2: nucleobases for the two alleles at the SNP position.
+\item a1, a2: nucleotides for the two alleles at the SNP position.
 \end{itemize}
   
 This data set can be loaded using the 'LoadSNPData' function. The 'genome.lib' argument specifies the annotation package name corresponding to the SNP data set, with the default as 'BSgenome.Hsapiens.UCSC.hg19'. Each side of the SNP is extended by a number of base pairs specified by the 'half.window.size' argument. 'LoadSNPData' extracts the genome sequence within such windows around each SNP using the 'genome.lib' package. An example is the following:
@@ -104,28 +120,31 @@ LoadSNPData("/p/keles/ENCODE-CHARGE/volume2/SNP/hg19_allinfo.bed",
             half.window.size = 30)
 @ 
 
-'LoadSNPData' simultaneously estimates the parameters for the first order Markov model in the reference genome using the nucleobases within the SNP windows. It returns a list object with five fields:
+'LoadSNPData' simultaneously estimates the parameters for the first order Markov model in the reference genome using the nucleotides within the SNP windows. It returns a list object with five fields:
 
 \begin{itemize}
-\item \$sequence\_matrix: a matrix with (2$\times$'half.window.size' + 1), with each column corresponding to one SNP. The entries 1-4 represent the A, C, G, T nucleobases;
-\item \$ref\_base: a vector coding the reference allele nucleobases for all SNPs;
-\item \$snp\_base: a vector coding the SNP allele nucleobases for all SNPs;
+\item \$sequence\_matrix: a matrix with (2$\times$'half.window.size' + 1), with each column corresponding to one SNP. The entries 1-4 represent the A, C, G, T nucleotides;
+\item \$ref\_base: a vector coding the reference allele nucleotides for all SNPs;
+\item \$snp\_base: a vector coding the SNP allele nucleotides for all SNPs;
 \item \$prior: the stationary distribution parameters for the Markov model;
 \item \$transition: the transition matrix for the first order Markov model.
 \end{itemize}
 
-A sample data set including a preloaded motif library and a SNP set is included in the package:
+A toy sample data set including a preloaded motif library and a SNP set is included in the package:
 
 <<eval=TRUE, echo=TRUE, results=verbatim>>=
-library(atSNP)
 data(example)
 names(motif_library)
 str(snpInfo)
+## to look at the motif information
+data(encode_motif)
+motif_info[names(motif_library)]
 @ 
+
 
 \subsection{Affinity score tests}
 
-The binding affinity scores for all pairs of SNP and PWM can be computed by the 'ComputeMotifScore' function. It returns a list of two fields: 'snp.tbl' is a data.table containing the nucleobase sequences for each SNP; 'motif.scores' is a data.table containing the binding affinity scores for each SNP-motif pair.
+The binding affinity scores for all pairs of SNP and PWM can be computed by the 'ComputeMotifScore' function. It returns a list of two fields: 'snp.tbl' is a data.table containing the nucleotide sequences for each SNP; 'motif.scores' is a data.table containing the binding affinity scores for each SNP-motif pair.
 
 <<eval=TRUE, echo=TRUE, results=verbatim>>=
 motif_score <- ComputeMotifScore(motif_library, snpInfo, ncores = 2)
@@ -148,7 +167,7 @@ motif.scores[, list(snpid, motif, pval_ref, pval_snp, pval_diff)]
 
 \subsection{Additional analysis}
 
-atSNP provides additional functions to extract the matched nucleobase subsequences that match to the motifs. Function 'MatchSubsequence' adds the subsequence matches to the affinity score table by using the motif library and the SNP set. The subsequences matching to the motif in the two alleles are returned in the 'ref\_match\_seq' and 'snp\_match\_seq' columns. The 'IUPAC' column returns the IUPAC letters of the motifs. Notice that if you have a large number of SNPs and motifs, the returned table can be very large.
+atSNP provides additional functions to extract the matched nucleotide subsequences that match to the motifs. Function 'MatchSubsequence' adds the subsequence matches to the affinity score table by using the motif library and the SNP set. The subsequences matching to the motif in the two alleles are returned in the 'ref\_match\_seq' and 'snp\_match\_seq' columns. The 'IUPAC' column returns the IUPAC letters of the motifs. Notice that if you have a large number of SNPs and motifs, the returned table can be very large.
 
 <<eval=TRUE,echo=TRUE,results=verbatim>>=
 match_result <- MatchSubsequence(snp.tbl = motif_scores$snp.tbl,

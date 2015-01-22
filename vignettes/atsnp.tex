@@ -60,7 +60,91 @@ In addition, users also need to install the annotation package from \url{www.bio
 
 \subsection{Load motif and SNP data}
 
-A text file including the PWMs of all motifs can be loaded via the 'LoadMotifLibrary' function. In this function, 'tag' specifies the string that marks the start of each block of PWM; 'skiprows' is the number of description lines before the PWM; 'skipcols' is the number of columns to be skipped in the PWM matrix; 'transpose' is TRUE if the PWM has 4 rows representing A, C, G, T or FALSE if otherwise; 'field' is the position of the motif name within the description line; 'sep' is the separator in the PWM. These arguments provide the flexibility of loading a number of varying formatted files. The PWMs are returned as a list object. Some examples are the following:
+\texttt{atSNP} provdes a default motif library downloaded from \url{compbio.mit.edu/encode-motifs/motifs.txt}. This library contains 2065 known and discovered motifs from ENCODE TF ChIP-seq data sets. The following commands allow you to load this motif library:
+
+\begin{Schunk}
+\begin{Sinput}
+> library(atSNP)
+> data(encode_motif)
+> length(motif_encode)
+\end{Sinput}
+\begin{Soutput}
+[1] 2065
+\end{Soutput}
+\begin{Sinput}
+> motif_encode[seq(3)]
+\end{Sinput}
+\begin{Soutput}
+$SIX5_disc1
+             [,1]       [,2]     [,3]        [,4]
+ [1,] 8.51100e-03 4.2550e-03 0.987234 1.00000e-10
+ [2,] 9.02127e-01 1.2766e-02 0.038298 4.68090e-02
+ [3,] 4.55319e-01 7.2340e-02 0.344681 1.27660e-01
+ [4,] 2.51064e-01 8.5106e-02 0.085106 5.78724e-01
+ [5,] 1.00000e-10 4.6809e-02 0.012766 9.40425e-01
+ [6,] 1.00000e-10 1.0000e-10 1.000000 1.00000e-10
+ [7,] 3.82980e-02 2.1277e-02 0.029787 9.10638e-01
+ [8,] 9.44681e-01 4.2550e-03 0.051064 1.00000e-10
+ [9,] 1.00000e-10 1.0000e-10 1.000000 1.00000e-10
+[10,] 1.00000e-10 1.0000e-10 0.012766 9.87234e-01
+
+$MYC_disc1
+             [,1]        [,2]        [,3]        [,4]
+ [1,] 1.73516e-01 1.05023e-01 7.21461e-01 1.00000e-10
+ [2,] 1.00000e-10 1.00000e-10 1.00000e-10 1.00000e+00
+ [3,] 1.00000e-10 1.00000e+00 1.00000e-10 1.00000e-10
+ [4,] 1.00000e+00 1.00000e-10 1.00000e-10 1.00000e-10
+ [5,] 1.00000e-10 9.58904e-01 1.00000e-10 4.10960e-02
+ [6,] 5.93610e-02 1.00000e-10 9.40639e-01 1.00000e-10
+ [7,] 1.00000e-10 1.00000e-10 1.00000e-10 1.00000e+00
+ [8,] 1.00000e-10 1.00000e-10 1.00000e+00 1.00000e-10
+ [9,] 1.00000e+00 1.00000e-10 1.00000e-10 1.00000e-10
+[10,] 1.00000e-10 7.26028e-01 1.14155e-01 1.59817e-01
+
+$SRF_disc1
+             [,1]  [,2]  [,3]        [,4]
+ [1,] 1.00000e-10 1e+00 1e-10 1.00000e-10
+ [2,] 1.00000e-10 1e+00 1e-10 1.00000e-10
+ [3,] 4.95495e-01 1e-10 1e-10 5.04505e-01
+ [4,] 2.61261e-01 1e-10 1e-10 7.38739e-01
+ [5,] 1.00000e+00 1e-10 1e-10 1.00000e-10
+ [6,] 1.00000e-10 1e-10 1e-10 1.00000e+00
+ [7,] 7.29730e-01 1e-10 1e-10 2.70270e-01
+ [8,] 5.04505e-01 1e-10 1e-10 4.95495e-01
+ [9,] 1.00000e-10 1e-10 1e+00 1.00000e-10
+[10,] 1.00000e-10 1e-10 1e+00 1.00000e-10
+\end{Soutput}
+\end{Schunk}
+
+The data object 'encode\_motif' also contains a character vector 'motif\_info' that contains detailed information for each motif:
+
+\begin{Schunk}
+\begin{Sinput}
+> length(motif_info)
+\end{Sinput}
+\begin{Soutput}
+[1] 2065
+\end{Soutput}
+\begin{Sinput}
+> head(motif_info)
+\end{Sinput}
+\begin{Soutput}
+                                                SIX5_disc1 
+  "SIX5_GM12878_encode-Myers_seq_hsa_r1:MEME#1#Intergenic" 
+                                                 MYC_disc1 
+  "USF2_K562_encode-Snyder_seq_hsa_r1:MDscan#1#Intergenic" 
+                                                 SRF_disc1 
+ "SRF_H1-hESC_encode-Myers_seq_hsa_r1:MDscan#2#Intergenic" 
+                                                 AP1_disc1 
+    "JUND_K562_encode-Snyder_seq_hsa_r1:MEME#1#Intergenic" 
+                                                SIX5_disc2 
+"SIX5_H1-hESC_encode-Myers_seq_hsa_r1:MDscan#1#Intergenic" 
+                                                 NFY_disc1 
+    "NFYA_K562_encode-Snyder_seq_hsa_r1:MEME#2#Intergenic" 
+\end{Soutput}
+\end{Schunk}
+
+Users can also provide a list of PWMs as the motif library via the 'LoadMotifLibrary' function. In this function, 'tag' specifies the string that marks the start of each block of PWM; 'skiprows' is the number of description lines before the PWM; 'skipcols' is the number of columns to be skipped in the PWM matrix; 'transpose' is TRUE if the PWM has 4 rows representing A, C, G, T or FALSE if otherwise; 'field' is the position of the motif name within the description line; 'sep' is a vector of separators in the PWM; 'pseudocount' is the number added to the raw matrices, recommended to be 1 if the matrices are in fact position frequency matrices. These arguments provide the flexibility of loading a number of varying formatted files. The PWMs are returned as a list object. This function flexibly adaps to a variety of different formats. Some examples using online accessible files from other research groups are shown below.
 
 \begin{Schunk}
 \begin{Sinput}
@@ -97,38 +181,32 @@ The data set for the SNP information must be a table including five columns:
 \item chr: the chromosome ID;
 \item snp: the genome coordinate of the SNP;
 \item snpid: the string for the SNP name;
-\item a1, a2: nucleobases for the two alleles at the SNP position.
+\item a1, a2: nucleotides for the two alleles at the SNP position.
 \end{itemize}
   
 This data set can be loaded using the 'LoadSNPData' function. The 'genome.lib' argument specifies the annotation package name corresponding to the SNP data set, with the default as 'BSgenome.Hsapiens.UCSC.hg19'. Each side of the SNP is extended by a number of base pairs specified by the 'half.window.size' argument. 'LoadSNPData' extracts the genome sequence within such windows around each SNP using the 'genome.lib' package. An example is the following:
 
 
-'LoadSNPData' simultaneously estimates the parameters for the first order Markov model in the reference genome using the nucleobases within the SNP windows. It returns a list object with five fields:
+'LoadSNPData' simultaneously estimates the parameters for the first order Markov model in the reference genome using the nucleotides within the SNP windows. It returns a list object with five fields:
 
 \begin{itemize}
-\item \$sequence\_matrix: a matrix with (2$\times$'half.window.size' + 1), with each column corresponding to one SNP. The entries 1-4 represent the A, C, G, T nucleobases;
-\item \$ref\_base: a vector coding the reference allele nucleobases for all SNPs;
-\item \$snp\_base: a vector coding the SNP allele nucleobases for all SNPs;
+\item \$sequence\_matrix: a matrix with (2$\times$'half.window.size' + 1), with each column corresponding to one SNP. The entries 1-4 represent the A, C, G, T nucleotides;
+\item \$ref\_base: a vector coding the reference allele nucleotides for all SNPs;
+\item \$snp\_base: a vector coding the SNP allele nucleotides for all SNPs;
 \item \$prior: the stationary distribution parameters for the Markov model;
 \item \$transition: the transition matrix for the first order Markov model.
 \end{itemize}
 
-A sample data set including a preloaded motif library and a SNP set is included in the package:
+A toy sample data set including a preloaded motif library and a SNP set is included in the package:
 
 \begin{Schunk}
 \begin{Sinput}
-> library(atSNP)
 > data(example)
 > names(motif_library)
 \end{Sinput}
 \begin{Soutput}
-[1] "SIX5_GM12878_encode-Myers_seq_hsa_r1:MEME#1#Intergenic"  
-[2] "USF2_K562_encode-Snyder_seq_hsa_r1:MDscan#1#Intergenic"  
-[3] "SRF_H1-hESC_encode-Myers_seq_hsa_r1:MDscan#2#Intergenic" 
-[4] "JUND_K562_encode-Snyder_seq_hsa_r1:MEME#1#Intergenic"    
-[5] "SIX5_H1-hESC_encode-Myers_seq_hsa_r1:MDscan#1#Intergenic"
-[6] "ALX3_jolma_DBD_M449"                                     
-[7] "AFP1_transfac_M00616"                                    
+[1] "SIX5_disc1" "MYC_disc1"  "SRF_disc1"  "AP1_disc1"  "SIX5_disc2"
+[6] "ALX3_2"     "AFP_1"     
 \end{Soutput}
 \begin{Sinput}
 > str(snpInfo)
@@ -148,11 +226,33 @@ List of 5
  $ prior          : Named num [1:4] 0.289 0.207 0.207 0.297
   ..- attr(*, "names")= chr [1:4] "A" "C" "G" "T"
 \end{Soutput}
+\begin{Sinput}
+> ## to look at the motif information
+> data(encode_motif)
+> motif_info[names(motif_library)]
+\end{Sinput}
+\begin{Soutput}
+                                                SIX5_disc1 
+  "SIX5_GM12878_encode-Myers_seq_hsa_r1:MEME#1#Intergenic" 
+                                                 MYC_disc1 
+  "USF2_K562_encode-Snyder_seq_hsa_r1:MDscan#1#Intergenic" 
+                                                 SRF_disc1 
+ "SRF_H1-hESC_encode-Myers_seq_hsa_r1:MDscan#2#Intergenic" 
+                                                 AP1_disc1 
+    "JUND_K562_encode-Snyder_seq_hsa_r1:MEME#1#Intergenic" 
+                                                SIX5_disc2 
+"SIX5_H1-hESC_encode-Myers_seq_hsa_r1:MDscan#1#Intergenic" 
+                                                    ALX3_2 
+                                     "ALX3_jolma_DBD_M449" 
+                                                     AFP_1 
+                                    "AFP1_transfac_M00616" 
+\end{Soutput}
 \end{Schunk}
+
 
 \subsection{Affinity score tests}
 
-The binding affinity scores for all pairs of SNP and PWM can be computed by the 'ComputeMotifScore' function. It returns a list of two fields: 'snp.tbl' is a data.table containing the nucleobase sequences for each SNP; 'motif.scores' is a data.table containing the binding affinity scores for each SNP-motif pair.
+The binding affinity scores for all pairs of SNP and PWM can be computed by the 'ComputeMotifScore' function. It returns a list of two fields: 'snp.tbl' is a data.table containing the nucleotide sequences for each SNP; 'motif.scores' is a data.table containing the binding affinity scores for each SNP-motif pair.
 
 \begin{Schunk}
 \begin{Sinput}
@@ -214,30 +314,18 @@ The binding affinity scores for all pairs of SNP and PWM can be computed by the 
 +                                 log_lik_snp, log_lik_ratio)]
 \end{Sinput}
 \begin{Soutput}
-            snpid                                                  motif
-    1: rs10910078                                   AFP1_transfac_M00616
-    2:  rs4486391                                   AFP1_transfac_M00616
-    3:  rs3748816                                   AFP1_transfac_M00616
-    4:  rs2843401                                   AFP1_transfac_M00616
-    5:  rs2843402                                   AFP1_transfac_M00616
-   ---                                                                  
-13975:  rs3003207 USF2_K562_encode-Snyder_seq_hsa_r1:MDscan#1#Intergenic
-13976:  rs1173830 USF2_K562_encode-Snyder_seq_hsa_r1:MDscan#1#Intergenic
-13977:   rs654873 USF2_K562_encode-Snyder_seq_hsa_r1:MDscan#1#Intergenic
-13978:  rs1768071 USF2_K562_encode-Snyder_seq_hsa_r1:MDscan#1#Intergenic
-13979:  rs1538961 USF2_K562_encode-Snyder_seq_hsa_r1:MDscan#1#Intergenic
-       log_lik_ref log_lik_snp log_lik_ratio
-    1:  -117.69581  -116.93812    -0.7576857
-    2:   -73.54122   -95.18078    21.6395566
-    3:   -73.94669   -96.74940    22.8027074
-    4:  -139.33536  -141.41480     2.0794415
-    5:   -95.07542   -95.40392     0.3285041
-   ---                                      
-13975:   -97.42420   -95.28965    -2.1345441
-13976:   -94.64204  -115.49770    20.8556528
-13977:   -75.86532   -94.23625    18.3709332
-13978:  -117.30407  -119.09290     1.7888356
-13979:   -98.55470   -75.52885   -23.0258509
+            snpid     motif log_lik_ref log_lik_snp log_lik_ratio
+    1: rs10910078     AFP_1  -117.69581  -116.93812    -0.7576857
+    2:  rs4486391     AFP_1   -73.54122   -95.18078    21.6395566
+    3:  rs3748816     AFP_1   -73.94669   -96.74940    22.8027074
+    4:  rs2843401     AFP_1  -139.33536  -141.41480     2.0794415
+    5:  rs2843402     AFP_1   -95.07542   -95.40392     0.3285041
+   ---                                                           
+13975:  rs3003207 SRF_disc1   -72.43032   -73.11450     0.6841775
+13976:  rs1173830 SRF_disc1   -93.09039   -93.09039     0.0000000
+13977:   rs654873 SRF_disc1   -93.09039   -70.39764   -22.6927498
+13978:  rs1768071 SRF_disc1  -116.44934  -115.83145    -0.6178913
+13979:  rs1538961 SRF_disc1   -96.14035   -73.11450   -23.0258509
 \end{Soutput}
 \end{Schunk}
 
@@ -254,36 +342,24 @@ After we have computed the binding affinity scores, they can be tested using the
 > motif.scores[, list(snpid, motif, pval_ref, pval_snp, pval_diff)]
 \end{Sinput}
 \begin{Soutput}
-            snpid                                                  motif
-    1: rs10910078                                   AFP1_transfac_M00616
-    2:  rs4486391                                   AFP1_transfac_M00616
-    3:  rs3748816                                   AFP1_transfac_M00616
-    4:  rs2843401                                   AFP1_transfac_M00616
-    5:  rs2843402                                   AFP1_transfac_M00616
-   ---                                                                  
-13975:  rs3003207 USF2_K562_encode-Snyder_seq_hsa_r1:MDscan#1#Intergenic
-13976:  rs1173830 USF2_K562_encode-Snyder_seq_hsa_r1:MDscan#1#Intergenic
-13977:   rs654873 USF2_K562_encode-Snyder_seq_hsa_r1:MDscan#1#Intergenic
-13978:  rs1768071 USF2_K562_encode-Snyder_seq_hsa_r1:MDscan#1#Intergenic
-13979:  rs1538961 USF2_K562_encode-Snyder_seq_hsa_r1:MDscan#1#Intergenic
-        pval_ref  pval_snp  pval_diff
-    1: 0.9776495 0.9626548 0.77254685
-    2: 0.3767000 0.7685845 0.25680145
-    3: 0.4267265 0.9081736 0.08460265
-    4: 0.9911095 0.9982255 0.58550863
-    5: 0.7636040 0.8077694 0.86817355
-   ---                               
-13975: 0.6791180 0.4550585 0.66532759
-13976: 0.4178541 0.8221420 0.37256608
-13977: 0.2620478 0.3924319 0.48837719
-13978: 0.9164300 0.9749997 0.69863341
-13979: 0.7292026 0.2418850 0.19211121
+            snpid     motif  pval_ref   pval_snp  pval_diff
+    1: rs10910078     AFP_1 0.9776495 0.96265483 0.77254685
+    2:  rs4486391     AFP_1 0.3767000 0.76858447 0.25680145
+    3:  rs3748816     AFP_1 0.4267265 0.90817363 0.08460265
+    4:  rs2843401     AFP_1 0.9911095 0.99822551 0.58550863
+    5:  rs2843402     AFP_1 0.7636040 0.80776942 0.86817355
+   ---                                                     
+13975:  rs3003207 SRF_disc1 0.2372302 0.24653492 0.66522050
+13976:  rs1173830 SRF_disc1 0.2673992 0.26739919 1.00000000
+13977:   rs654873 SRF_disc1 0.2618610 0.05817295 0.25026857
+13978:  rs1768071 SRF_disc1 0.7770457 0.69299844 0.68555718
+13979:  rs1538961 SRF_disc1 0.6604981 0.24653492 0.03966129
 \end{Soutput}
 \end{Schunk}
 
 \subsection{Additional analysis}
 
-atSNP provides additional functions to extract the matched nucleobase subsequences that match to the motifs. Function 'MatchSubsequence' adds the subsequence matches to the affinity score table by using the motif library and the SNP set. The subsequences matching to the motif in the two alleles are returned in the 'ref\_match\_seq' and 'snp\_match\_seq' columns. The 'IUPAC' column returns the IUPAC letters of the motifs. Notice that if you have a large number of SNPs and motifs, the returned table can be very large.
+atSNP provides additional functions to extract the matched nucleotide subsequences that match to the motifs. Function 'MatchSubsequence' adds the subsequence matches to the affinity score table by using the motif library and the SNP set. The subsequences matching to the motif in the two alleles are returned in the 'ref\_match\_seq' and 'snp\_match\_seq' columns. The 'IUPAC' column returns the IUPAC letters of the motifs. Notice that if you have a large number of SNPs and motifs, the returned table can be very large.
 
 \begin{Schunk}
 \begin{Sinput}
@@ -296,16 +372,11 @@ atSNP provides additional functions to extract the matched nucleobase subsequenc
 > match_result[, list(snpid, motif, IUPAC, ref_match_seq, snp_match_seq)]
 \end{Sinput}
 \begin{Soutput}
-        snpid                                                  motif      IUPAC
-1: rs10910078 SIX5_GM12878_encode-Myers_seq_hsa_r1:MEME#1#Intergenic GARWTGTAGT
-2: rs10910078 USF2_K562_encode-Snyder_seq_hsa_r1:MDscan#1#Intergenic GTCACGTGAC
-3:  rs4486391 SIX5_GM12878_encode-Myers_seq_hsa_r1:MEME#1#Intergenic GARWTGTAGT
-4:  rs4486391 USF2_K562_encode-Snyder_seq_hsa_r1:MDscan#1#Intergenic GTCACGTGAC
-   ref_match_seq snp_match_seq
-1:    CTGGCGGATG    GGCGGGTGGC
-2:    GGCGGATGGC    GCCACCCGCC
-3:    CTCGTTTAGG    CTCGTATAGG
-4:    TAAACGAGAG    CTCGTATAGG
+        snpid      motif      IUPAC ref_match_seq snp_match_seq
+1: rs10910078  MYC_disc1 GTCACGTGAC    GGCGGATGGC    GCCACCCGCC
+2: rs10910078 SIX5_disc1 GARWTGTAGT    CTGGCGGATG    GGCGGGTGGC
+3:  rs4486391  MYC_disc1 GTCACGTGAC    TAAACGAGAG    CTCGTATAGG
+4:  rs4486391 SIX5_disc1 GARWTGTAGT    CTCGTTTAGG    CTCGTATAGG
 \end{Soutput}
 \end{Schunk}
 
@@ -320,7 +391,7 @@ We can also visualize how each motif is matched to each allele using the 'plotMo
 +                motif = motif_scores$motif.scores$motif[1])
 \end{Sinput}
 \end{Schunk}
-\includegraphics{atsnp-008}
+\includegraphics{atsnp-010}
 
 \section{Session Information}
 

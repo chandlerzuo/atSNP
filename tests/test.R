@@ -1,9 +1,25 @@
 library(atSNP)
 
 if(FALSE) {
+  motif_encode <- LoadMotifLibrary("http://compbio.mit.edu/encode-motifs/motifs.txt", tag = ">", transpose = FALSE, field = 1, sep = c("\t", " ", ">"), skipcols = 1, skiprows = 1, pseudocount = 0)
+
+  lines <- readLines("http://compbio.mit.edu/encode-motifs/motifs.txt")
+  title.no <- grep(">", lines)
+  source("~/atsnp_git/atSNP/R/utility.R")
+  title.info <- sapply(lines[title.no], function(x) myStrSplit(x, c(">", " ", "\t")))
+  nfields <- sapply(title.info, length)
+  allnames <- motif_info <- rep("", length(title.no))
+  for(i in 1:2) {
+    allnames[nfields == i + 1] <- sapply(title.info[nfields == i + 1], function(x) x[i])
+    motif_info[nfields == i + 1] <- sapply(title.info[nfields == i + 1], function(x) x[i + 1])
+  }
+
+  names(motif_info) <- names(motif_encode) <- allnames
+
+  system.time(save(motif_encode, motif_info, file = "~/atsnp_git/atSNP/data/encode_motif.rda"))
+
   # construct the test data set
-  motif_file <- "/p/keles/ENCODE-CHARGE/volume1/ENCODE-Motifs/encode_motifs_for_fimo.txt"
-  system.time(motif_library <- LoadMotifLibrary(motif_file))
+  motif_library <- motif_encode
   system.time(snpInfo <- LoadSNPData("/p/keles/ENCODE-CHARGE/volume2/SNP/hg19_allinfo.bed", nrow = 2000))
   motif_library <- motif_library[c(1:5, 1695, 595)]
   motif_scores <- ComputeMotifScore(motif_library, snpInfo, ncores = 5)
@@ -30,11 +46,7 @@ if(FALSE) {
   ggplot(aes(x = pval_ref, y = pval_snp, color = pval_diff), data = motif_pval[motif == names(motif_library)[i], ]) + geom_point()
 
   system.time(save(motif_library, snpInfo, motif_scores, file = "~/atsnp_git/atSNP/data/example.rda"))
-
-  motif_encode <- LoadMotifLibrary("http://compbio.mit.edu/encode-motifs/motifs.txt", tag = ">", transpose = FALSE, field = 1, sep = c("\t", " ", ">"), skipcols = 1, skiprows = 1, pseudocount = 0)
-
-  system.time(save(motif_encode, file = "~/atsnp_git/atSNP/data/encode_motif.rda"))
-
+  
   library(BSgenome.Hsapiens.UCSC.hg19)
   tbl1 <- read.table("~/atsnp_git/data/gwas_snp1.txt", stringsAsFactors = FALSE)
   names(tbl1) <- c("chr", "snp", "snpid")
