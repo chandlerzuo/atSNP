@@ -31,7 +31,7 @@ if(FALSE) {
 
   system.time(save(motif_library, snpInfo, motif_scores, file = "~/atsnp_git/atSNP/data/example.rda"))
 
-  motif_encode <- LoadMotifLibrary("~/atsnp_git/data/motifs-toscan.txt", tag = ">", transpose = FALSE, field = 1, sep = " ", skipcols = 1, skiprows = 1, pseudocount = 0)
+  motif_encode <- LoadMotifLibrary("http://compbio.mit.edu/encode-motifs/motifs.txt", tag = ">", transpose = FALSE, field = 1, sep = c("\t", " ", ">"), skipcols = 1, skiprows = 1, pseudocount = 0)
 
   system.time(save(motif_encode, file = "~/atsnp_git/atSNP/data/encode_motif.rda"))
 

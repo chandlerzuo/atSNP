@@ -65,7 +65,12 @@ A text file including the PWMs of all motifs can be loaded via the 'LoadMotifLib
 \begin{Schunk}
 \begin{Sinput}
 > pwms <- LoadMotifLibrary(
-+ "http://meme.nbcr.net/meme/examples/sample-dna-motif.meme-io")
++  "http://meme.nbcr.net/meme/examples/sample-dna-motif.meme-io")
+> pwms <- LoadMotifLibrary(
++  "http://compbio.mit.edu/encode-motifs/motifs.txt",
++  tag = ">", transpose = FALSE, field = 1, 
++  sep = c("\t", " ", ">"), skipcols = 1, 
++  skiprows = 1, pseudocount = 0)
 > pwms <- LoadMotifLibrary(
 +  "http://johnsonlab.ucsf.edu/mochi_files/JASPAR_motifs_H_sapiens.txt",
 +  tag = "/NAME",skiprows = 1, skipcols = 0, transpose = FALSE,
