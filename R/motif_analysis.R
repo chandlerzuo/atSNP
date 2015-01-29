@@ -88,8 +88,8 @@ LoadMotifLibrary <- function(filename, tag = "MOTIF", transpose = FALSE, field =
 #' chr \tab chromosome.\cr
 #' snp \tab The nucleotide position of the SNP.\cr
 #' snpid \tab The names of the SNPs.\cr
-#' a1 \tab The deoxyribose at the reference genome.\cr
-#' a2 \tab The deoxyribose at the SNP genome.\cr
+#' a1 \tab The deoxyribose for one allele.\cr
+#' a2 \tab The deoxyribose for the other allele.\cr
 #' }
 #' @param genome.lib A string of the library name for the genome version. Default: "BSgenome.Hsapiens.UCSC.hg19".
 #' @param half.window.size An integer for the half window size around the SNP within which the motifs are matched. Default: 30.

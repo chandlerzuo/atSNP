@@ -13,8 +13,8 @@ LoadSNPData(filename, genome.lib = "BSgenome.Hsapiens.UCSC.hg19",
 chr \tab chromosome.\cr
 snp \tab The nucleotide position of the SNP.\cr
 snpid \tab The names of the SNPs.\cr
-a1 \tab The deoxyribose at the reference genome.\cr
-a2 \tab The deoxyribose at the SNP genome.\cr
+a1 \tab The deoxyribose for one allele.\cr
+a2 \tab The deoxyribose for the other allele.\cr
 }}
 
 \item{genome.lib}{A string of the library name for the genome version. Default: "BSgenome.Hsapiens.UCSC.hg19".}

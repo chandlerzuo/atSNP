@@ -20,13 +20,14 @@ if(FALSE) {
 
   # construct the test data set
   motif_library <- motif_encode
-  system.time(snpInfo <- LoadSNPData("/p/keles/ENCODE-CHARGE/volume2/SNP/hg19_allinfo.bed", nrow = 2000))
-  motif_library <- motif_library[c(1:5, 1695, 595)]
-  motif_scores <- ComputeMotifScore(motif_library, snpInfo, ncores = 5)
+  system.time(snpInfo <- LoadSNPData("/p/keles/ENCODE-CHARGE/volume2/SNP/hg19_allinfo.bed", nrow = 20))
+  motif_library <- motif_library[c(1:2)]
+  snp_tbl <- read.table("/p/keles/ENCODE-CHARGE/volume2/SNP/hg19_allinfo.bed", nrow = 20, header = TRUE)
+  motif_scores <- ComputeMotifScore(motif_library, snpInfo, ncores = 2)
 
-  motif_pval <- ComputePValues(motif_library, snpInfo, motif_scores$motif.scores, ncores = 4)
+  motif_pval <- ComputePValues(motif_library, snpInfo, motif_scores$motif.scores, ncores = 2)
   
-  i <- 7
+  i <- 2
 
   motif_pval[, pval_ratio := abs(log(pval_ref + 1e-10) - log(pval_snp + 1e-10))]
   
@@ -45,7 +46,7 @@ if(FALSE) {
 
   ggplot(aes(x = pval_ref, y = pval_snp, color = pval_diff), data = motif_pval[motif == names(motif_library)[i], ]) + geom_point()
 
-  system.time(save(motif_library, snpInfo, motif_scores, file = "~/atsnp_git/atSNP/data/example.rda"))
+  system.time(save(motif_library, snpInfo, snp_tbl, motif_scores, file = "~/atsnp_git/atSNP/data/example.rda"))
   
   library(BSgenome.Hsapiens.UCSC.hg19)
   tbl1 <- read.table("~/atsnp_git/data/gwas_snp1.txt", stringsAsFactors = FALSE)

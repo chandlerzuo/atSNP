@@ -1,11 +1,14 @@
-%% \VignetteIndexEntry{CSSP: ChIP-Seq Statistical Power}
 \documentclass[a4paper,10pt]{article}
 \usepackage{amsmath,mathrsfs,graphicx}
-\usepackage[top=2cm,bottom=2cm,left=2cm,right=2cm]{geometry}
+%\usepackage[top=2cm,bottom=2cm,left=2cm,right=2cm]{geometry}
 \usepackage[utf8]{inputenc}
-\usepackage{hyperref}
 \usepackage{color}
 %\usepackage{natbib}
+
+%\usepackage{Sweave}
+<<style-Sweave, eval=TRUE, echo=FALSE, results=tex>>=
+BiocStyle::latex()
+@
 
 \title{atSNP: affinity tests for regulatory SNP detection}
 
@@ -15,7 +18,7 @@ S\"und\"uz Kele\c{s}\footnote{Departments of Statistics and of Biostatistics and
   
 \date{}
 
-\usepackage{Sweave}
+
 \begin{document}
 \maketitle
 
@@ -23,15 +26,25 @@ S\"und\"uz Kele\c{s}\footnote{Departments of Statistics and of Biostatistics and
 
 \section{Introduction}
 
-This document provides an introduction to the affinity test for large sets of SNP-motif interactions using the \texttt{atSNP} package(\textbf{a}ffinity \textbf{t}est for regulatory \textbf{SNP} detection) \cite{zuo14}. \texttt{atSNP} implements in-silico methods for identifying SNPs that potentially may affect binding affinity of transcription factors. Given a set of SNPs and a library of motif position weight matrices (PWMs), \texttt{atSNP} provides three main functions for analyzing SNP effects:
+This document provides an introduction to the affinity test for large sets of SNP-motif interactions using the \software{atSNP} package(\textbf{a}ffinity \textbf{t}est for regulatory \textbf{SNP} detection) \cite{zuo15}. \software{atSNP} implements in-silico methods for identifying SNPs that potentially may affect binding affinity of transcription factors. Given a set of SNPs and a library of motif position weight matrices (PWMs), \software{atSNP} provides three main functions for analyzing SNP effects:
+
+% Not sure if is is on purpose, but the cite zuo14 is not in the bib
+% file.
 
 \begin{enumerate}
-\item Computing the binding affinity score for each allele and each PWM;
-\item Computing the p-values for allele-specific binding affinity scores;
+\item Computing the binding affinity score for each allele and each PWM.
+\item Computing the p-values for allele-specific binding affinity scores.
 \item Computing the p-values for affinity score changes between the two alleles for each SNP.
 \end{enumerate}
 
-\texttt{atSNP} implements the importance sampling algorithm in \cite{isample} to compute the p-values. Compared to other bioinformatics tools, such as FIMO \cite{fimo} and is-rSNP \cite{is-rsnp}, that provides similar functionalities, \texttt{atSNP} avoides computing the p-values analytically. This reduces the execution time drastically because the probability sample space is a exponential order of the motif length. In one of our research projects, we have used atSNP to evaluate interactions between 26K SNPs and 2K motifs within 5 hours. We found no other existing tool can finish the analysis of such a scale.
+\software{atSNP} implements the importance sampling algorithm in \cite{isample} to compute the p-values. Compared to other bioinformatics tools, such as FIMO \cite{fimo} and is-rSNP \cite{is-rsnp} that provide similar functionalities, \software{atSNP} avoids computing the p-values analytically. %This reduces the execution time drastically because the probability sample space is a exponential order of the motif length. 
+In one of our research projects, we have used atSNP to evaluate interactions between 26K SNPs and 2K motifs within 5 hours. We found no other existing tool can finish the analysis of such a scale.
+
+% I didn't understood the last statement, I think it means it is
+% O(exp(L)) where L is the motif length. However, based on Sunduz
+% comment on the email I am not sure it this even necessary, since the
+% package is aimed to users without R knowledge they may just want to
+% know that atSNP is fast but not why
 
 \section{Installation}
 
@@ -42,23 +55,49 @@ library(devtools)
 install_github("chandlerzuo/atSNP")
 @ 
 
-The following dependent \texttt{R} packages are required:
+% The following dependent \R{} packages are required:
+\software{atSNP} depends on the following \R{} packages:
 
 \begin{itemize}
-\item \texttt{data.table} is used for formatting results that are easy for users to query;
-\item \texttt{motifStack} is relied upon to draw sequence logo plots;
-\item \texttt{doMC} is used for parallel computation;
-\item \texttt{Rcpp} interfaces the C++ codes that implements the importance sampling algorithm;
-\item \texttt{testthat} is used for unit testing.
+\item \CRANpkg{data.table} is used for formatting results that are easy for users to query.
+\item \Biocpkg{motifStack} is relied upon to draw sequence logo plots.
+\item \CRANpkg{doMC} is used for parallel computation.
+\item \CRANpkg{Rcpp} interfaces the C++ codes that implements the importance sampling algorithm.
 \end{itemize}
   
-In addition, users also need to install the annotation package from \url{www.bioconductor.org/packages/3.0/data/annotation/} that corresponds to the species type and genome version. Our example SNP data set in the subsequent sections corresponds to the hg19 version of human genome. To repeat the sample codes in this vignette, the \texttt{BSgenome.Hsapiens.UCSC.hg19} package is required.
+In addition, users also need to install the annotation package from \url{www.bioconductor.org/packages/3.0/data/annotation/} that corresponds to the species type and genome version. Our example SNP data set in the subsequent sections corresponds to the hg19 version of human genome. To repeat the sample codes in this vignette, the \Biocannopkg{BSgenome.Hsapiens.UCSC.hg19} package is required. To install it from the \Bioconductor{} repository,
+
+<<eval=FALSE, echo=TRUE, results=hide>>=
+source("http://bioconduc.org/biocLite.R")
+biocLite("BSgenome.Hsapiens.UCSC.hg19")
+@ 
+
+Notice that the annotation package is usually large and this installation step may take a substantial amout of time.
+
+% In this section, there are several references to bioconductor
+% packages. I think that biocstyle would add the links but in the
+% vignette's current version it would be useful to add link to this
+% packages and perhaps add a code chunk explaining how to install both
+% annotation and BSgenome.Hsapiens.UCSC.hg19 packages, and with an
+% explicit warning that installing this two packages may take some
+% time (as I recall those are heavy ones)
+
 
 \section{Example}
 
 \subsection{Load motif and SNP data}
 
-\texttt{atSNP} provdes a default motif library downloaded from \url{compbio.mit.edu/encode-motifs/motifs.txt}. This library contains 2065 known and discovered motifs from ENCODE TF ChIP-seq data sets. The following commands allow you to load this motif library:
+\software{atSNP} provides a default motif library downloaded from \url{compbio.mit.edu/encode-motifs/motifs.txt}. This library contains 2065 known and discovered motifs from ENCODE TF ChIP-seq data sets. The following commands allows to load this motif library:
+
+% It may be useful to specify that each element of motif_encode is a
+% PWM. And it may be useful to show the actual motif sequence, since
+% it may be hard to understand the matrix. Perhaps specifiy which
+% columns is which nucleotide, for example jaspar's input is like:
+
+% A [13 13 3 1 54 1 1 1 0 3 2 5 ]
+% C [13 39 5 53 0 1 50 1 0 37 0 17 ]
+% G [17 2 37 0 0 52 3 0 53 8 37 12 ]
+% T [11 0 9 0 0 0 0 52 1 6 15 20 ]
 
 <<eval=TRUE, echo=TRUE, results = verbatim>>=
 library(atSNP)
@@ -67,14 +106,30 @@ length(motif_encode)
 motif_encode[seq(3)]
 @ 
 
-The data object 'encode\_motif' also contains a character vector 'motif\_info' that contains detailed information for each motif:
+Here, the motif library is represented by \Robject{motif_encode}, which is a list of position weight matrices. The codes below shows the content of one matrix as well as its IUPAC letters:
+
+<<eval=TRUE, echo=TRUE, results=verbatim>>=
+motif_encode[[1]]
+GetIUPACSequence(motif_encode[[1]])
+@ 
+
+The data object \Robject{encode_motif} also contains a character vector \Robject{motif_info} that contains detailed information for each motif.
 
 <<eval=TRUE, echo=TRUE, results = verbatim>>=
 length(motif_info)
 head(motif_info)
 @ 
 
-Users can also provide a list of PWMs as the motif library via the 'LoadMotifLibrary' function. In this function, 'tag' specifies the string that marks the start of each block of PWM; 'skiprows' is the number of description lines before the PWM; 'skipcols' is the number of columns to be skipped in the PWM matrix; 'transpose' is TRUE if the PWM has 4 rows representing A, C, G, T or FALSE if otherwise; 'field' is the position of the motif name within the description line; 'sep' is a vector of separators in the PWM; 'pseudocount' is the number added to the raw matrices, recommended to be 1 if the matrices are in fact position frequency matrices. These arguments provide the flexibility of loading a number of varying formatted files. The PWMs are returned as a list object. This function flexibly adaps to a variety of different formats. Some examples using online accessible files from other research groups are shown below.
+Here, the entry names of this vector are the same as the names of the motif library. \Robject{motif_info} allows easy looking up the motif information for a specific PWM. For example, to look up the motif information for the first PWM in \Robject{motif_encode}:
+
+<<eval=TRUE, echo=TRUE, results=verbatim>>=
+motif_info[names(motif_encode[[1]])]
+@ 
+
+% Following my earlier comment, it may be useful to be able to
+% introduce the PWM with counts as above
+
+Users can also provide a list of PWMs as the motif library via the \Rfunction{LoadMotifLibrary} function. In this function, 'tag' specifies the string that marks the start of each block of PWM; 'skiprows' is the number of description lines before the PWM; 'skipcols' is the number of columns to be skipped in the PWM matrix; 'transpose' is TRUE if the PWM has 4 rows representing A, C, G, T or FALSE if otherwise; 'field' is the position of the motif name within the description line; 'sep' is a vector of separators in the PWM; 'pseudocount' is the number added to the raw matrices, recommended to be 1 if the matrices are in fact position frequency matrices. These arguments provide the flexibility of loading a number of varying formatted files. The PWMs are returned as a list object. This function flexibly adapts to a variety of different formats. Some examples using online accessible files from other research groups are shown below.
 
 <<eval=FALSE, echo=TRUE, results=hide>>=
 pwms <- LoadMotifLibrary(
@@ -103,6 +158,10 @@ pwms <- LoadMotifLibrary(
  transpose = FALSE, field = 2, sep = "\t")
 @ 
 
+% Perhaps it may useful to add explicit links to those databases, or
+% an example highlighting what those the tag parameter means in one
+% (or all) of this databases
+
 The data set for the SNP information must be a table including five columns:
 
 \begin{itemize}
@@ -112,21 +171,43 @@ The data set for the SNP information must be a table including five columns:
 \item a1, a2: nucleotides for the two alleles at the SNP position.
 \end{itemize}
   
-This data set can be loaded using the 'LoadSNPData' function. The 'genome.lib' argument specifies the annotation package name corresponding to the SNP data set, with the default as 'BSgenome.Hsapiens.UCSC.hg19'. Each side of the SNP is extended by a number of base pairs specified by the 'half.window.size' argument. 'LoadSNPData' extracts the genome sequence within such windows around each SNP using the 'genome.lib' package. An example is the following:
+% It may be useful to add an example of this tables, if the user needs
+% to build, may be a more complete example of how to build it
 
-<<eval=FALSE, echo=FALSE, results=hide>>=
-LoadSNPData("/p/keles/ENCODE-CHARGE/volume2/SNP/hg19_allinfo.bed",
+This data set can be loaded using the \Rfunction{LoadSNPData} function. The 'genome.lib' argument specifies the annotation package name corresponding to the SNP data set, with the default as 'BSgenome.Hsapiens.UCSC.hg19'. Each side of the SNP is extended by a number of base pairs specified by the 'half.window.size' argument. \Rfunction{LoadSNPData} extracts the genome sequence within such windows around each SNP using the 'genome.lib' package. An example is the following:
+
+The following codes generate a synthetic SNP data and loads it back in \R{}:
+<<eval=TRUE, echo=TRUE, results=verbatim>>=
+data(example)
+write.table(snp_tbl, file = "test_snp_file.txt",
+            row.names = FALSE, quote = FALSE)
+snp_info <- LoadSNPData("test_snp_file.txt",
             genome.lib = "BSgenome.Hsapiens.UCSC.hg19",
-            half.window.size = 30, default.par = FALSE)
+            half.window.size = 30, default.par = TRUE,
+            mutation = FALSE)
+ncol(snp_info$sequence) == nrow(snp_tbl)
 @ 
 
-If 'default.par = FALSE', 'LoadSNPData' simultaneously estimates the parameters for the first order Markov model in the reference genome using the nucleotides within the SNP windows. Otherwise, it loads a set of parameter values pre-fitted from sequences around all the SNPs in the NHGRI GWAS catalog (\cite{nhgri-gwas}). We recommend setting 'default.par = TRUE' when we have fewer than 1000 SNPs. 'LoadSNPData' returns a list object with five fields:
+The 'mutation' argument specifies whether the data set is related to SNP or general single nucleotide mutation. By default, 'mutation=FALSE'. In this case, \Rfunction{LoadSNPData} get the nucleotides on the reference genome based on the genome coordinates specified by 'chr' and 'snp' and match them to 'a1' and 'a2' alleles. 'a1' and 'a2' nucleotides are assigned to the refrence or the SNP allele based on which one matches to the reference nucleotide. If neither allele matches to the reference nucleotide, the corresponding row in the SNP information file is discarded. Alternatively, if 'mutation=TRUE', no row is discarded. \Rfunction{LoadSNPData} takes the reference sequences around the SNP locations, replaces the reference nucleotides at the SNP locations by 'a1' nucleotides to construct the 'reference' sequences, and by 'a2' nucleotides to construct the 'SNP' sequences. Notice that in this case, in the subsequent analysis, whenever we refer to the ``reference'' or the ``SNP'' allele, it actually means the ``a1'' or the ``a2'' allele.
+
+<<eval=TRUE, echo=TRUE, results=verbatim>>=
+mutation_info <- LoadSNPData("test_snp_file.txt",
+                             genome.lib = "BSgenome.Hsapiens.UCSC.hg19",
+                             half.window.size = 30, default.par = TRUE,
+                             mutation = TRUE)
+ncol(snp_info$sequence) == nrow(snp_tbl)
+file.remove("test_snp_file.txt")
+@ 
+
+% This example is not showing in the pdf vignette
+
+If 'default.par = FALSE', \Rfunction{LoadSNPData} simultaneously estimates the parameters for the first order Markov model in the reference genome using the nucleotides within the SNP windows. Otherwise, it loads a set of parameter values pre-fitted from sequences around all the SNPs in the NHGRI GWAS catalog (\cite{nhgri-gwas}). We recommend setting 'default.par = TRUE' when we have fewer than 1000 SNPs. \Rfunction{LoadSNPData} returns a list object with five fields:
 
 \begin{itemize}
-\item \$sequence\_matrix: a matrix with (2$\times$'half.window.size' + 1), with each column corresponding to one SNP. The entries 1-4 represent the A, C, G, T nucleotides;
-\item \$ref\_base: a vector coding the reference allele nucleotides for all SNPs;
-\item \$snp\_base: a vector coding the SNP allele nucleotides for all SNPs;
-\item \$prior: the stationary distribution parameters for the Markov model;
+\item \$sequence\_matrix: a matrix with (2$\times$'half.window.size' + 1), with each column corresponding to one SNP. The entries 1-4 represent the A, C, G, T nucleotides.
+\item \$ref\_base: a vector coding the reference allele nucleotides for all SNPs.
+\item \$snp\_base: a vector coding the SNP allele nucleotides for all SNPs.
+\item \$prior: the stationary distribution parameters for the Markov model.
 \item \$transition: the transition matrix for the first order Markov model.
 \end{itemize}
 
@@ -144,7 +225,7 @@ motif_info[names(motif_library)]
 
 \subsection{Affinity score tests}
 
-The binding affinity scores for all pairs of SNP and PWM can be computed by the 'ComputeMotifScore' function. It returns a list of two fields: 'snp.tbl' is a data.table containing the nucleotide sequences for each SNP; 'motif.scores' is a data.table containing the binding affinity scores for each SNP-motif pair.
+The binding affinity scores for all pairs of SNP and PWM can be computed by the \Rfunction{ComputeMotifScore} function. It returns a list of two fields: 'snp.tbl' is a \Rclass{data.table} containing the nucleotide sequences for each SNP; 'motif.scores' is a \Rclass{data.table} containing the binding affinity scores for each SNP-motif pair.
 
 <<eval=TRUE, echo=TRUE, results=verbatim>>=
 motif_score <- ComputeMotifScore(motif_library, snpInfo, ncores = 2)
@@ -153,19 +234,22 @@ motif_score$motif.scores[, list(snpid, motif, log_lik_ref,
                                 log_lik_snp, log_lik_ratio)]
 @ 
 
+% I wonder if it is possible there is an example with smaller sequences.
+
 The affinity scores for the reference and the SNP alleles are represented by the 'log\_lik\_ref' and 'log\_lik\_snp' columns in '\$motif.scores'. The affinity score change is included in the 'log\_lik\_ratio' column. These three affinity scores are tested in the subsequent steps. '\$motif.scores' also include other columns for the position of the best matching subsequence on each allele. For a complete description on all these columns, users can look up the help documentation.
 
-After we have computed the binding affinity scores, they can be tested using the 'ComputePValues' function. The result is a data.table extending the affinity score table by six columns: 
+After we have computed the binding affinity scores, they can be tested using the \Rfunction{ComputePValues} function. The result is a \Rclass{data.table} extending the affinity score table by six columns: 
 
 \begin{itemize}
-  \item 'pval\_ref': p-value for the reference allele affinity score;
-  \item 'pval\_snp': p-value for the SNP allele affinity score;
-  \item 'pval\_cond\_ref' and 'pval\_cond\_snp': conditional p-values for the affinity scores of the reference and SNP alleles;
-  \item 'pval\_diff': p-value for the affinity score change between the two alleles;
+  \item 'pval\_ref': p-value for the reference allele affinity score.
+  \item 'pval\_snp': p-value for the SNP allele affinity score.
+  \item 'pval\_cond\_ref' and 'pval\_cond\_snp': conditional p-values
+    for the affinity scores of the reference and SNP alleles.
+  \item 'pval\_diff': p-value for the affinity score change between the two alleles.
   \item 'pval\_rank': p-value for the rank test between the two alleles.
   \end{itemize}
 
-We recommend using 'pval\_ref', 'pval\_snp' for assessing the significance of allele specific affinity, and using 'pval\_rank' for assessing the significance of the SNP effect on the affinity change.
+We recommend using 'pval\_ref'and 'pval\_snp' for assessing the significance of allele specific affinity; and using 'pval\_rank' for assessing the significance of the SNP effect on the affinity change.
 
 <<eval=TRUE,echo=TRUE,results=verbatim>>=
 motif.scores <- ComputePValues(motif.lib = motif_library,
@@ -177,7 +261,7 @@ motif.scores[, list(snpid, motif, pval_ref, pval_snp, pval_rank, pval_diff)]
 
 \subsection{Additional analysis}
 
-atSNP provides additional functions to extract the matched nucleotide subsequences that match to the motifs. Function 'MatchSubsequence' adds the subsequence matches to the affinity score table by using the motif library and the SNP set. The subsequences matching to the motif in the two alleles are returned in the 'ref\_match\_seq' and 'snp\_match\_seq' columns. The 'IUPAC' column returns the IUPAC letters of the motifs. Notice that if you have a large number of SNPs and motifs, the returned table can be very large.
+atSNP provides additional functions to extract the matched nucleotide subsequences that match to the motifs. Function \Rfunction{MatchSubsequence} adds the subsequence matches to the affinity score table by using the motif library and the SNP set. The subsequences matching to the motif in the two alleles are returned in the 'ref\_match\_seq' and 'snp\_match\_seq' columns. The 'IUPAC' column returns the IUPAC letters of the motifs. Notice that if you have a large number of SNPs and motifs, the returned table can be very large.
 
 <<eval=TRUE,echo=TRUE,results=verbatim>>=
 match_result <- MatchSubsequence(snp.tbl = motif_scores$snp.tbl,
@@ -189,12 +273,12 @@ match_result <- MatchSubsequence(snp.tbl = motif_scores$snp.tbl,
 match_result[, list(snpid, motif, IUPAC, ref_match_seq, snp_match_seq)]
 @ 
 
-We can also visualize how each motif is matched to each allele using the 'plotMotifMatch' function:
+To visualize how each motif is matched to each allele using the \Rfunction{plotMotifMatch} function:
 
 <<eval=TRUE, echo=TRUE,fig=TRUE>>=
 plotMotifMatch(snp.tbl = motif_scores$snp.tbl,
                motif.scores = motif_scores$motif.scores,
-               snpid = motif_scores$snp.tbl$snpid[50],
+               snpid = motif_scores$snp.tbl$snpid[1],
                motif.lib = motif_library,
                motif = motif_scores$motif.scores$motif[1])
 @
