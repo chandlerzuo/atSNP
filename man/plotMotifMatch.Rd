@@ -47,7 +47,7 @@ Plot the best matching augmented subsequences on the reference and SNP alleles. 
 }
 \examples{
 data(example)
-plotMotifMatch(motif_scores$snp.tbl, motif_scores$motif.scores, motif_scores$snp.tbl$snpid[50], motif_scores$motif.scores$motif[1], motif.lib = motif_library)
+plotMotifMatch(motif_scores$snp.tbl, motif_scores$motif.scores, motif_scores$snp.tbl$snpid[1], motif_scores$motif.scores$motif[1], motif.lib = motif_library)
 }
 \author{
 Sunyoung Shin\email{shin@stat.wisc.edu}

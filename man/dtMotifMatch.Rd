@@ -58,7 +58,7 @@ Calculate the best matching augmented subsequences on both SNP and reference all
 }
 \examples{
 data(example)
-dtMotifMatch(motif_scores$snp.tbl, motif_scores$motif.scores, motif_scores$snp.tbl$snpid[1:100], motif_scores$motif.scores$motif[1], motif.lib = motif_library)
+dtMotifMatch(motif_scores$snp.tbl, motif_scores$motif.scores, motif_scores$snp.tbl$snpid, motif_scores$motif.scores$motif[1], motif.lib = motif_library)
 }
 \author{
 Sunyoung Shin\email{shin@stat.wisc.edu}

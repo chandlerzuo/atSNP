@@ -1,4 +1,5 @@
 library(atSNP)
+library(testthat)
 
 if(FALSE) {
   motif_encode <- LoadMotifLibrary("http://compbio.mit.edu/encode-motifs/motifs.txt", tag = ">", transpose = FALSE, field = 1, sep = c("\t", " ", ">"), skipcols = 1, skiprows = 1, pseudocount = 0)

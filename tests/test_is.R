@@ -1,4 +1,5 @@
 library(atSNP)
+library(testthat)
 data(example)
 
 trans_mat <- matrix(rep(snpInfo$prior, each = 4), nrow = 4)

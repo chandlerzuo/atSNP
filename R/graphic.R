@@ -41,7 +41,7 @@
 #' @author Sunyoung Shin\email{shin@@stat.wisc.edu}
 #' @examples
 #' data(example)
-#' dtMotifMatch(motif_scores$snp.tbl, motif_scores$motif.scores, motif_scores$snp.tbl$snpid[1:100], motif_scores$motif.scores$motif[1], motif.lib = motif_library)
+#' dtMotifMatch(motif_scores$snp.tbl, motif_scores$motif.scores, motif_scores$snp.tbl$snpid, motif_scores$motif.scores$motif[1], motif.lib = motif_library)
 #' @import data.table doMC
 #' @export
 dtMotifMatch<-function(motif.lib, snp.tbl, motif.scores, snpids=NULL, motifs=NULL, ncores=10) {
@@ -118,7 +118,7 @@ dtMotifMatch<-function(motif.lib, snp.tbl, motif.scores, snpids=NULL, motifs=NUL
 #' @author Sunyoung Shin\email{shin@@stat.wisc.edu}
 #' @examples
 #' data(example)
-#' plotMotifMatch(motif_scores$snp.tbl, motif_scores$motif.scores, motif_scores$snp.tbl$snpid[50], motif_scores$motif.scores$motif[1], motif.lib = motif_library)
+#' plotMotifMatch(motif_scores$snp.tbl, motif_scores$motif.scores, motif_scores$snp.tbl$snpid[1], motif_scores$motif.scores$motif[1], motif.lib = motif_library)
 #' @import data.table motifStack doMC
 #' @export
 plotMotifMatch<-function(snp.tbl, motif.scores, snpid, motif, motif.lib, cex.main = 2, ...) {
@@ -131,7 +131,7 @@ plotMotifMatch<-function(snp.tbl, motif.scores, snpid, motif, motif.lib, cex.mai
   if(sum(! motif %in% names(motif.lib)) > 0) {
     stop("Error: The motif is not included in 'motif.lib'.")
   }
-  library(motifStack)
+  
   motif.match.dt <- dtMotifMatch(snp.tbl, motif.scores, snpid, motif, ncores = 1, motif.lib = motif.lib)  
   ##snpid, motif, ref_strand, ref_seq, pwm_ref, snp_strand, snp_seq, pwm_snp, ref_location, snp_location, snp_ref_length) {
   

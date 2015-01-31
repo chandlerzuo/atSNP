@@ -1,10 +1,11 @@
 library(atSNP)
+library(testthat)
 data(example)
 
 trans_mat <- matrix(rep(snpInfo$prior, each = 4), nrow = 4)
-id <- 4
-test_pwm <- motif_library[[6]]
-scores <- as.matrix(motif_scores$motif.scores[motif == names(motif_library)[6], list(log_lik_ref, log_lik_snp)])
+id <- 1
+test_pwm <- motif_library[[id]]
+scores <- as.matrix(motif_scores$motif.scores[motif == names(motif_library)[id], list(log_lik_ref, log_lik_snp)])
 score_diff <- apply(scores, 1, function(x) abs(diff(x)))
 
 test_score <- test_pwm

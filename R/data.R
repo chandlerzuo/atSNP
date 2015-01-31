@@ -4,7 +4,6 @@
 #' @docType data
 #' @format A list object.
 #' @author Chandler Zuo zuo@@stat.wisc.edu
-#' @import testthat
 NULL
 
 #' @name snpInfo
@@ -17,6 +16,20 @@ NULL
 #' }
 #' @docType data
 #' @format A list object.
+#' @author Chandler Zuo zuo@@stat.wisc.edu
+NULL
+
+#' @name snp_tbl
+#' @title A data frame for SNP information.
+#' @description This data frame is loaded by 'data(example)'. It is a table including the following columns:
+#' \tabular{ll}{
+#' chr \tab The chromosome.\cr
+#' snp \tab The SNP location coordinate.\cr
+#' snpid \tab The SNP label.\cr
+#' a1,a2 \tab The nucleotide on the reference and SNP allele.\cr
+#' }
+#' @docType data
+#' @format A data.frame object.
 #' @author Chandler Zuo zuo@@stat.wisc.edu
 NULL
 

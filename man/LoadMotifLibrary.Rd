@@ -16,7 +16,7 @@ LoadMotifLibrary(filename, tag = "MOTIF", transpose = FALSE, field = 2,
 
 \item{field}{The index of the field in the description line, seperated by space, that indicates the motif name.}
 
-\item{sep}{A vector of chars for the string separators to parse each lines of the matrix. Default: c(" ", "\t").}
+\item{sep}{A vector of chars for the string separators to parse each lines of the matrix. Default: c(" ", "\\t").}
 
 \item{skipcols}{Number of columns to be skipped in the position weight matrix.}
 

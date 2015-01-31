@@ -7,7 +7,7 @@
 #' @param skipcols Number of columns to be skipped in the position weight matrix. 
 #' @param transpose If TRUE (default), then the position weight matrix should have 4 columns. Otherwise, it should have 4 rows.
 #' @param field The index of the field in the description line, seperated by space, that indicates the motif name.
-#' @param sep A vector of chars for the string separators to parse each lines of the matrix. Default: c(" ", "\t").
+#' @param sep A vector of chars for the string separators to parse each lines of the matrix. Default: c(" ", "\\t").
 #' @param pseudocount An integer for the pseudocount added to each of the original matrices. Default: 0. Recommended to be 1 if the original matrices are position frequency matrices.
 #' @details This function reads the formatted file containing motif information and convert them into a list of position weight matrices. The list of arguments should provide enough flexibility of importing a varying number of formats. Som eexamples are the following:
 #' For MEME format, the suggested arguments are: tag = 'Motif', skiprows = 2, skipcols = 0, transpose = FALSE, field = 2, sep = " ";
