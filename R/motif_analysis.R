@@ -662,7 +662,7 @@ ComputePValues <- function(motif.lib, snp.info, motif.scores, ncores = 1, figdir
     pval_diff[pval_diff[, 1] > 1, 1] <- 1
     pval_rank[, 1] <- sort(pval_rank[,1])[rank(-rank_ratio)]
     pval_rank[pval_rank[, 1] > 1, 1] <- 1
-    message("Finished testing the ", motifid, "th motif")
+    message("Finished testing motif No. ", motifid)
     ##    save(list = ls(), file = paste("/p/keles/ENCODE-CHARGE/volume2/SNP/test/motif", motifid, ".Rda", sep= ""))
     if(!is.null(figdir)) {
     if(!file.exists(figdir)) {
