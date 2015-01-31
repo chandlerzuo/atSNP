@@ -1,3 +1,5 @@
+%\VignetteEngine{knitr::knitr}
+
 \documentclass[a4paper,10pt]{article}
 \usepackage{amsmath,mathrsfs,graphicx}
 %\usepackage[top=2cm,bottom=2cm,left=2cm,right=2cm]{geometry}
@@ -6,15 +8,14 @@
 %\usepackage{natbib}
 
 %\usepackage{Sweave}
-<<style-Sweave, eval=TRUE, echo=FALSE, results=tex>>=
-BiocStyle::latex()
+<<style-knitr, eval=TRUE, echo=FALSE, results="asis">>=
+  BiocStyle::latex()
 @
 
 \title{atSNP: affinity tests for regulatory SNP detection}
 
-\author{Chandler Zuo\footnote{Department of Statistics and of Biostatistics and Medical Informatics, 1300 University Avenue, Madison, WI, 53706, USA.}\\
-Sunyoung Shin\footnote{Department of Statistics and of Biostatistics and Medical Informatics, 1300 University Avenue, Madison, WI, 53706, USA.}  \\
-S\"und\"uz Kele\c{s}\footnote{Departments of Statistics and of Biostatistics and Medical Informatics, 1300 University Avenue, Madison, WI, 53706, USA.}}
+\author{Chandler Zuo, Sunyoung Shin and S\"und\"uz Kele\c{s}\\
+Department of Statistics and of Biostatistics and Medical Informatics, University of Wisconsin Madison}
   
 \date{}
 
@@ -50,7 +51,7 @@ In one of our research projects, we have used atSNP to evaluate interactions bet
 
 We are working to make the package available through bioconductor. The developing version can be installed from the Github repository:
 
-<<eval=FALSE, echo=TRUE,results=hide>>=
+<<eval=FALSE, echo=TRUE,results="hide">>=
 library(devtools)
 install_github("chandlerzuo/atSNP")
 @ 
@@ -67,9 +68,23 @@ install_github("chandlerzuo/atSNP")
   
 In addition, users also need to install the annotation package from \url{www.bioconductor.org/packages/3.0/data/annotation/} that corresponds to the species type and genome version. Our example SNP data set in the subsequent sections corresponds to the hg19 version of human genome. To repeat the sample codes in this vignette, the \Biocannopkg{BSgenome.Hsapiens.UCSC.hg19} package is required. To install it from the \Bioconductor{} repository,
 
-<<eval=FALSE, echo=TRUE, results=hide>>=
-source("http://bioconduc.org/biocLite.R")
-biocLite("BSgenome.Hsapiens.UCSC.hg19")
+% This just makes the code appear in pretty format
+
+<<include=TRUE,echo=TRUE,eval=FALSE,results="markup">>=
+  source("http://bioconductor.org/biocLite.R")
+  biocLite("BSgenome.Hsapiens.UCSC.hg19")
+@ 
+
+% This is what actually runs the code
+
+<<include=FALSE,eval=TRUE, echo=FALSE, results="hide">>=
+source("http://bioconductor.org/biocLite.R")
+if (!require("BSgenome.Hsapiens.UCSC.hg19",character.only = TRUE))
+{
+  biocLite("BSgenome.Hsapiens.UCSC.hg19",suppressAutoUpdate=TRUE)
+  if(!require("BSgenome.Hsapiens.UCSC.hg19",character.only = TRUE)) stop("Package not found")
+}
+tidy.opt = list(width.cutoff = 60)
 @ 
 
 Notice that the annotation package is usually large and this installation step may take a substantial amout of time.
@@ -99,31 +114,45 @@ Notice that the annotation package is usually large and this installation step m
 % G [17 2 37 0 0 52 3 0 53 8 37 12 ]
 % T [11 0 9 0 0 0 0 52 1 6 15 20 ]
 
-<<eval=TRUE, echo=TRUE, results = verbatim>>=
+% I added this chunck to avoid unnecesary echo's in documents
+% that way only loads atSNP
+
+<<eval=TRUE,echo=FALSE,results="hide">>=
+  library(IRanges)
+  library(BSgenome)
+@ 
+
+
+<<eval=TRUE, echo=TRUE, results = "markup">>=
 library(atSNP)
+@ 
+
+<<eval=TRUE, echo=TRUE, results = "markup">>=
 data(encode_motif)
 length(motif_encode)
 motif_encode[seq(3)]
 @ 
 
-Here, the motif library is represented by \Robject{motif_encode}, which is a list of position weight matrices. The codes below shows the content of one matrix as well as its IUPAC letters:
+Here, the motif library is represented by \Robject{motif\_encode},
+which is a list of position weight matrices. The codes below shows the
+content of one matrix as well as its IUPAC letters:
 
-<<eval=TRUE, echo=TRUE, results=verbatim>>=
+<<eval=TRUE, echo=TRUE, results="markup",tidy=TRUE>>=
 motif_encode[[1]]
 GetIUPACSequence(motif_encode[[1]])
 @ 
 
-The data object \Robject{encode_motif} also contains a character vector \Robject{motif_info} that contains detailed information for each motif.
+The data object \Robject{encode\_motif} also contains a character vector \Robject{motif\_info} that contains detailed information for each motif.
 
-<<eval=TRUE, echo=TRUE, results = verbatim>>=
+<<eval=TRUE, echo=TRUE, results = "markup",tidy=TRUE>>=
 length(motif_info)
 head(motif_info)
 @ 
 
-Here, the entry names of this vector are the same as the names of the motif library. \Robject{motif_info} allows easy looking up the motif information for a specific PWM. For example, to look up the motif information for the first PWM in \Robject{motif_encode}:
+Here, the entry names of this vector are the same as the names of the motif library. \Robject{motif\_info} allows easy looking up the motif information for a specific PWM. For example, to look up the motif information for the first PWM in \Robject{motif\_encode}:
 
-<<eval=TRUE, echo=TRUE, results=verbatim>>=
-motif_info[names(motif_encode[[1]])]
+<<eval=TRUE, echo=TRUE, results="markup",tidy=TRUE>>=
+motif_info[names(motif_encode[1])]
 @ 
 
 % Following my earlier comment, it may be useful to be able to
@@ -131,7 +160,8 @@ motif_info[names(motif_encode[[1]])]
 
 Users can also provide a list of PWMs as the motif library via the \Rfunction{LoadMotifLibrary} function. In this function, 'tag' specifies the string that marks the start of each block of PWM; 'skiprows' is the number of description lines before the PWM; 'skipcols' is the number of columns to be skipped in the PWM matrix; 'transpose' is TRUE if the PWM has 4 rows representing A, C, G, T or FALSE if otherwise; 'field' is the position of the motif name within the description line; 'sep' is a vector of separators in the PWM; 'pseudocount' is the number added to the raw matrices, recommended to be 1 if the matrices are in fact position frequency matrices. These arguments provide the flexibility of loading a number of varying formatted files. The PWMs are returned as a list object. This function flexibly adapts to a variety of different formats. Some examples using online accessible files from other research groups are shown below.
 
-<<eval=FALSE, echo=TRUE, results=hide>>=
+<<eval=FALSE, echo=TRUE, results="hide">>=
+
 pwms <- LoadMotifLibrary(
  "http://meme.nbcr.net/meme/examples/sample-dna-motif.meme-io")
 pwms <- LoadMotifLibrary(
@@ -152,10 +182,12 @@ pwms <- LoadMotifLibrary(
  "http://jaspar.genereg.net/html/DOWNLOAD/JASPAR_CORE/pfm/nonredundant/pfm_vertebrates.txt",
  tag = ">", skiprows = 1, skipcols = 0, transpose = TRUE, field = 1, 
  sep = c(">", "\t", " "), pseudocount = 1)
-pwms <- LoadMotifLibrary(
- "http://gibbs.biomed.ucf.edu/PreDREM/download/nonredundantmotif.transfac", 
- tag = "DE", skiprows = 1, skipcols = 1, 
- transpose = FALSE, field = 2, sep = "\t")
+
+## pwms <- LoadMotifLibrary(
+##  "http://gibbs.biomed.ucf.edu/PreDREM/download/nonredundantmotif.transfac", 
+##  tag = "DE", skiprows = 1, skipcols = 1, 
+##  transpose = FALSE, field = 2, sep = "\t")
+
 @ 
 
 % Perhaps it may useful to add explicit links to those databases, or
@@ -177,26 +209,27 @@ The data set for the SNP information must be a table including five columns:
 This data set can be loaded using the \Rfunction{LoadSNPData} function. The 'genome.lib' argument specifies the annotation package name corresponding to the SNP data set, with the default as 'BSgenome.Hsapiens.UCSC.hg19'. Each side of the SNP is extended by a number of base pairs specified by the 'half.window.size' argument. \Rfunction{LoadSNPData} extracts the genome sequence within such windows around each SNP using the 'genome.lib' package. An example is the following:
 
 The following codes generate a synthetic SNP data and loads it back in \R{}:
-<<eval=TRUE, echo=TRUE, results=verbatim>>=
-data(example)
-write.table(snp_tbl, file = "test_snp_file.txt",
+<<eval=TRUE, echo=TRUE, results="markup",tidy=FALSE>>=
+
+  data(example)
+  write.table(snp_tbl, file = "test_snp_file.txt",
             row.names = FALSE, quote = FALSE)
-snp_info <- LoadSNPData("test_snp_file.txt",
-            genome.lib = "BSgenome.Hsapiens.UCSC.hg19",
-            half.window.size = 30, default.par = TRUE,
-            mutation = FALSE)
-ncol(snp_info$sequence) == nrow(snp_tbl)
+  snp_info <- LoadSNPData("test_snp_file.txt", genome.lib = "BSgenome.Hsapiens.UCSC.hg19",
+                          half.window.size = 30, default.par = TRUE,mutation = FALSE)
+  ncol(snp_info$sequence) == nrow(snp_tbl)
+
 @ 
 
 The 'mutation' argument specifies whether the data set is related to SNP or general single nucleotide mutation. By default, 'mutation=FALSE'. In this case, \Rfunction{LoadSNPData} get the nucleotides on the reference genome based on the genome coordinates specified by 'chr' and 'snp' and match them to 'a1' and 'a2' alleles. 'a1' and 'a2' nucleotides are assigned to the refrence or the SNP allele based on which one matches to the reference nucleotide. If neither allele matches to the reference nucleotide, the corresponding row in the SNP information file is discarded. Alternatively, if 'mutation=TRUE', no row is discarded. \Rfunction{LoadSNPData} takes the reference sequences around the SNP locations, replaces the reference nucleotides at the SNP locations by 'a1' nucleotides to construct the 'reference' sequences, and by 'a2' nucleotides to construct the 'SNP' sequences. Notice that in this case, in the subsequent analysis, whenever we refer to the ``reference'' or the ``SNP'' allele, it actually means the ``a1'' or the ``a2'' allele.
 
-<<eval=TRUE, echo=TRUE, results=verbatim>>=
-mutation_info <- LoadSNPData("test_snp_file.txt",
-                             genome.lib = "BSgenome.Hsapiens.UCSC.hg19",
-                             half.window.size = 30, default.par = TRUE,
-                             mutation = TRUE)
-ncol(snp_info$sequence) == nrow(snp_tbl)
-file.remove("test_snp_file.txt")
+% manually wrapping the lines works better than setting tidy = TRUE
+<<eval=TRUE, echo=TRUE, results="markup",tidy=FALSE>>=
+
+  mutation_info <- LoadSNPData("test_snp_file.txt", genome.lib = "BSgenome.Hsapiens.UCSC.hg19",
+                               half.window.size = 30, default.par = TRUE, mutation = TRUE)
+  ncol(mutation_info$sequence) == nrow(snp_tbl)
+  file.remove("test_snp_file.txt")
+
 @ 
 
 % This example is not showing in the pdf vignette
@@ -213,13 +246,15 @@ If 'default.par = FALSE', \Rfunction{LoadSNPData} simultaneously estimates the p
 
 A toy sample data set including a preloaded motif library and a SNP set is included in the package:
 
-<<eval=TRUE, echo=TRUE, results=verbatim>>=
-data(example)
-names(motif_library)
-str(snpInfo)
+<<eval=TRUE, echo=TRUE, results="markup",tidy=TRUE>>=
+
+  data(example)
+  names(motif_library)
+  str(snpInfo)
 ## to look at the motif information
-data(encode_motif)
-motif_info[names(motif_library)]
+  data(encode_motif)
+  motif_info[names(motif_library)]
+
 @ 
 
 
@@ -227,10 +262,11 @@ motif_info[names(motif_library)]
 
 The binding affinity scores for all pairs of SNP and PWM can be computed by the \Rfunction{ComputeMotifScore} function. It returns a list of two fields: 'snp.tbl' is a \Rclass{data.table} containing the nucleotide sequences for each SNP; 'motif.scores' is a \Rclass{data.table} containing the binding affinity scores for each SNP-motif pair.
 
-<<eval=TRUE, echo=TRUE, results=verbatim>>=
-motif_score <- ComputeMotifScore(motif_library, snpInfo, ncores = 2)
-motif_score$snp.tbl
-motif_score$motif.scores[, list(snpid, motif, log_lik_ref,
+<<eval=TRUE, echo=TRUE, results="markup">>=
+
+  motif_score <- ComputeMotifScore(motif_library, snpInfo, ncores = 2)
+  motif_score$snp.tbl
+  motif_score$motif.scores[, list(snpid, motif, log_lik_ref,
                                 log_lik_snp, log_lik_ratio)]
 @ 
 
@@ -251,47 +287,54 @@ After we have computed the binding affinity scores, they can be tested using the
 
 We recommend using 'pval\_ref'and 'pval\_snp' for assessing the significance of allele specific affinity; and using 'pval\_rank' for assessing the significance of the SNP effect on the affinity change.
 
-<<eval=TRUE,echo=TRUE,results=verbatim>>=
-motif.scores <- ComputePValues(motif.lib = motif_library,
-                               snp.info = snpInfo,
-                               motif.scores = motif_scores$motif.scores,
-                               ncores = 7)
-motif.scores[, list(snpid, motif, pval_ref, pval_snp, pval_rank, pval_diff)]
+<<eval=TRUE,echo=TRUE,results="markup">>=
+  
+  motif.scores <- ComputePValues(motif.lib = motif_library, snp.info = snpInfo,
+                                 motif.scores = motif_scores$motif.scores,
+				 ncores = 2)
+  motif.scores[, list(snpid, motif, pval_ref, pval_snp, pval_rank, pval_diff)]
+
 @ 
 
 \subsection{Additional analysis}
 
 atSNP provides additional functions to extract the matched nucleotide subsequences that match to the motifs. Function \Rfunction{MatchSubsequence} adds the subsequence matches to the affinity score table by using the motif library and the SNP set. The subsequences matching to the motif in the two alleles are returned in the 'ref\_match\_seq' and 'snp\_match\_seq' columns. The 'IUPAC' column returns the IUPAC letters of the motifs. Notice that if you have a large number of SNPs and motifs, the returned table can be very large.
 
-<<eval=TRUE,echo=TRUE,results=verbatim>>=
-match_result <- MatchSubsequence(snp.tbl = motif_scores$snp.tbl,
+<<eval=TRUE,echo=TRUE,results="markup">>=
+  
+  match_result <- MatchSubsequence(snp.tbl = motif_scores$snp.tbl,
                                  motif.scores = motif.scores,
                                  motif.lib = motif_library,
                                  snpids = c("rs10910078", "rs4486391"),
                                  motifs = names(motif_library)[1:2],
                                  ncores = 2)
-match_result[, list(snpid, motif, IUPAC, ref_match_seq, snp_match_seq)]
+  match_result[, list(snpid, motif, IUPAC, ref_match_seq, snp_match_seq)]
+
 @ 
 
 To visualize how each motif is matched to each allele using the \Rfunction{plotMotifMatch} function:
 
-<<eval=TRUE, echo=TRUE,fig=TRUE>>=
-plotMotifMatch(snp.tbl = motif_scores$snp.tbl,
+<<include=TRUE,eval=TRUE, echo=TRUE,fig.align="center",dpi=600,fig.width=6,fig.height=6>>=
+
+  plotMotifMatch(snp.tbl = motif_scores$snp.tbl,
                motif.scores = motif_scores$motif.scores,
                snpid = motif_scores$snp.tbl$snpid[1],
                motif.lib = motif_library,
                motif = motif_scores$motif.scores$motif[1])
+
 @
 
 \section{Session Information}
 
-<<eval=TRUE,echo=FALSE,results=verbatim,cache=FALSE>>=
+<<eval=TRUE,echo=FALSE,results="markup",cache=FALSE>>=
 print(sessionInfo())
 @
 
-\bibliographystyle{apalike}
+
+%\bibliographystyle{apalike}
 %\bibliographystyle{natbib}
 
+\bibliographystyle{plain}
 \bibliography{document}
 
 \end{document}

@@ -161,7 +161,7 @@ LoadSNPData <- function(filename, genome.lib = "BSgenome.Hsapiens.UCSC.hg19",
     a2.ref.base.id <- a2.ref.base.id[!a2.ref.base.id %in% a1.ref.base.id]
     discard.id <- setdiff(seq_along(a1), c(a1.ref.base.id, a2.ref.base.id))
     if(length(discard.id) > 0) {
-      message(length(discard.id), "sequences are discarded because the reference nucleotide matches to neither a1 nor a2.")
+      message(length(discard.id), " sequences are discarded because the reference nucleotide matches to neither a1 nor a2.")
     }
   } else {
     ## single nucleotide mutation data
