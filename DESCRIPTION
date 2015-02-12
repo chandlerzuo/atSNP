@@ -8,7 +8,7 @@ Maintainer: Chandler Zuo<zuo@stat.wisc.edu> Sunyoung Shin<shin@stat.wisc.edu>
 Description: Affinity test for regulatory SNPs.
 License: GPL-2
 LinkingTo: Rcpp
-Suggests: testthat, BiocStyle, BSgenome.Hsapiens.UCSC.hg19
+Suggests: testthat, BiocStyle, BSgenome.Hsapiens.UCSC.hg19, SNPlocs.Hsapiens.dbSNP.20120608
 Depends:
     Rcpp,
     data.table,

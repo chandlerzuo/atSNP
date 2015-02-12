@@ -374,7 +374,13 @@ The following codes generate a synthetic SNP data and loads it back in \R{}:
 \end{alltt}
 
 
-{\ttfamily\noindent\itshape\color{messagecolor}{\#\# 3 sequences are discarded because the reference nucleotide matches to neither a1 nor a2.}}\begin{alltt}
+{\ttfamily\noindent\itshape\color{messagecolor}{\#\# 3 sequences are discarded because the reference nucleotide matches to neither a1 nor a2.}}\begin{verbatim}
+##       snpid  chr     snp a1 a2
+## 3 rs2495365 chr1 2498027  T  C
+## 4 rs2281852 chr1 2490942  T  G
+## 5 rs1886730 chr1 2488608  A  G
+\end{verbatim}
+\begin{alltt}
   \hlkwd{ncol}\hlstd{(snp_info}\hlopt{$}\hlstd{sequence)} \hlopt{==} \hlkwd{nrow}\hlstd{(snp_tbl)}
 \end{alltt}
 \begin{verbatim}

@@ -91,12 +91,16 @@ LoadMotifLibrary <- function(filename, tag = "MOTIF", transpose = FALSE, field =
 #' a1 \tab The deoxyribose for one allele.\cr
 #' a2 \tab The deoxyribose for the other allele.\cr
 #' }
+#' If this file exists already, it is used to extract the SNP information. Otherwise, SNP information extracted using argument 'snpids' is outputted to this file. 
+#' @param snpids A vector of rs ids for the SNPs. This argument is overidden if the file with name 'filename' exists.
+#‘ @param snp.lib A string of the library name to obtain the SNP information based on rs ids. Default: "SNPlocs.Hsapiens.dbSNP.20120608".
 #' @param genome.lib A string of the library name for the genome version. Default: "BSgenome.Hsapiens.UCSC.hg19".
 #' @param half.window.size An integer for the half window size around the SNP within which the motifs are matched. Default: 30.
 #' @param default.par A boolean for whether using the default Markov parameters. Default: FALSE.
 #' @param mutation A boolean for whether this is mutation data. See details for more information. Default: FALSE.
 #' @param ... Other parameters passed to 'read.table'.
-#' @details This function extracts the nucleotide sequence within a window around each SNP and code them using 1-A, 2-C, 3-G, 4-T. The sequences are extracted using the Bioconductor annotation package specified by 'genome.lib'. Users should make sure that this annotation package corresponds to the correct species and genome version of the actual data.\cr
+#' @details This function extracts the nucleotide sequence within a window around each SNP and code them using 1-A, 2-C, 3-G, 4-T.\cr
+#' There are two ways of obtaining the nucleotide sequences. If 'filename' is not NULL and the file exists, it should contain the positions and alleles for each SNP. Based on such information, the sequences around SNP positions are extracted using the Bioconductor annotation package specified by 'genome.lib'. Users should make sure that this annotation package corresponds to the correct species and genome version of the actual data. Alternatively, users can also provide a vector of rs ids via the argument 'snpids'. The SNP locations and allele information is then obtained via the Bioconductor annotation package specified by 'snp.lib', and passed on to the package specified by 'genome.lib' to further obtain the nucleotide sequences.\cr
 #' If 'mutation=FALSE' (default), this function assumes that the data is for SNP analysis, and the reference genome should be consistent with either the a1 or a2 nucleotide. When extracting the genome sequence around each SNP position, this function compares the nucleotide at the SNP location on the reference genome with both a1 and a2 to distinguish between the reference allele and the SNP allele. If the nucleotide extracted from the reference genome does not match either a1 or a2, the SNP is discarded.\cr
 #' Alternatively, if 'mutation=TRUE', this function assumes that the data is for general single nucleotide mutation analysis. After extracting the genome sequence around each SNP position, it replaces the nucleotide at the SNP location by the a1 nucleotide as the 'reference' allele sequence, and by the a2 nucleotide as the 'snp' allele sequence. It does NOT discard the sequence even if neither a1 or a2 matches the reference genome. When this data set is used in other functions, such as 'ComputeMotifScore', 'ComputePValues', all the results (i.e. affinity scores and their p-values) for the reference allele are indeed for the a1 allele, and results for the SNP allele are indeed for the a2 allele.
 #' @return A list object containing the following components:
@@ -111,16 +115,65 @@ LoadMotifLibrary <- function(filename, tag = "MOTIF", transpose = FALSE, field =
 #' \dontrun{LoadSNPData("/p/keles/ENCODE-CHARGE/volume2/SNP/hg19_allinfo.bed")}
 #' @useDynLib atSNP
 #' @export
-LoadSNPData <- function(filename, genome.lib = "BSgenome.Hsapiens.UCSC.hg19",
-                        half.window.size = 30, default.par = FALSE,
+LoadSNPData <- function(filename = NULL, genome.lib = "BSgenome.Hsapiens.UCSC.hg19",
+			snp.lib = "SNPlocs.Hsapiens.dbSNP.20120608",
+			snpids = NULL, half.window.size = 30, default.par = FALSE,
                         mutation = FALSE, ...) {
-  ## load the corresponding genome version
-  library(package = genome.lib, character.only = TRUE)
-  tbl <- read.table(filename, header = TRUE, stringsAsFactors = FALSE, ...)
-  ## check if the input file has the required information
-  if(sum(!c("snp", "chr", "a1", "a2", "snpid") %in% names(tbl)) > 0) {
-    stop("Error: 'filename' must be a table containing 'snp' and 'chr' columns.")
+  if(!is.null(filename) & file.exists(filename)) {
+    if(!is.null(snpids)) {
+      message("Warning: load SNP information from 'filename' only. The argument 'snpids' is overridden.")
+    }
+    tbl <- read.table(filename, header = TRUE, stringsAsFactors = FALSE, ...)
+    ## check if the input file has the required information
+    if(sum(!c("snp", "chr", "a1", "a2", "snpid") %in% names(tbl)) > 0) {
+      stop("Error: 'filename' must be a table containing 'snp' and 'chr' columns.")
+    }
+  } else {
+    if(is.null(snpids)) {
+      stop("Error: either 'snpids' should be a vector, or 'filename' should be the file name that contains the SNP information.")
+    }
+    ## load the corresponding snp library
+    library(package = snp.lib, character.only = TRUE)
+    snp.loc <- rsid2loc(snpids)
+    snp.alleles <- rsid2alleles(snpids)
+    snp.alleles <- IUPAC_CODE_MAP[snp.alleles]
+    gr <- rsidsToGRanges(snpids)
+    snp.strands <- as.character(GenomicRanges::as.data.frame(gr)$strand)
+    if(sum(nchar(snp.alleles) > 2) > 0) {
+      message("The following SNPs do not have 2 alleles: ")
+      message(paste(snpids[nchar(snp.alleles) != 2], collapse = ", "))
+    }
+    ## retain only SNPs with >= 2 alleles
+    ids <- which(sapply(snp.alleles, nchar) >= 2)
+    snp.loc <- snp.loc[ids]
+    snp.alleles <- snp.alleles[ids]
+    snpids <- snpids[ids]
+    snp.alleles <- strsplit(snp.alleles, "")
+    snp.strands <- snp.strands[ids]
+    a1 <- sapply(snp.alleles, function(x) x[1])
+    a2 <- sapply(snp.alleles, function(x) x[2])
+    ## revert the alleles on the reverse strand
+    id.rev <- which(snp.strands != "+")
+    if(length(id.rev) > 0) {  
+      rev.codes <- c("A", "C", "G", "T")
+      names(rev.codes) <- rev(rev.codes)
+      a1[id.rev] <- rev.codes[a1[id.rev]]
+      a2[id.rev] <- rev.codes[a2[id.rev]]
+    }
+
+    tbl <- data.frame(
+                      snp = snp.loc,
+		      chr = as.character(sub("ch", "chr", names(snp.loc))),
+		      a1 = as.character(a1),
+                      a2 = as.character(a2),
+		      snpid = as.character(snpids))
+    if(!file.exists(filename)) {
+      write.table(tbl, file = filename, row.names = FALSE, col.names = TRUE, quote = FALSE)
+    }
   }
+
+  ## load the corresponding genome version
+  library(package = genome.lib, character.only = TRUE) 
   seqvec <- getSeq(Hsapiens,
                    as.character(tbl$chr),
                    start=tbl$snp - half.window.size,
@@ -129,15 +182,15 @@ LoadSNPData <- function(filename, genome.lib = "BSgenome.Hsapiens.UCSC.hg19",
   codes <- seq(4)
   names(codes) <- c("A", "C", "G", "T")
   sequences <- sapply(seqvec, function(x) codes[strsplit(x, "")[[1]]])
-  colnames(sequences) <- tbl$snpid
+  colnames(sequences) <- as.character(tbl$snpid)
   rownames(sequences) <- NULL
-  a1 <- codes[tbl$a1]
-  a2 <- codes[tbl$a2]
+  a1 <- codes[as.character(tbl$a1)]
+  a2 <- codes[as.character(tbl$a2)]
   names(a1) <- names(a2) <- NULL
   keep.id <- which(apply(sequences, 2, function(x) sum(is.na(x))) == 0)
   if(length(keep.id) < nrow(tbl)) {
     message("The following rows are discarded because the reference genome sequences contain non ACGT characters:")
-    message(tbl[-keep.id, ])
+    print(tbl[-keep.id, ])
   }
   ## remove sequences containing non ACGT characters
   sequences <- sequences[, keep.id]
@@ -162,6 +215,7 @@ LoadSNPData <- function(filename, genome.lib = "BSgenome.Hsapiens.UCSC.hg19",
     discard.id <- setdiff(seq_along(a1), c(a1.ref.base.id, a2.ref.base.id))
     if(length(discard.id) > 0) {
       message(length(discard.id), " sequences are discarded because the reference nucleotide matches to neither a1 nor a2.")
+      print(tbl[keep.id[discard.id], ])
     }
   } else {
     ## single nucleotide mutation data
