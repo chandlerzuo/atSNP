@@ -8,6 +8,7 @@
 ## ----include=TRUE,echo=TRUE,eval=FALSE,results="markup"---------------------------------
 #    source("http://bioconductor.org/biocLite.R")
 #    biocLite("BSgenome.Hsapiens.UCSC.hg19")
+#    biocLite("SNPlocs.Hsapiens.dbSNP.20120608")
 
 ## ----include=FALSE,eval=TRUE, echo=FALSE, results="hide"--------------------------------
 source("http://bioconductor.org/biocLite.R")
@@ -76,9 +77,18 @@ motif_info[names(motif_encode[1])]
   write.table(snp_tbl, file = "test_snp_file.txt",
             row.names = FALSE, quote = FALSE)
   snp_info <- LoadSNPData("test_snp_file.txt", genome.lib = "BSgenome.Hsapiens.UCSC.hg19",
-                          half.window.size = 30, default.par = TRUE,mutation = FALSE)
+                          half.window.size = 30, default.par = TRUE, mutation = FALSE)
   ncol(snp_info$sequence) == nrow(snp_tbl)
 
+
+## ----eval=TRUE, echo=TRUE, results="markup", tidy=FALSE---------------------------------
+
+snp_info1 <- LoadSNPData(snpids = c("rs5050", "rs616488", "rs11249433"),
+                         genome.lib = "BSgenome.Hsapiens.UCSC.hg19",
+  			 snp.lib = "SNPlocs.Hsapiens.dbSNP.20120608",
+ 			 half.window.size = 30,
+			 default.par = TRUE,
+			 mutation = FALSE)
 
 ## ----eval=TRUE, echo=TRUE, results="markup",tidy=FALSE----------------------------------
 

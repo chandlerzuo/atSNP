@@ -21,8 +21,8 @@ INSTALLATION
 
 atSNP will be available at Bioconductor. Currently you can download the development version here and install in R by:
 
-    library( devtools )
-    install_github( "chandlerzuo/atSNP" )
+    library(devtools)
+    install_github("chandlerzuo/atSNP")
 
 
 REFERENCES

@@ -119,7 +119,13 @@ LoadSNPData <- function(filename = NULL, genome.lib = "BSgenome.Hsapiens.UCSC.hg
 			snp.lib = "SNPlocs.Hsapiens.dbSNP.20120608",
 			snpids = NULL, half.window.size = 30, default.par = FALSE,
                         mutation = FALSE, ...) {
-  if(!is.null(filename) & file.exists(filename)) {
+  useFile <- FALSE
+  if(!is.null(filename)) {
+    if(file.exists(filename)) {
+      useFile <- TRUE
+    }
+  }
+  if(useFile) {
     if(!is.null(snpids)) {
       message("Warning: load SNP information from 'filename' only. The argument 'snpids' is overridden.")
     }
@@ -167,7 +173,7 @@ LoadSNPData <- function(filename = NULL, genome.lib = "BSgenome.Hsapiens.UCSC.hg
 		      a1 = as.character(a1),
                       a2 = as.character(a2),
 		      snpid = as.character(snpids))
-    if(!file.exists(filename)) {
+    if(!is.null(filename)) {
       write.table(tbl, file = filename, row.names = FALSE, col.names = TRUE, quote = FALSE)
     }
   }

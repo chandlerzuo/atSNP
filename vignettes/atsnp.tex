@@ -117,8 +117,7 @@ We are working to make the package available through bioconductor. The developin
 \item \CRANpkg{Rcpp} interfaces the C++ codes that implements the importance sampling algorithm.
 \end{itemize}
   
-In addition, users also need to install the annotation package from \url{www.bioconductor.org/packages/3.0/data/annotation/} that corresponds to the species type and genome version. Our example SNP data set in the subsequent sections corresponds to the hg19 version of human genome. To repeat the sample codes in this vignette, the \Biocannopkg{BSgenome.Hsapiens.UCSC.hg19} package is required. To install it from the \Bioconductor{} repository,
-
+In addition, users need to install the annotation package \Biocannopkg{BSgenome} from \url{www.bioconductor.org/packages/3.0/data/annotation/} that corresponds to the species type and genome version. Our example SNP data set in the subsequent sections corresponds to the hg19 version of human genome. To repeat the sample codes in this vignette, the \Biocannopkg{BSgenome.Hsapiens.UCSC.hg19} package is required. If users wish to annotate the SNP location and allele information given their rs ids, they also need install the corresponding \Biocannopkg{SNPlocs} package. The sample codes in this vignettes require the package \Biocannopkg{SNPlocs.Hsapiens.dbSNP.20120608}. To install these packages from the \Bioconductor{} repository,
 % This just makes the code appear in pretty format
 
 \begin{knitrout}
@@ -126,6 +125,7 @@ In addition, users also need to install the annotation package from \url{www.bio
 \begin{alltt}
   \hlkwd{source}\hlstd{(}\hlstr{"http://bioconductor.org/biocLite.R"}\hlstd{)}
   \hlkwd{biocLite}\hlstd{(}\hlstr{"BSgenome.Hsapiens.UCSC.hg19"}\hlstd{)}
+  \hlkwd{biocLite}\hlstd{(}\hlstr{"SNPlocs.Hsapiens.dbSNP.20120608"}\hlstd{)}
 \end{alltt}
 \end{kframe}
 \end{knitrout}
@@ -134,7 +134,7 @@ In addition, users also need to install the annotation package from \url{www.bio
 
 
 
-Notice that the annotation package is usually large and this installation step may take a substantial amout of time.
+Notice that the annotation packages are usually large and this installation step may take a substantial amount of time.
 
 % In this section, there are several references to bioconductor
 % packages. I think that biocstyle would add the links but in the
@@ -370,7 +370,7 @@ The following codes generate a synthetic SNP data and loads it back in \R{}:
   \hlkwd{write.table}\hlstd{(snp_tbl,} \hlkwc{file} \hlstd{=} \hlstr{"test_snp_file.txt"}\hlstd{,}
             \hlkwc{row.names} \hlstd{=} \hlnum{FALSE}\hlstd{,} \hlkwc{quote} \hlstd{=} \hlnum{FALSE}\hlstd{)}
   \hlstd{snp_info} \hlkwb{<-} \hlkwd{LoadSNPData}\hlstd{(}\hlstr{"test_snp_file.txt"}\hlstd{,} \hlkwc{genome.lib} \hlstd{=} \hlstr{"BSgenome.Hsapiens.UCSC.hg19"}\hlstd{,}
-                          \hlkwc{half.window.size} \hlstd{=} \hlnum{30}\hlstd{,} \hlkwc{default.par} \hlstd{=} \hlnum{TRUE}\hlstd{,}\hlkwc{mutation} \hlstd{=} \hlnum{FALSE}\hlstd{)}
+                          \hlkwc{half.window.size} \hlstd{=} \hlnum{30}\hlstd{,} \hlkwc{default.par} \hlstd{=} \hlnum{TRUE}\hlstd{,} \hlkwc{mutation} \hlstd{=} \hlnum{FALSE}\hlstd{)}
 \end{alltt}
 
 
@@ -386,6 +386,21 @@ The following codes generate a synthetic SNP data and loads it back in \R{}:
 \begin{verbatim}
 ## [1] FALSE
 \end{verbatim}
+\end{kframe}
+\end{knitrout}
+
+Alternatively, users can also provide a list of rsids for the SNPs. In this case, \Rfunction{LoadSNPData} looks up the SNP location and the allele information using the annotation package specified by 'snp.lib'. The default value of 'snp.lib' is 'SNPlocs.Hsapiens.dbSNP.20120608'.
+
+\begin{knitrout}
+\definecolor{shadecolor}{rgb}{0.969, 0.969, 0.969}\color{fgcolor}\begin{kframe}
+\begin{alltt}
+\hlstd{snp_info1} \hlkwb{<-} \hlkwd{LoadSNPData}\hlstd{(}\hlkwc{snpids} \hlstd{=} \hlkwd{c}\hlstd{(}\hlstr{"rs5050"}\hlstd{,} \hlstr{"rs616488"}\hlstd{,} \hlstr{"rs11249433"}\hlstd{),}
+                         \hlkwc{genome.lib} \hlstd{=} \hlstr{"BSgenome.Hsapiens.UCSC.hg19"}\hlstd{,}
+                         \hlkwc{snp.lib} \hlstd{=} \hlstr{"SNPlocs.Hsapiens.dbSNP.20120608"}\hlstd{,}
+                         \hlkwc{half.window.size} \hlstd{=} \hlnum{30}\hlstd{,}
+                         \hlkwc{default.par} \hlstd{=} \hlnum{TRUE}\hlstd{,}
+                         \hlkwc{mutation} \hlstd{=} \hlnum{FALSE}\hlstd{)}
+\end{alltt}
 \end{kframe}
 \end{knitrout}
 
@@ -700,7 +715,7 @@ To visualize how each motif is matched to each allele using the \Rfunction{plotM
 \end{alltt}
 \end{kframe}
 
-{\centering \includegraphics[width=\maxwidth]{figure/unnamed-chunk-17-1} 
+{\centering \includegraphics[width=\maxwidth]{figure/unnamed-chunk-18-1} 
 
 }
 
@@ -727,16 +742,16 @@ To visualize how each motif is matched to each allele using the \Rfunction{plotM
 ## [9] base     
 ## 
 ## other attached packages:
-##  [1] atSNP_1.0                          motifStack_1.6.5                  
-##  [3] ade4_1.6-2                         MotIV_1.18.0                      
-##  [5] grImport_0.9-0                     XML_3.98-1.1                      
-##  [7] doMC_1.3.3                         iterators_1.0.7                   
-##  [9] foreach_1.4.2                      data.table_1.9.4                  
-## [11] Rcpp_0.11.4                        BSgenome.Hsapiens.UCSC.hg19_1.3.19
-## [13] BSgenome_1.30.0                    Biostrings_2.30.1                 
-## [15] GenomicRanges_1.14.4               XVector_0.2.0                     
-## [17] IRanges_1.20.7                     BiocGenerics_0.8.0                
-## [19] BiocInstaller_1.12.1              
+##  [1] SNPlocs.Hsapiens.dbSNP.20120608_0.99.9 atSNP_1.0                             
+##  [3] motifStack_1.6.5                       ade4_1.6-2                            
+##  [5] MotIV_1.18.0                           grImport_0.9-0                        
+##  [7] XML_3.98-1.1                           doMC_1.3.3                            
+##  [9] iterators_1.0.7                        foreach_1.4.2                         
+## [11] data.table_1.9.4                       Rcpp_0.11.4                           
+## [13] BSgenome.Hsapiens.UCSC.hg19_1.3.19     BSgenome_1.30.0                       
+## [15] Biostrings_2.30.1                      GenomicRanges_1.14.4                  
+## [17] XVector_0.2.0                          IRanges_1.20.7                        
+## [19] BiocGenerics_0.8.0                     BiocInstaller_1.12.1                  
 ## 
 ## loaded via a namespace (and not attached):
 ##  [1] BiocStyle_1.0.0 chron_2.3-45    codetools_0.2-8 compiler_3.1.1  evaluate_0.5.5 

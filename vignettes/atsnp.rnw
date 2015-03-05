@@ -66,13 +66,13 @@ install_github("chandlerzuo/atSNP")
 \item \CRANpkg{Rcpp} interfaces the C++ codes that implements the importance sampling algorithm.
 \end{itemize}
   
-In addition, users also need to install the annotation package from \url{www.bioconductor.org/packages/3.0/data/annotation/} that corresponds to the species type and genome version. Our example SNP data set in the subsequent sections corresponds to the hg19 version of human genome. To repeat the sample codes in this vignette, the \Biocannopkg{BSgenome.Hsapiens.UCSC.hg19} package is required. To install it from the \Bioconductor{} repository,
-
+In addition, users need to install the annotation package \Biocannopkg{BSgenome} from \url{www.bioconductor.org/packages/3.0/data/annotation/} that corresponds to the species type and genome version. Our example SNP data set in the subsequent sections corresponds to the hg19 version of human genome. To repeat the sample codes in this vignette, the \Biocannopkg{BSgenome.Hsapiens.UCSC.hg19} package is required. If users wish to annotate the SNP location and allele information given their rs ids, they also need install the corresponding \Biocannopkg{SNPlocs} package. The sample codes in this vignettes require the package \Biocannopkg{SNPlocs.Hsapiens.dbSNP.20120608}. To install these packages from the \Bioconductor{} repository,
 % This just makes the code appear in pretty format
 
 <<include=TRUE,echo=TRUE,eval=FALSE,results="markup">>=
   source("http://bioconductor.org/biocLite.R")
   biocLite("BSgenome.Hsapiens.UCSC.hg19")
+  biocLite("SNPlocs.Hsapiens.dbSNP.20120608")
 @ 
 
 % This is what actually runs the code
@@ -87,7 +87,7 @@ if (!require("BSgenome.Hsapiens.UCSC.hg19",character.only = TRUE))
 tidy.opt = list(width.cutoff = 60)
 @ 
 
-Notice that the annotation package is usually large and this installation step may take a substantial amout of time.
+Notice that the annotation packages are usually large and this installation step may take a substantial amount of time.
 
 % In this section, there are several references to bioconductor
 % packages. I think that biocstyle would add the links but in the
@@ -215,10 +215,22 @@ The following codes generate a synthetic SNP data and loads it back in \R{}:
   write.table(snp_tbl, file = "test_snp_file.txt",
             row.names = FALSE, quote = FALSE)
   snp_info <- LoadSNPData("test_snp_file.txt", genome.lib = "BSgenome.Hsapiens.UCSC.hg19",
-                          half.window.size = 30, default.par = TRUE,mutation = FALSE)
+                          half.window.size = 30, default.par = TRUE, mutation = FALSE)
   ncol(snp_info$sequence) == nrow(snp_tbl)
 
-@ 
+@
+
+Alternatively, users can also provide a list of rsids for the SNPs. In this case, \Rfunction{LoadSNPData} looks up the SNP location and the allele information using the annotation package specified by 'snp.lib'. The default value of 'snp.lib' is 'SNPlocs.Hsapiens.dbSNP.20120608'.
+
+<<eval=TRUE, echo=TRUE, results="markup", tidy=FALSE>>=
+
+snp_info1 <- LoadSNPData(snpids = c("rs5050", "rs616488", "rs11249433"),
+                         genome.lib = "BSgenome.Hsapiens.UCSC.hg19",
+  			 snp.lib = "SNPlocs.Hsapiens.dbSNP.20120608",
+ 			 half.window.size = 30,
+			 default.par = TRUE,
+			 mutation = FALSE)
+@
 
 The 'mutation' argument specifies whether the data set is related to SNP or general single nucleotide mutation. By default, 'mutation=FALSE'. In this case, \Rfunction{LoadSNPData} get the nucleotides on the reference genome based on the genome coordinates specified by 'chr' and 'snp' and match them to 'a1' and 'a2' alleles. 'a1' and 'a2' nucleotides are assigned to the refrence or the SNP allele based on which one matches to the reference nucleotide. If neither allele matches to the reference nucleotide, the corresponding row in the SNP information file is discarded. Alternatively, if 'mutation=TRUE', no row is discarded. \Rfunction{LoadSNPData} takes the reference sequences around the SNP locations, replaces the reference nucleotides at the SNP locations by 'a1' nucleotides to construct the 'reference' sequences, and by 'a2' nucleotides to construct the 'SNP' sequences. Notice that in this case, in the subsequent analysis, whenever we refer to the ``reference'' or the ``SNP'' allele, it actually means the ``a1'' or the ``a2'' allele.
 
