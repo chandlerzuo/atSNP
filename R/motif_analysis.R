@@ -188,6 +188,7 @@ LoadSNPData <- function(filename = NULL, genome.lib = "BSgenome.Hsapiens.UCSC.hg
   codes <- seq(4)
   names(codes) <- c("A", "C", "G", "T")
   sequences <- sapply(seqvec, function(x) codes[strsplit(x, "")[[1]]])
+  sequences <- matrix(sequences, ncol = length(seqvec))
   colnames(sequences) <- as.character(tbl$snpid)
   rownames(sequences) <- NULL
   a1 <- codes[as.character(tbl$a1)]
@@ -199,7 +200,7 @@ LoadSNPData <- function(filename = NULL, genome.lib = "BSgenome.Hsapiens.UCSC.hg
     print(tbl[-keep.id, ])
   }
   ## remove sequences containing non ACGT characters
-  sequences <- sequences[, keep.id]
+  sequences <- sequences[, keep.id, drop = FALSE]
   a1 <- a1[keep.id]
   a2 <- a2[keep.id]
   ## whether use the default parameters
@@ -228,7 +229,7 @@ LoadSNPData <- function(filename = NULL, genome.lib = "BSgenome.Hsapiens.UCSC.hg
     a1.ref.base.id <- seq_along(a1)
     a2.ref.base.id <- numeric(0)
   }
-  sequences <- sequences[, c(a1.ref.base.id, a2.ref.base.id)]
+  sequences <- sequences[, c(a1.ref.base.id, a2.ref.base.id), drop = FALSE]
   ref.base <- c(a1[a1.ref.base.id], a2[a2.ref.base.id])
   snp.base <- c(a2[a1.ref.base.id], a1[a2.ref.base.id])
   return(list(
