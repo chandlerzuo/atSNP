@@ -2,28 +2,46 @@ library(atSNP)
 library(testthat)
 
 if(FALSE) {
-  motif_encode <- LoadMotifLibrary("http://compbio.mit.edu/encode-motifs/motifs.txt", tag = ">", transpose = FALSE, field = 1, sep = c("\t", " ", ">"), skipcols = 1, skiprows = 1, pseudocount = 0)
+  ## Import the ENCODE motif library
+  
+  encode_motif <- LoadMotifLibrary("http://compbio.mit.edu/encode-motifs/motifs.txt", tag = ">", transpose = FALSE, field = 1, sep = c("\t", " ", ">"), skipcols = 1, skiprows = 1, pseudocount = 0)
 
   lines <- readLines("http://compbio.mit.edu/encode-motifs/motifs.txt")
   title.no <- grep(">", lines)
   source("~/atsnp_git/atSNP/R/utility.R")
   title.info <- sapply(lines[title.no], function(x) myStrSplit(x, c(">", " ", "\t")))
   nfields <- sapply(title.info, length)
-  allnames <- motif_info <- rep("", length(title.no))
+  allnames <- encode_motifinfo <- rep("", length(title.no))
   for(i in 1:2) {
     allnames[nfields == i + 1] <- sapply(title.info[nfields == i + 1], function(x) x[i])
-    motif_info[nfields == i + 1] <- sapply(title.info[nfields == i + 1], function(x) x[i + 1])
+    encode_motifinfo[nfields == i + 1] <- sapply(title.info[nfields == i + 1], function(x) x[i + 1])
   }
 
-  names(motif_info) <- names(motif_encode) <- allnames
+  names(encode_motifinfo) <- names(encode_motif) <- allnames
 
-  system.time(save(motif_encode, motif_info, file = "~/atsnp_git/atSNP/data/encode_motif.rda"))
-
+  system.time(save(encode_motif, encode_motifinfo, file = "~/atsnp_git/atSNP/data/encode_library.rda"))
+  
+  ## Import the JASPAR library
+  jaspar_motif <- LoadMotifLibrary(
+                                   "http://jaspar.genereg.net/html/DOWNLOAD/JASPAR_CORE/pfm/nonredundant/pfm_all.txt",
+                                   tag = ">", skiprows = 1, skipcols = 0, transpose = TRUE, field = 1, 
+                           sep = c(">", "\t", " "), pseudocount = 1)
+  lines <- readLines("http://jaspar.genereg.net/html/DOWNLOAD/JASPAR_CORE/pfm/nonredundant/pfm_all.txt")
+  title.no <- grep(">", lines)
+  source("~/atsnp_git/atSNP/R/utility.R")
+  title.info <- sapply(lines[title.no], function(x) myStrSplit(x, c(">", " ", "\t")))
+  nfields <- sapply(title.info, length)
+  allnames <- jaspar_motifinfo <- rep("", length(title.no))
+  allnames <- sapply(title.info, function(x) x[1])
+  jaspar_motifinfo <- sapply(title.info, function(x) x[2])
+  names(jaspar_motifinfo) <- names(jaspar_motif) <- allnames
+  system.time(save(jaspar_motifinfo, jaspar_motif, file = "~/atsnp_git/atSNP/data/jaspar_library.rda"))
+  
   # construct the test data set
-  motif_library <- motif_encode
+  motif_library <- encode_motif
   system.time(snpInfo <- LoadSNPData("/p/keles/ENCODE-CHARGE/volume2/SNP/hg19_allinfo.bed", nrow = 20))
   motif_library <- motif_library[c(1:2)]
-  snp_tbl <- read.table("/p/keles/ENCODE-CHARGE/volume2/SNP/hg19_allinfo.bed", nrow = 20, header = TRUE)
+  snp_tbl <- read.table("/p/keles/ENCODE-CHARGE/volume2/SNP/hg19_allinfo.bed", nrow = 20, header = TRUE)[, c("snpid", "a1", "a2", "chr", "snp")]
   motif_scores <- ComputeMotifScore(motif_library, snpInfo, ncores = 2)
 
   motif_pval <- ComputePValues(motif_library, snpInfo, motif_scores$motif.scores, ncores = 2)

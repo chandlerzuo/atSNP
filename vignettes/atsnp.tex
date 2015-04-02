@@ -151,7 +151,7 @@ Notice that the annotation packages are usually large and this installation step
 
 \software{atSNP} provides a default motif library downloaded from \url{compbio.mit.edu/encode-motifs/motifs.txt}. This library contains 2065 known and discovered motifs from ENCODE TF ChIP-seq data sets. The following commands allows to load this motif library:
 
-% It may be useful to specify that each element of motif_encode is a
+% It may be useful to specify that each element of encode_motif is a
 % PWM. And it may be useful to show the actual motif sequence, since
 % it may be hard to understand the matrix. Perhaps specifiy which
 % columns is which nucleotide, for example jaspar's input is like:
@@ -163,7 +163,6 @@ Notice that the annotation packages are usually large and this installation step
 
 % I added this chunck to avoid unnecesary echo's in documents
 % that way only loads atSNP
-
 
 
 
@@ -180,14 +179,14 @@ Notice that the annotation packages are usually large and this installation step
 \begin{knitrout}
 \definecolor{shadecolor}{rgb}{0.969, 0.969, 0.969}\color{fgcolor}\begin{kframe}
 \begin{alltt}
-\hlkwd{data}\hlstd{(encode_motif)}
-\hlkwd{length}\hlstd{(motif_encode)}
+\hlkwd{data}\hlstd{(encode_library)}
+\hlkwd{length}\hlstd{(encode_motif)}
 \end{alltt}
 \begin{verbatim}
 ## [1] 2065
 \end{verbatim}
 \begin{alltt}
-\hlstd{motif_encode[}\hlkwd{seq}\hlstd{(}\hlnum{3}\hlstd{)]}
+\hlstd{encode_motif[}\hlkwd{seq}\hlstd{(}\hlnum{3}\hlstd{)]}
 \end{alltt}
 \begin{verbatim}
 ## $SIX5_disc1
@@ -232,14 +231,14 @@ Notice that the annotation packages are usually large and this installation step
 \end{kframe}
 \end{knitrout}
 
-Here, the motif library is represented by \Robject{motif\_encode},
+Here, the motif library is represented by \Robject{encode\_motif},
 which is a list of position weight matrices. The codes below shows the
 content of one matrix as well as its IUPAC letters:
 
 \begin{knitrout}
 \definecolor{shadecolor}{rgb}{0.969, 0.969, 0.969}\color{fgcolor}\begin{kframe}
 \begin{alltt}
-\hlstd{motif_encode[[}\hlnum{1}\hlstd{]]}
+\hlstd{encode_motif[[}\hlnum{1}\hlstd{]]}
 \end{alltt}
 \begin{verbatim}
 ##              [,1]       [,2]     [,3]        [,4]
@@ -255,7 +254,7 @@ content of one matrix as well as its IUPAC letters:
 ## [10,] 1.00000e-10 1.0000e-10 0.012766 9.87234e-01
 \end{verbatim}
 \begin{alltt}
-\hlkwd{GetIUPACSequence}\hlstd{(motif_encode[[}\hlnum{1}\hlstd{]])}
+\hlkwd{GetIUPACSequence}\hlstd{(encode_motif[[}\hlnum{1}\hlstd{]])}
 \end{alltt}
 \begin{verbatim}
 ## [1] "GARWTGTAGT"
@@ -263,18 +262,18 @@ content of one matrix as well as its IUPAC letters:
 \end{kframe}
 \end{knitrout}
 
-The data object \Robject{encode\_motif} also contains a character vector \Robject{motif\_info} that contains detailed information for each motif.
+The data object \Robject{encode\_library} also contains a character vector \Robject{encode\_motifinfo} that contains detailed information for each motif.
 
 \begin{knitrout}
 \definecolor{shadecolor}{rgb}{0.969, 0.969, 0.969}\color{fgcolor}\begin{kframe}
 \begin{alltt}
-\hlkwd{length}\hlstd{(motif_info)}
+\hlkwd{length}\hlstd{(encode_motifinfo)}
 \end{alltt}
 \begin{verbatim}
 ## [1] 2065
 \end{verbatim}
 \begin{alltt}
-\hlkwd{head}\hlstd{(motif_info)}
+\hlkwd{head}\hlstd{(encode_motifinfo)}
 \end{alltt}
 \begin{verbatim}
 ##                                                 SIX5_disc1 
@@ -293,16 +292,43 @@ The data object \Robject{encode\_motif} also contains a character vector \Robjec
 \end{kframe}
 \end{knitrout}
 
-Here, the entry names of this vector are the same as the names of the motif library. \Robject{motif\_info} allows easy looking up the motif information for a specific PWM. For example, to look up the motif information for the first PWM in \Robject{motif\_encode}:
+Here, the entry names of this vector are the same as the names of the motif library. \Robject{encode\_motifinfo} allows easy looking up the motif information for a specific PWM. For example, to look up the motif information for the first PWM in \Robject{encode\_motifinfo}:
 
 \begin{knitrout}
 \definecolor{shadecolor}{rgb}{0.969, 0.969, 0.969}\color{fgcolor}\begin{kframe}
 \begin{alltt}
-\hlstd{motif_info[}\hlkwd{names}\hlstd{(motif_encode[}\hlnum{1}\hlstd{])]}
+\hlstd{encode_motifinfo[}\hlkwd{names}\hlstd{(encode_motif[}\hlnum{1}\hlstd{])]}
 \end{alltt}
 \begin{verbatim}
 ##                                               SIX5_disc1 
 ## "SIX5_GM12878_encode-Myers_seq_hsa_r1:MEME#1#Intergenic"
+\end{verbatim}
+\end{kframe}
+\end{knitrout}
+
+Our package also includes the JASPAR library downloaded from \url{http://jaspar.genereg.net/html/DOWNLOAD/JASPAR_CORE/pfm/nonredundant/pfm_all.txt}. The data object \Robject{jaspar\_library} contains a list of 593 PWMs \Robject{jaspar\_motif} and a character vector \Robject{jaspar\_motifinfo}.
+
+\begin{knitrout}
+\definecolor{shadecolor}{rgb}{0.969, 0.969, 0.969}\color{fgcolor}\begin{kframe}
+\begin{alltt}
+\hlkwd{data}\hlstd{(jaspar_library)}
+\hlstd{jaspar_motif[[}\hlnum{1}\hlstd{]]}
+\end{alltt}
+\begin{verbatim}
+##            [,1]       [,2]       [,3]       [,4]
+## [1,] 0.20833333 0.70833333 0.04166667 0.04166667
+## [2,] 0.83333333 0.04166667 0.08333333 0.04166667
+## [3,] 0.04166667 0.87500000 0.04166667 0.04166667
+## [4,] 0.04166667 0.04166667 0.87500000 0.04166667
+## [5,] 0.04166667 0.04166667 0.04166667 0.87500000
+## [6,] 0.04166667 0.04166667 0.87500000 0.04166667
+\end{verbatim}
+\begin{alltt}
+\hlstd{jaspar_motifinfo[}\hlkwd{names}\hlstd{(jaspar_motif[}\hlnum{1}\hlstd{])]}
+\end{alltt}
+\begin{verbatim}
+## MA0004.1 
+##   "Arnt"
 \end{verbatim}
 \end{kframe}
 \end{knitrout}
@@ -375,10 +401,10 @@ The following codes generate a synthetic SNP data and loads it back in \R{}:
 
 
 {\ttfamily\noindent\itshape\color{messagecolor}{\#\# 3 sequences are discarded because the reference nucleotide matches to neither a1 nor a2.}}\begin{verbatim}
-##       snpid  chr     snp a1 a2
-## 3 rs2495365 chr1 2498027  T  C
-## 4 rs2281852 chr1 2490942  T  G
-## 5 rs1886730 chr1 2488608  A  G
+##       snpid a1 a2  chr     snp
+## 3 rs2495365  T  C chr1 2498027
+## 4 rs2281852  T  G chr1 2490942
+## 5 rs1886730  A  G chr1 2488608
 \end{verbatim}
 \begin{alltt}
   \hlkwd{ncol}\hlstd{(snp_info}\hlopt{$}\hlstd{sequence)} \hlopt{==} \hlkwd{nrow}\hlstd{(snp_tbl)}
@@ -470,7 +496,11 @@ A toy sample data set including a preloaded motif library and a SNP set is inclu
 \begin{alltt}
 \hlcom{## to look at the motif information}
 \hlkwd{data}\hlstd{(encode_motif)}
-\hlstd{motif_info[}\hlkwd{names}\hlstd{(motif_library)]}
+\end{alltt}
+
+
+{\ttfamily\noindent\color{warningcolor}{\#\# Warning in data(encode\_motif): data set 'encode\_motif' not found}}\begin{alltt}
+\hlstd{encode_motifinfo[}\hlkwd{names}\hlstd{(motif_library)]}
 \end{alltt}
 \begin{verbatim}
 ##                                               SIX5_disc1 
@@ -489,124 +519,51 @@ The binding affinity scores for all pairs of SNP and PWM can be computed by the 
 \begin{knitrout}
 \definecolor{shadecolor}{rgb}{0.969, 0.969, 0.969}\color{fgcolor}\begin{kframe}
 \begin{alltt}
-  \hlstd{motif_score} \hlkwb{<-} \hlkwd{ComputeMotifScore}\hlstd{(motif_library, snpInfo,} \hlkwc{ncores} \hlstd{=} \hlnum{2}\hlstd{)}
-  \hlstd{motif_score}\hlopt{$}\hlstd{snp.tbl}
+  \hlstd{atsnp.scores} \hlkwb{<-} \hlkwd{ComputeMotifScore}\hlstd{(motif_library, snpInfo,} \hlkwc{ncores} \hlstd{=} \hlnum{2}\hlstd{)}
+  \hlkwd{head}\hlstd{(atsnp.scores}\hlopt{$}\hlstd{snp.tbl)}
 \end{alltt}
 \begin{verbatim}
-##          snpid                                                       ref_seq
-##  1: rs10910078 TGATGCCAGGTGGTCAGTGGGTTTTTGCCATCCGCCAGGAGCTTCACTGGGCCTCCCGTTG
-##  2:  rs4486391 ATGGAGAATTCCACAGCTGATTGGAACCTAAACGAGAGAACCAAATGGACATCCCAGGGCT
-##  3:  rs3748816 TTGGAGTACTCCTCGTCCAGGCGCCTGTTCATCTCCTCCAGGATGTAGTCAGGGTGCCCGA
-##  4:  rs2843401 TCCTCCACCATTGTGCCAAACAGCGCCTGGTGGGGCCACCCGATCATCCCACGGGCCCCCA
-##  5:  rs2843402 CACCTTCTGGGCTGCAGGACTTCCTGCCCTTTAGGAAAGGGAGGCAGCCCTTTCTTCCTCC
-##  6:  rs2843403 CCCCCTAGGGCCTCCCTGCGGTTCCTTGTCTCCACCCTCACCCCAGCCCTGGAGCAGCCAC
-##  7:  rs2843404 AAATGGAATATTTAATTTGAAACTTTCCAATAAAGAAATTTCCAGACCCATTTGGCTTCAC
-##  8:  rs2985855 ACCTGATAAAGGAAATGTATGAAGCAGCAGAAGCAACAAAAACAACTCCATAGCAAACATA
-##  9:  rs2296442 CCGCTTCCTCGTCTGGGACCACGATCCCATCGGGCGTGACTTCATTGGCCAGAGGACGCTG
-## 10: rs10797432 GACTCACAGGTGGGAGACAGGAGTTCCGACCGCCAGGGGGAGAGTCCTGGAGGATCCTGGG
-## 11:  rs6667605 TCCCACAAATGCAGAAAGCTCAACAGACCCCAAGAGGGGTAAATAGAGAGGCATGCACTGC
-## 12:  rs4648648 CAGGTCCTGCGATCTCCCCACGCCCTGACAGTGACCTATCTTTGTGCACACACGTGTGTTT
-## 13:   rs734999 CCACTGAAATACCCGTGGGAAAGAAAAGCACAACAGAGAACAGGAGACTTATGTGACTCCG
-## 14:  rs2764845 CACCATGGCCAAGCCTGTCACCTCACCTGGGTGACCACATCGGCCTCCATGCTGACCCCGC
-## 15:  rs2764841 CTGTTTCTGCTCCCGGGAAATCACCCCGCCGCCTCTTCAGGCCTTTAAGGTCTCAAATGTC
-## 16:  rs2985857 CACTCTTGAAGAACAAAGTTGAAATATATACTCTATTGACTATCAAGACATTATAAAGCTG
-## 17:  rs6424092 ATCTCACTGTCCATTAAAAAAATCAACTCACAGTAGATTGTAGACCTAAGCAAACCTGAGG
-##                                                           snp_seq
-##  1: TGATGCCAGGTGGTCAGTGGGTTTTTGCCACCCGCCAGGAGCTTCACTGGGCCTCCCGTTG
-##  2: ATGGAGAATTCCACAGCTGATTGGAACCTATACGAGAGAACCAAATGGACATCCCAGGGCT
-##  3: TTGGAGTACTCCTCGTCCAGGCGCCTGTTCGTCTCCTCCAGGATGTAGTCAGGGTGCCCGA
-##  4: TCCTCCACCATTGTGCCAAACAGCGCCTGGCGGGGCCACCCGATCATCCCACGGGCCCCCA
-##  5: CACCTTCTGGGCTGCAGGACTTCCTGCCCTCTAGGAAAGGGAGGCAGCCCTTTCTTCCTCC
-##  6: CCCCCTAGGGCCTCCCTGCGGTTCCTTGTCCCCACCCTCACCCCAGCCCTGGAGCAGCCAC
-##  7: AAATGGAATATTTAATTTGAAACTTTCCAACAAAGAAATTTCCAGACCCATTTGGCTTCAC
-##  8: ACCTGATAAAGGAAATGTATGAAGCAGCAGCAGCAACAAAAACAACTCCATAGCAAACATA
-##  9: CCGCTTCCTCGTCTGGGACCACGATCCCATTGGGCGTGACTTCATTGGCCAGAGGACGCTG
-## 10: GACTCACAGGTGGGAGACAGGAGTTCCGACTGCCAGGGGGAGAGTCCTGGAGGATCCTGGG
-## 11: TCCCACAAATGCAGAAAGCTCAACAGACCCTAAGAGGGGTAAATAGAGAGGCATGCACTGC
-## 12: CAGGTCCTGCGATCTCCCCACGCCCTGACAATGACCTATCTTTGTGCACACACGTGTGTTT
-## 13: CCACTGAAATACCCGTGGGAAAGAAAAGCATAACAGAGAACAGGAGACTTATGTGACTCCG
-## 14: CACCATGGCCAAGCCTGTCACCTCACCTGGTTGACCACATCGGCCTCCATGCTGACCCCGC
-## 15: CTGTTTCTGCTCCCGGGAAATCACCCCGCCACCTCTTCAGGCCTTTAAGGTCTCAAATGTC
-## 16: CACTCTTGAAGAACAAAGTTGAAATATATATTCTATTGACTATCAAGACATTATAAAGCTG
-## 17: ATCTCACTGTCCATTAAAAAAATCAACTCAAAGTAGATTGTAGACCTAAGCAAACCTGAGG
-##                                                       ref_seq_rev
-##  1: CAACGGGAGGCCCAGTGAAGCTCCTGGCGGATGGCAAAAACCCACTGACCACCTGGCATCA
-##  2: AGCCCTGGGATGTCCATTTGGTTCTCTCGTTTAGGTTCCAATCAGCTGTGGAATTCTCCAT
-##  3: TCGGGCACCCTGACTACATCCTGGAGGAGATGAACAGGCGCCTGGACGAGGAGTACTCCAA
-##  4: TGGGGGCCCGTGGGATGATCGGGTGGCCCCACCAGGCGCTGTTTGGCACAATGGTGGAGGA
-##  5: GGAGGAAGAAAGGGCTGCCTCCCTTTCCTAAAGGGCAGGAAGTCCTGCAGCCCAGAAGGTG
-##  6: GTGGCTGCTCCAGGGCTGGGGTGAGGGTGGAGACAAGGAACCGCAGGGAGGCCCTAGGGGG
-##  7: GTGAAGCCAAATGGGTCTGGAAATTTCTTTATTGGAAAGTTTCAAATTAAATATTCCATTT
-##  8: TATGTTTGCTATGGAGTTGTTTTTGTTGCTTCTGCTGCTTCATACATTTCCTTTATCAGGT
-##  9: CAGCGTCCTCTGGCCAATGAAGTCACGCCCGATGGGATCGTGGTCCCAGACGAGGAAGCGG
-## 10: CCCAGGATCCTCCAGGACTCTCCCCCTGGCGGTCGGAACTCCTGTCTCCCACCTGTGAGTC
-## 11: GCAGTGCATGCCTCTCTATTTACCCCTCTTGGGGTCTGTTGAGCTTTCTGCATTTGTGGGA
-## 12: AAACACACGTGTGTGCACAAAGATAGGTCACTGTCAGGGCGTGGGGAGATCGCAGGACCTG
-## 13: CGGAGTCACATAAGTCTCCTGTTCTCTGTTGTGCTTTTCTTTCCCACGGGTATTTCAGTGG
-## 14: GCGGGGTCAGCATGGAGGCCGATGTGGTCACCCAGGTGAGGTGACAGGCTTGGCCATGGTG
-## 15: GACATTTGAGACCTTAAAGGCCTGAAGAGGCGGCGGGGTGATTTCCCGGGAGCAGAAACAG
-## 16: CAGCTTTATAATGTCTTGATAGTCAATAGAGTATATATTTCAACTTTGTTCTTCAAGAGTG
-## 17: CCTCAGGTTTGCTTAGGTCTACAATCTACTGTGAGTTGATTTTTTTAATGGACAGTGAGAT
-##                                                       snp_seq_rev
-##  1: CAACGGGAGGCCCAGTGAAGCTCCTGGCGGGTGGCAAAAACCCACTGACCACCTGGCATCA
-##  2: AGCCCTGGGATGTCCATTTGGTTCTCTCGTATAGGTTCCAATCAGCTGTGGAATTCTCCAT
-##  3: TCGGGCACCCTGACTACATCCTGGAGGAGACGAACAGGCGCCTGGACGAGGAGTACTCCAA
-##  4: TGGGGGCCCGTGGGATGATCGGGTGGCCCCGCCAGGCGCTGTTTGGCACAATGGTGGAGGA
-##  5: GGAGGAAGAAAGGGCTGCCTCCCTTTCCTAGAGGGCAGGAAGTCCTGCAGCCCAGAAGGTG
-##  6: GTGGCTGCTCCAGGGCTGGGGTGAGGGTGGGGACAAGGAACCGCAGGGAGGCCCTAGGGGG
-##  7: GTGAAGCCAAATGGGTCTGGAAATTTCTTTGTTGGAAAGTTTCAAATTAAATATTCCATTT
-##  8: TATGTTTGCTATGGAGTTGTTTTTGTTGCTGCTGCTGCTTCATACATTTCCTTTATCAGGT
-##  9: CAGCGTCCTCTGGCCAATGAAGTCACGCCCAATGGGATCGTGGTCCCAGACGAGGAAGCGG
-## 10: CCCAGGATCCTCCAGGACTCTCCCCCTGGCAGTCGGAACTCCTGTCTCCCACCTGTGAGTC
-## 11: GCAGTGCATGCCTCTCTATTTACCCCTCTTAGGGTCTGTTGAGCTTTCTGCATTTGTGGGA
-## 12: AAACACACGTGTGTGCACAAAGATAGGTCATTGTCAGGGCGTGGGGAGATCGCAGGACCTG
-## 13: CGGAGTCACATAAGTCTCCTGTTCTCTGTTATGCTTTTCTTTCCCACGGGTATTTCAGTGG
-## 14: GCGGGGTCAGCATGGAGGCCGATGTGGTCAACCAGGTGAGGTGACAGGCTTGGCCATGGTG
-## 15: GACATTTGAGACCTTAAAGGCCTGAAGAGGTGGCGGGGTGATTTCCCGGGAGCAGAAACAG
-## 16: CAGCTTTATAATGTCTTGATAGTCAATAGAATATATATTTCAACTTTGTTCTTCAAGAGTG
-## 17: CCTCAGGTTTGCTTAGGTCTACAATCTACTTTGAGTTGATTTTTTTAATGGACAGTGAGAT
+##         snpid                                                       ref_seq
+## 1: rs10910078 TGATGCCAGGTGGTCAGTGGGTTTTTGCCATCCGCCAGGAGCTTCACTGGGCCTCCCGTTG
+## 2:  rs4486391 ATGGAGAATTCCACAGCTGATTGGAACCTAAACGAGAGAACCAAATGGACATCCCAGGGCT
+## 3:  rs3748816 TTGGAGTACTCCTCGTCCAGGCGCCTGTTCATCTCCTCCAGGATGTAGTCAGGGTGCCCGA
+## 4:  rs2843401 TCCTCCACCATTGTGCCAAACAGCGCCTGGTGGGGCCACCCGATCATCCCACGGGCCCCCA
+## 5:  rs2843402 CACCTTCTGGGCTGCAGGACTTCCTGCCCTTTAGGAAAGGGAGGCAGCCCTTTCTTCCTCC
+## 6:  rs2843403 CCCCCTAGGGCCTCCCTGCGGTTCCTTGTCTCCACCCTCACCCCAGCCCTGGAGCAGCCAC
+##                                                          snp_seq
+## 1: TGATGCCAGGTGGTCAGTGGGTTTTTGCCACCCGCCAGGAGCTTCACTGGGCCTCCCGTTG
+## 2: ATGGAGAATTCCACAGCTGATTGGAACCTATACGAGAGAACCAAATGGACATCCCAGGGCT
+## 3: TTGGAGTACTCCTCGTCCAGGCGCCTGTTCGTCTCCTCCAGGATGTAGTCAGGGTGCCCGA
+## 4: TCCTCCACCATTGTGCCAAACAGCGCCTGGCGGGGCCACCCGATCATCCCACGGGCCCCCA
+## 5: CACCTTCTGGGCTGCAGGACTTCCTGCCCTCTAGGAAAGGGAGGCAGCCCTTTCTTCCTCC
+## 6: CCCCCTAGGGCCTCCCTGCGGTTCCTTGTCCCCACCCTCACCCCAGCCCTGGAGCAGCCAC
+##                                                      ref_seq_rev
+## 1: CAACGGGAGGCCCAGTGAAGCTCCTGGCGGATGGCAAAAACCCACTGACCACCTGGCATCA
+## 2: AGCCCTGGGATGTCCATTTGGTTCTCTCGTTTAGGTTCCAATCAGCTGTGGAATTCTCCAT
+## 3: TCGGGCACCCTGACTACATCCTGGAGGAGATGAACAGGCGCCTGGACGAGGAGTACTCCAA
+## 4: TGGGGGCCCGTGGGATGATCGGGTGGCCCCACCAGGCGCTGTTTGGCACAATGGTGGAGGA
+## 5: GGAGGAAGAAAGGGCTGCCTCCCTTTCCTAAAGGGCAGGAAGTCCTGCAGCCCAGAAGGTG
+## 6: GTGGCTGCTCCAGGGCTGGGGTGAGGGTGGAGACAAGGAACCGCAGGGAGGCCCTAGGGGG
+##                                                      snp_seq_rev
+## 1: CAACGGGAGGCCCAGTGAAGCTCCTGGCGGGTGGCAAAAACCCACTGACCACCTGGCATCA
+## 2: AGCCCTGGGATGTCCATTTGGTTCTCTCGTATAGGTTCCAATCAGCTGTGGAATTCTCCAT
+## 3: TCGGGCACCCTGACTACATCCTGGAGGAGACGAACAGGCGCCTGGACGAGGAGTACTCCAA
+## 4: TGGGGGCCCGTGGGATGATCGGGTGGCCCCGCCAGGCGCTGTTTGGCACAATGGTGGAGGA
+## 5: GGAGGAAGAAAGGGCTGCCTCCCTTTCCTAGAGGGCAGGAAGTCCTGCAGCCCAGAAGGTG
+## 6: GTGGCTGCTCCAGGGCTGGGGTGAGGGTGGGGACAAGGAACCGCAGGGAGGCCCTAGGGGG
 \end{verbatim}
 \begin{alltt}
-  \hlstd{motif_score}\hlopt{$}\hlstd{motif.scores[,} \hlkwd{list}\hlstd{(snpid, motif, log_lik_ref,}
-                                \hlstd{log_lik_snp, log_lik_ratio)]}
+  \hlkwd{head}\hlstd{(atsnp.scores}\hlopt{$}\hlstd{motif.scores[,} \hlkwd{list}\hlstd{(snpid, motif, log_lik_ref,}
+                                \hlstd{log_lik_snp, log_lik_ratio)])}
 \end{alltt}
 \begin{verbatim}
-##          snpid      motif log_lik_ref log_lik_snp log_lik_ratio
-##  1: rs10910078  MYC_disc1   -95.57417   -92.79201    -2.7821535
-##  2:  rs4486391  MYC_disc1   -94.37676   -79.51729   -14.8594729
-##  3:  rs3748816  MYC_disc1   -96.67901   -99.39326     2.7142529
-##  4:  rs2843401  MYC_disc1   -94.66127   -94.21702    -0.4442544
-##  5:  rs2843402  MYC_disc1  -117.34142  -117.34142     0.0000000
-##  6:  rs2843403  MYC_disc1  -115.81786  -115.81786     0.0000000
-##  7:  rs2843404  MYC_disc1   -95.73058  -118.75643    23.0258509
-##  8:  rs2985855  MYC_disc1  -116.88074  -120.49201     3.6112717
-##  9: rs10910078 SIX5_disc1   -46.06943   -38.82055    -7.2488780
-## 10:  rs4486391 SIX5_disc1   -41.21034   -41.21034     0.0000000
-## 11:  rs3748816 SIX5_disc1   -51.99542   -40.50007   -11.4953572
-## 12:  rs2843401 SIX5_disc1   -19.33735   -23.09387     3.7565188
-## 13:  rs2843402 SIX5_disc1   -20.74899   -23.90834     3.1593576
-## 14:  rs2843403 SIX5_disc1   -38.21561   -41.13338     2.9177676
-## 15:  rs2843404 SIX5_disc1   -43.06925   -38.31571    -4.7535476
-## 16:  rs2985855 SIX5_disc1   -58.35713   -58.35713     0.0000000
-## 17:  rs2296442  MYC_disc1   -71.67739   -75.86532     4.1879305
-## 18: rs10797432  MYC_disc1  -117.72909   -99.39326   -18.3358300
-## 19:  rs6667605  MYC_disc1   -75.86532   -79.01520     3.1498802
-## 20:  rs4648648  MYC_disc1   -92.79201   -94.21702     1.4250085
-## 21:   rs734999  MYC_disc1   -75.86532   -79.01520     3.1498802
-## 22:  rs2764845  MYC_disc1   -50.51744   -50.03458    -0.4828589
-## 23:  rs2764841  MYC_disc1   -94.64204   -94.23625    -0.4057914
-## 24:  rs2985857  MYC_disc1   -71.57423   -92.42357    20.8493426
-## 25:  rs6424092  MYC_disc1   -53.34156   -76.32544    22.9838866
-## 26:  rs2296442 SIX5_disc1   -23.43206   -21.51514    -1.9169281
-## 27: rs10797432 SIX5_disc1   -24.19256   -21.27479    -2.9177676
-## 28:  rs6667605 SIX5_disc1   -18.25728   -41.28313    23.0258509
-## 29:  rs4648648 SIX5_disc1   -44.20012   -36.50922    -7.6909014
-## 30:   rs734999 SIX5_disc1   -36.30181   -56.49106    20.1892485
-## 31:  rs2764845 SIX5_disc1   -41.43849   -41.69843     0.2599394
-## 32:  rs2764841 SIX5_disc1   -17.46570   -16.16641    -1.2992901
-## 33:  rs2985857 SIX5_disc1   -54.58632   -54.58632     0.0000000
-## 34:  rs6424092 SIX5_disc1   -38.05012   -37.46235    -0.5877710
-##          snpid      motif log_lik_ref log_lik_snp log_lik_ratio
+##         snpid     motif log_lik_ref log_lik_snp log_lik_ratio
+## 1: rs10910078 MYC_disc1   -95.57417   -92.79201    -2.7821535
+## 2:  rs4486391 MYC_disc1   -94.37676   -79.51729   -14.8594729
+## 3:  rs3748816 MYC_disc1   -96.67901   -99.39326     2.7142529
+## 4:  rs2843401 MYC_disc1   -94.66127   -94.21702    -0.4442544
+## 5:  rs2843402 MYC_disc1  -117.34142  -117.34142     0.0000000
+## 6:  rs2843403 MYC_disc1  -115.81786  -115.81786     0.0000000
 \end{verbatim}
 \end{kframe}
 \end{knitrout}
@@ -631,49 +588,142 @@ We recommend using 'pval\_ref'and 'pval\_snp' for assessing the significance of 
 \begin{knitrout}
 \definecolor{shadecolor}{rgb}{0.969, 0.969, 0.969}\color{fgcolor}\begin{kframe}
 \begin{alltt}
-  \hlstd{motif.scores} \hlkwb{<-} \hlkwd{ComputePValues}\hlstd{(}\hlkwc{motif.lib} \hlstd{= motif_library,} \hlkwc{snp.info} \hlstd{= snpInfo,}
-                                 \hlkwc{motif.scores} \hlstd{= motif_scores}\hlopt{$}\hlstd{motif.scores,}
+  \hlstd{atsnp.result} \hlkwb{<-} \hlkwd{ComputePValues}\hlstd{(}\hlkwc{motif.lib} \hlstd{= motif_library,} \hlkwc{snp.info} \hlstd{= snpInfo,}
+                                 \hlkwc{motif.scores} \hlstd{= atsnp.scores}\hlopt{$}\hlstd{motif.scores,}
                                  \hlkwc{ncores} \hlstd{=} \hlnum{2}\hlstd{)}
-  \hlstd{motif.scores[,} \hlkwd{list}\hlstd{(snpid, motif, pval_ref, pval_snp, pval_rank, pval_diff)]}
+  \hlkwd{head}\hlstd{(atsnp.result[,} \hlkwd{list}\hlstd{(snpid, motif, pval_ref, pval_snp, pval_rank, pval_diff)])}
 \end{alltt}
 \begin{verbatim}
-##          snpid      motif   pval_ref   pval_snp  pval_rank   pval_diff
-##  1: rs10910078  MYC_disc1 0.55250823 0.34976728 0.49731358 0.599057634
-##  2:  rs4486391  MYC_disc1 0.42467126 0.32482700 0.61817128 0.531919133
-##  3:  rs3748816  MYC_disc1 0.62428125 0.78352831 0.63538138 0.613347967
-##  4:  rs2843401  MYC_disc1 0.47098190 0.39017206 0.66297624 0.809006055
-##  5:  rs2843402  MYC_disc1 0.92392287 0.92392287 1.00000000 1.000000000
-##  6:  rs2843403  MYC_disc1 0.84071552 0.84071552 1.00000000 1.000000000
-##  7:  rs2843404  MYC_disc1 0.56662380 0.97929975 0.33680154 0.150135756
-##  8:  rs2985855  MYC_disc1 0.85727211 0.99400000 0.69437460 0.572437051
-##  9: rs10910078 SIX5_disc1 0.87876479 0.62172720 0.45687986 0.280402306
-## 10:  rs4486391 SIX5_disc1 0.77460249 0.77460249 1.00000000 1.000000000
-## 11:  rs3748816 SIX5_disc1 0.90275130 0.74334730 0.62512531 0.206882124
-## 12:  rs2843401 SIX5_disc1 0.08081194 0.23011782 0.01654064 0.434515202
-## 13:  rs2843402 SIX5_disc1 0.13659677 0.32832950 0.14789201 0.490855902
-## 14:  rs2843403 SIX5_disc1 0.60110887 0.77253940 0.57145169 0.618352633
-## 15:  rs2843404 SIX5_disc1 0.84323561 0.61067088 0.48140291 0.354767558
-## 16:  rs2985855 SIX5_disc1 0.97623554 0.97623554 1.00000000 1.000000000
-## 17:  rs2296442  MYC_disc1 0.11261743 0.26841651 0.29890362 0.553813438
-## 18: rs10797432  MYC_disc1 0.95726548 0.78177027 0.64089998 0.457487238
-## 19:  rs6667605  MYC_disc1 0.27303296 0.29517812 0.74665067 0.592775953
-## 20:  rs4648648  MYC_disc1 0.33416921 0.37746258 0.71484150 0.716330202
-## 21:   rs734999  MYC_disc1 0.26841651 0.29517812 0.73348109 0.591312146
-## 22:  rs2764845  MYC_disc1 0.02476245 0.02225671 0.72498353 0.803576225
-## 23:  rs2764841  MYC_disc1 0.44985448 0.40610585 0.73131633 0.816179825
-## 24:  rs2985857  MYC_disc1 0.09264310 0.32482700 0.14064803 0.367260674
-## 25:  rs6424092  MYC_disc1 0.05381326 0.28884471 0.02528970 0.171276172
-## 26:  rs2296442 SIX5_disc1 0.30747596 0.17194308 0.30722405 0.688903343
-## 27: rs10797432 SIX5_disc1 0.33296184 0.14606464 0.17415016 0.621522278
-## 28:  rs6667605 SIX5_disc1 0.06436599 0.77764949 0.01572935 0.002994372
-## 29:  rs4648648 SIX5_disc1 0.87216144 0.48674767 0.26849187 0.268226489
-## 30:   rs734999 SIX5_disc1 0.44673064 0.95825787 0.21057043 0.102711064
-## 31:  rs2764845 SIX5_disc1 0.80012831 0.80656654 0.93486937 0.915061559
-## 32:  rs2764841 SIX5_disc1 0.05984278 0.04457300 0.53680487 0.751367323
-## 33:  rs2985857 SIX5_disc1 0.92853988 0.92853988 1.00000000 1.000000000
-## 34:  rs6424092 SIX5_disc1 0.59650110 0.54347923 0.73416105 0.866256977
-##          snpid      motif   pval_ref   pval_snp  pval_rank   pval_diff
+##         snpid     motif  pval_ref  pval_snp pval_rank pval_diff
+## 1: rs10910078 MYC_disc1 0.5525082 0.3497673 0.4973136 0.5990576
+## 2:  rs4486391 MYC_disc1 0.4246713 0.3248270 0.6181713 0.5319191
+## 3:  rs3748816 MYC_disc1 0.6242812 0.7835283 0.6353814 0.6133480
+## 4:  rs2843401 MYC_disc1 0.4709819 0.3901721 0.6629762 0.8090061
+## 5:  rs2843402 MYC_disc1 0.9239229 0.9239229 1.0000000 1.0000000
+## 6:  rs2843403 MYC_disc1 0.8407155 0.8407155 1.0000000 1.0000000
 \end{verbatim}
+\end{kframe}
+\end{knitrout}
+
+The \Rclass{data.table} structure enables easy processing for prioritizing the SNP-PWM pairs based on the significance of affinity changes. We give a few examples here. First, we can sort this output table according to the 'pval\_rank' column:
+
+\begin{knitrout}
+\definecolor{shadecolor}{rgb}{0.969, 0.969, 0.969}\color{fgcolor}\begin{kframe}
+\begin{alltt}
+\hlkwd{head}\hlstd{(atsnp.result[}\hlkwd{order}\hlstd{(pval_rank),} \hlkwd{list}\hlstd{(snpid, motif, pval_ref, pval_snp, pval_rank)])}
+\end{alltt}
+\begin{verbatim}
+##         snpid      motif   pval_ref  pval_snp  pval_rank
+## 1:  rs6667605 SIX5_disc1 0.06436599 0.7776495 0.01572935
+## 2:  rs2843401 SIX5_disc1 0.08081194 0.2301178 0.01654064
+## 3:  rs6424092  MYC_disc1 0.05381326 0.2888447 0.02528970
+## 4:  rs2985857  MYC_disc1 0.09264310 0.3248270 0.14064803
+## 5:  rs2843402 SIX5_disc1 0.13659677 0.3283295 0.14789201
+## 6: rs10797432 SIX5_disc1 0.33296184 0.1460646 0.17415016
+\end{verbatim}
+\end{kframe}
+\end{knitrout}
+
+Second, we can also select the SNP-PWM pairs subject to a threshold in 'pval\_rank':
+
+\begin{knitrout}
+\definecolor{shadecolor}{rgb}{0.969, 0.969, 0.969}\color{fgcolor}\begin{kframe}
+\begin{alltt}
+\hlstd{atsnp.result[pval_rank} \hlopt{<=} \hlnum{0.1}\hlstd{,} \hlkwd{list}\hlstd{(snpid, motif, pval_ref, pval_snp, pval_rank)]}
+\end{alltt}
+\begin{verbatim}
+##        snpid      motif   pval_ref  pval_snp  pval_rank
+## 1: rs2843401 SIX5_disc1 0.08081194 0.2301178 0.01654064
+## 2: rs6424092  MYC_disc1 0.05381326 0.2888447 0.02528970
+## 3: rs6667605 SIX5_disc1 0.06436599 0.7776495 0.01572935
+\end{verbatim}
+\end{kframe}
+\end{knitrout}
+
+In addition, we can apply multiple testing adjustment to the p-values. \software{atSNP} does not implement any multiple testing adjustment internally. Users have the flexibility of choosing the adjustment method based on their specific application. For example, if we want to adjust 'pval\_rank' from all pairs of SNP-PWM pairs using the Benjamini-Hochberg's procedure, we may compute:
+
+\begin{knitrout}
+\definecolor{shadecolor}{rgb}{0.969, 0.969, 0.969}\color{fgcolor}\begin{kframe}
+\begin{alltt}
+\hlstd{atsnp.result[, pval_rank_bh} \hlkwb{:=} \hlkwd{p.adjust}\hlstd{(pval_rank,} \hlkwc{method} \hlstd{=} \hlstr{"BH"}\hlstd{)]}
+\end{alltt}
+\end{kframe}
+\end{knitrout}
+
+
+\begin{knitrout}
+\definecolor{shadecolor}{rgb}{0.969, 0.969, 0.969}\color{fgcolor}\begin{kframe}
+\begin{verbatim}
+##          snpid      motif  pval_rank pval_rank_bh
+##  1: rs10910078  MYC_disc1 0.49731358    0.9066472
+##  2:  rs4486391  MYC_disc1 0.61817128    0.9066472
+##  3:  rs3748816  MYC_disc1 0.63538138    0.9066472
+##  4:  rs2843401  MYC_disc1 0.66297624    0.9066472
+##  5:  rs2843402  MYC_disc1 1.00000000    1.0000000
+##  6:  rs2843403  MYC_disc1 1.00000000    1.0000000
+##  7:  rs2843404  MYC_disc1 0.33680154    0.9066472
+##  8:  rs2985855  MYC_disc1 0.69437460    0.9066472
+##  9: rs10910078 SIX5_disc1 0.45687986    0.9066472
+## 10:  rs4486391 SIX5_disc1 1.00000000    1.0000000
+## 11:  rs3748816 SIX5_disc1 0.62512531    0.9066472
+## 12:  rs2843401 SIX5_disc1 0.01654064    0.2811909
+## 13:  rs2843402 SIX5_disc1 0.14789201    0.9066472
+## 14:  rs2843403 SIX5_disc1 0.57145169    0.9066472
+## 15:  rs2843404 SIX5_disc1 0.48140291    0.9066472
+## 16:  rs2985855 SIX5_disc1 1.00000000    1.0000000
+## 17:  rs2296442  MYC_disc1 0.29890362    0.9066472
+## 18: rs10797432  MYC_disc1 0.64089998    0.9066472
+## 19:  rs6667605  MYC_disc1 0.74665067    0.9066472
+## 20:  rs4648648  MYC_disc1 0.71484150    0.9066472
+## 21:   rs734999  MYC_disc1 0.73348109    0.9066472
+## 22:  rs2764845  MYC_disc1 0.72498353    0.9066472
+## 23:  rs2764841  MYC_disc1 0.73131633    0.9066472
+## 24:  rs2985857  MYC_disc1 0.14064803    0.9066472
+## 25:  rs6424092  MYC_disc1 0.02528970    0.2866166
+## 26:  rs2296442 SIX5_disc1 0.30722405    0.9066472
+## 27: rs10797432 SIX5_disc1 0.17415016    0.9066472
+## 28:  rs6667605 SIX5_disc1 0.01572935    0.2811909
+## 29:  rs4648648 SIX5_disc1 0.26849187    0.9066472
+## 30:   rs734999 SIX5_disc1 0.21057043    0.9066472
+## 31:  rs2764845 SIX5_disc1 0.93486937    1.0000000
+## 32:  rs2764841 SIX5_disc1 0.53680487    0.9066472
+## 33:  rs2985857 SIX5_disc1 1.00000000    1.0000000
+## 34:  rs6424092 SIX5_disc1 0.73416105    0.9066472
+##          snpid      motif  pval_rank pval_rank_bh
+\end{verbatim}
+\end{kframe}
+\end{knitrout}
+
+Alternatively, if we want to compute Storey's q-values, we may utilize the \Biocpkg{qvalue} package from \Bioconductor{}: 
+
+\begin{knitrout}
+\definecolor{shadecolor}{rgb}{0.969, 0.969, 0.969}\color{fgcolor}\begin{kframe}
+\begin{alltt}
+\hlkwd{library}\hlstd{(qvalue)}
+\hlstd{atsnp.result[, qval_rank} \hlkwb{:=} \hlkwd{qvalue}\hlstd{(pval_rank)}\hlopt{$}\hlstd{qvalues]}
+\end{alltt}
+\end{kframe}
+\end{knitrout}
+
+Rather than adjusting all the p-values, if we have a large list of SNPs, we can adjust the p-values for each motif separately. This can be done by adding a 'by=...' argument in the \Robject{data.table}:
+
+\begin{knitrout}
+\definecolor{shadecolor}{rgb}{0.969, 0.969, 0.969}\color{fgcolor}\begin{kframe}
+\begin{alltt}
+\hlstd{atsnp.result[, pval_rank_bh} \hlkwb{:=} \hlkwd{p.adjust}\hlstd{(pval_rank,} \hlkwc{method} \hlstd{=} \hlstr{"BH"}\hlstd{),} \hlkwc{by} \hlstd{= motif]}
+\hlstd{atsnp.result[, qval_rank} \hlkwb{:=} \hlkwd{qvalue}\hlstd{(pval_rank)}\hlopt{$}\hlstd{qvalues,} \hlkwc{by} \hlstd{= motif]}
+\end{alltt}
+\end{kframe}
+\end{knitrout}
+
+Similarly, if we have a large motif library, we may also adjust the p-values for each SNP:
+
+\begin{knitrout}
+\definecolor{shadecolor}{rgb}{0.969, 0.969, 0.969}\color{fgcolor}\begin{kframe}
+\begin{alltt}
+\hlstd{atsnp.result[, pval_rank_bh} \hlkwb{:=} \hlkwd{p.adjust}\hlstd{(pval_rank,} \hlkwc{method} \hlstd{=} \hlstr{"BH"}\hlstd{),} \hlkwc{by} \hlstd{= snpid]}
+\hlstd{atsnp.result[, qval_rank} \hlkwb{:=} \hlkwd{qvalue}\hlstd{(pval_rank)}\hlopt{$}\hlstd{qvalues,} \hlkwc{by} \hlstd{= snpid]}
+\end{alltt}
 \end{kframe}
 \end{knitrout}
 
@@ -684,8 +734,8 @@ atSNP provides additional functions to extract the matched nucleotide subsequenc
 \begin{knitrout}
 \definecolor{shadecolor}{rgb}{0.969, 0.969, 0.969}\color{fgcolor}\begin{kframe}
 \begin{alltt}
-  \hlstd{match_result} \hlkwb{<-} \hlkwd{MatchSubsequence}\hlstd{(}\hlkwc{snp.tbl} \hlstd{= motif_scores}\hlopt{$}\hlstd{snp.tbl,}
-                                 \hlkwc{motif.scores} \hlstd{= motif.scores,}
+  \hlstd{match_result} \hlkwb{<-} \hlkwd{MatchSubsequence}\hlstd{(}\hlkwc{snp.tbl} \hlstd{= atsnp.scores}\hlopt{$}\hlstd{snp.tbl,}
+                                 \hlkwc{motif.scores} \hlstd{= atsnp.result,}
                                  \hlkwc{motif.lib} \hlstd{= motif_library,}
                                  \hlkwc{snpids} \hlstd{=} \hlkwd{c}\hlstd{(}\hlstr{"rs10910078"}\hlstd{,} \hlstr{"rs4486391"}\hlstd{),}
                                  \hlkwc{motifs} \hlstd{=} \hlkwd{names}\hlstd{(motif_library)[}\hlnum{1}\hlopt{:}\hlnum{2}\hlstd{],}
@@ -707,15 +757,15 @@ To visualize how each motif is matched to each allele using the \Rfunction{plotM
 \begin{knitrout}
 \definecolor{shadecolor}{rgb}{0.969, 0.969, 0.969}\color{fgcolor}\begin{kframe}
 \begin{alltt}
-  \hlkwd{plotMotifMatch}\hlstd{(}\hlkwc{snp.tbl} \hlstd{= motif_scores}\hlopt{$}\hlstd{snp.tbl,}
-               \hlkwc{motif.scores} \hlstd{= motif_scores}\hlopt{$}\hlstd{motif.scores,}
-               \hlkwc{snpid} \hlstd{= motif_scores}\hlopt{$}\hlstd{snp.tbl}\hlopt{$}\hlstd{snpid[}\hlnum{1}\hlstd{],}
+  \hlkwd{plotMotifMatch}\hlstd{(}\hlkwc{snp.tbl} \hlstd{= atsnp.scores}\hlopt{$}\hlstd{snp.tbl,}
+               \hlkwc{motif.scores} \hlstd{= atsnp.scores}\hlopt{$}\hlstd{motif.scores,}
+               \hlkwc{snpid} \hlstd{= atsnp.scores}\hlopt{$}\hlstd{snp.tbl}\hlopt{$}\hlstd{snpid[}\hlnum{1}\hlstd{],}
                \hlkwc{motif.lib} \hlstd{= motif_library,}
-               \hlkwc{motif} \hlstd{= motif_scores}\hlopt{$}\hlstd{motif.scores}\hlopt{$}\hlstd{motif[}\hlnum{1}\hlstd{])}
+               \hlkwc{motif} \hlstd{= atsnp.scores}\hlopt{$}\hlstd{motif.scores}\hlopt{$}\hlstd{motif[}\hlnum{1}\hlstd{])}
 \end{alltt}
 \end{kframe}
 
-{\centering \includegraphics[width=\maxwidth]{figure/unnamed-chunk-18-1} 
+{\centering \includegraphics[width=\maxwidth]{figure/unnamed-chunk-27-1} 
 
 }
 

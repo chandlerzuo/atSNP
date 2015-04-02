@@ -45,17 +45,33 @@ NULL
 #' @author Chandler Zuo zuo@@stat.wisc.edu
 NULL
 
-#' @name motif_encode
+#' @name encode_motif
 #' @title A motif library containing 2065 motifs downloaded from http://compbio.mit.edu/encode-motifs/motifs.txt.
-#' @description This motif library can be loaded by 'data(encode_motif)'.
+#' @description This motif library can be loaded by 'data(encode_library)'.
 #' @docType data
 #' @format A list object.
 #' @author Chandler Zuo zuo@@stat.wisc.edu
 NULL
 
-#' @name motif_info
+#' @name encode_motifinfo
 #' @title The information for the motif library downloaded from http://compbio.mit.edu/encode-motifs/motifs.txt.
-#' @description This is a character vector that be loaded by 'data(encode_motif)'. The names of this vector are the same as the names for 'motif_encode'. The entries of this vector are the corresponding motif information parsed from the raw file.
+#' @description This is a character vector that be loaded by 'data(encode_library)'. The names of this vector are the same as the names for 'encode_motif'. The entries of this vector are the corresponding motif information parsed from the raw file.
+#' @docType data
+#' @format A character vector.
+#' @author Chandler Zuo zuo@@stat.wisc.edu
+NULL
+
+#' @name jaspar_motif
+#' @title A motif library containing 593 motifs downloaded from http://jaspar.genereg.net/html/DOWNLOAD/JASPAR_CORE/pfm/nonredundant/pfm_all.txt.
+#' @description This motif library can be loaded by 'data(jaspar_library)'.
+#' @docType data
+#' @format A list object.
+#' @author Chandler Zuo zuo@@stat.wisc.edu
+NULL
+
+#' @name jaspar_motifinfo
+#' @title The information for the motif library downloaded from http://jaspar.genereg.net/html/DOWNLOAD/JASPAR_CORE/pfm/nonredundant/pfm_all.txt.
+#' @description This is a character vector that be loaded by 'data(jaspar_library)'. The names of this vector are the same as the names for 'jaspar_motif'. The entries of this vector are the corresponding motif information parsed from the raw file.
 #' @docType data
 #' @format A character vector.
 #' @author Chandler Zuo zuo@@stat.wisc.edu

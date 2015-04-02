@@ -19,7 +19,6 @@ Department of Statistics and of Biostatistics and Medical Informatics, Universit
   
 \date{}
 
-
 \begin{document}
 \maketitle
 
@@ -104,7 +103,7 @@ Notice that the annotation packages are usually large and this installation step
 
 \software{atSNP} provides a default motif library downloaded from \url{compbio.mit.edu/encode-motifs/motifs.txt}. This library contains 2065 known and discovered motifs from ENCODE TF ChIP-seq data sets. The following commands allows to load this motif library:
 
-% It may be useful to specify that each element of motif_encode is a
+% It may be useful to specify that each element of encode_motif is a
 % PWM. And it may be useful to show the actual motif sequence, since
 % it may be hard to understand the matrix. Perhaps specifiy which
 % columns is which nucleotide, for example jaspar's input is like:
@@ -122,37 +121,44 @@ Notice that the annotation packages are usually large and this installation step
   library(BSgenome)
 @ 
 
-
 <<eval=TRUE, echo=TRUE, results = "markup">>=
 library(atSNP)
 @ 
 
 <<eval=TRUE, echo=TRUE, results = "markup">>=
-data(encode_motif)
-length(motif_encode)
-motif_encode[seq(3)]
+data(encode_library)
+length(encode_motif)
+encode_motif[seq(3)]
 @ 
 
-Here, the motif library is represented by \Robject{motif\_encode},
+Here, the motif library is represented by \Robject{encode\_motif},
 which is a list of position weight matrices. The codes below shows the
 content of one matrix as well as its IUPAC letters:
 
 <<eval=TRUE, echo=TRUE, results="markup",tidy=TRUE>>=
-motif_encode[[1]]
-GetIUPACSequence(motif_encode[[1]])
+encode_motif[[1]]
+GetIUPACSequence(encode_motif[[1]])
 @ 
 
-The data object \Robject{encode\_motif} also contains a character vector \Robject{motif\_info} that contains detailed information for each motif.
+The data object \Robject{encode\_library} also contains a character vector \Robject{encode\_motifinfo} that contains detailed information for each motif.
 
 <<eval=TRUE, echo=TRUE, results = "markup",tidy=TRUE>>=
-length(motif_info)
-head(motif_info)
+length(encode_motifinfo)
+head(encode_motifinfo)
 @ 
 
-Here, the entry names of this vector are the same as the names of the motif library. \Robject{motif\_info} allows easy looking up the motif information for a specific PWM. For example, to look up the motif information for the first PWM in \Robject{motif\_encode}:
+Here, the entry names of this vector are the same as the names of the motif library. \Robject{encode\_motifinfo} allows easy looking up the motif information for a specific PWM. For example, to look up the motif information for the first PWM in \Robject{encode\_motifinfo}:
 
 <<eval=TRUE, echo=TRUE, results="markup",tidy=TRUE>>=
-motif_info[names(motif_encode[1])]
+encode_motifinfo[names(encode_motif[1])]
+@ 
+
+Our package also includes the JASPAR library downloaded from \url{http://jaspar.genereg.net/html/DOWNLOAD/JASPAR_CORE/pfm/nonredundant/pfm_all.txt}. The data object \Robject{jaspar\_library} contains a list of 593 PWMs \Robject{jaspar\_motif} and a character vector \Robject{jaspar\_motifinfo}.
+
+<<eval=TRUE, echo = TRUE, results = "markup", tidy = TRUE>>=
+data(jaspar_library)
+jaspar_motif[[1]]
+jaspar_motifinfo[names(jaspar_motif[1])]
 @ 
 
 % Following my earlier comment, it may be useful to be able to
@@ -161,7 +167,6 @@ motif_info[names(motif_encode[1])]
 Users can also provide a list of PWMs as the motif library via the \Rfunction{LoadMotifLibrary} function. In this function, 'tag' specifies the string that marks the start of each block of PWM; 'skiprows' is the number of description lines before the PWM; 'skipcols' is the number of columns to be skipped in the PWM matrix; 'transpose' is TRUE if the PWM has 4 rows representing A, C, G, T or FALSE if otherwise; 'field' is the position of the motif name within the description line; 'sep' is a vector of separators in the PWM; 'pseudocount' is the number added to the raw matrices, recommended to be 1 if the matrices are in fact position frequency matrices. These arguments provide the flexibility of loading a number of varying formatted files. The PWMs are returned as a list object. This function flexibly adapts to a variety of different formats. Some examples using online accessible files from other research groups are shown below.
 
 <<eval=FALSE, echo=TRUE, results="hide">>=
-
 pwms <- LoadMotifLibrary(
  "http://meme.nbcr.net/meme/examples/sample-dna-motif.meme-io")
 pwms <- LoadMotifLibrary(
@@ -265,7 +270,7 @@ A toy sample data set including a preloaded motif library and a SNP set is inclu
   str(snpInfo)
 ## to look at the motif information
   data(encode_motif)
-  motif_info[names(motif_library)]
+  encode_motifinfo[names(motif_library)]
 
 @ 
 
@@ -276,10 +281,10 @@ The binding affinity scores for all pairs of SNP and PWM can be computed by the 
 
 <<eval=TRUE, echo=TRUE, results="markup">>=
 
-  motif_score <- ComputeMotifScore(motif_library, snpInfo, ncores = 2)
-  motif_score$snp.tbl
-  motif_score$motif.scores[, list(snpid, motif, log_lik_ref,
-                                log_lik_snp, log_lik_ratio)]
+  atsnp.scores <- ComputeMotifScore(motif_library, snpInfo, ncores = 2)
+  head(atsnp.scores$snp.tbl)
+  head(atsnp.scores$motif.scores[, list(snpid, motif, log_lik_ref,
+                                log_lik_snp, log_lik_ratio)])
 @ 
 
 % I wonder if it is possible there is an example with smaller sequences.
@@ -301,11 +306,57 @@ We recommend using 'pval\_ref'and 'pval\_snp' for assessing the significance of 
 
 <<eval=TRUE,echo=TRUE,results="markup">>=
   
-  motif.scores <- ComputePValues(motif.lib = motif_library, snp.info = snpInfo,
-                                 motif.scores = motif_scores$motif.scores,
+  atsnp.result <- ComputePValues(motif.lib = motif_library, snp.info = snpInfo,
+                                 motif.scores = atsnp.scores$motif.scores,
 				 ncores = 2)
-  motif.scores[, list(snpid, motif, pval_ref, pval_snp, pval_rank, pval_diff)]
+  head(atsnp.result[, list(snpid, motif, pval_ref, pval_snp, pval_rank, pval_diff)])
 
+@ 
+
+The \Rclass{data.table} structure enables easy processing for prioritizing the SNP-PWM pairs based on the significance of affinity changes. We give a few examples here. First, we can sort this output table according to the 'pval\_rank' column:
+
+<<eval=TRUE, echo = TRUE, results="markup">>=
+head(atsnp.result[order(pval_rank), list(snpid, motif, pval_ref, pval_snp, pval_rank)])
+@ 
+
+Second, we can also select the SNP-PWM pairs subject to a threshold in 'pval\_rank':
+
+<<eval=TRUE, echo = TRUE, results = "markup">>=
+atsnp.result[pval_rank <= 0.1, list(snpid, motif, pval_ref, pval_snp, pval_rank)]
+@ 
+
+In addition, we can apply multiple testing adjustment to the p-values. \software{atSNP} does not implement any multiple testing adjustment internally. Users have the flexibility of choosing the adjustment method based on their specific application. For example, if we want to adjust 'pval\_rank' from all pairs of SNP-PWM pairs using the Benjamini-Hochberg's procedure, we may compute:
+
+<<eval=FALSE, echo = TRUE, results="hide">>=
+atsnp.result[, pval_rank_bh := p.adjust(pval_rank, method = "BH")]
+@ 
+<<eval=TRUE, echo = FALSE, results="hide">>=
+atsnp.result[, pval_rank_bh := p.adjust(pval_rank, method = "BH")]
+@ 
+
+<<eval=TRUE, echo = FALSE, results="markup">>=
+atsnp.result[, list(snpid, motif, pval_rank, pval_rank_bh)]
+@ 
+
+Alternatively, if we want to compute Storey's q-values, we may utilize the \Biocpkg{qvalue} package from \Bioconductor{}: 
+
+<<eval=FALSE, echo =TRUE,results="markup">>=
+library(qvalue)
+atsnp.result[, qval_rank := qvalue(pval_rank)$qvalues]
+@ 
+
+Rather than adjusting all the p-values, if we have a large list of SNPs, we can adjust the p-values for each motif separately. This can be done by adding a 'by=...' argument in the \Robject{data.table}:
+
+<<eval=FALSE, echo =TRUE,results="markup">>=
+atsnp.result[, pval_rank_bh := p.adjust(pval_rank, method = "BH"), by = motif]
+atsnp.result[, qval_rank := qvalue(pval_rank)$qvalues, by = motif]
+@ 
+
+Similarly, if we have a large motif library, we may also adjust the p-values for each SNP:
+
+<<eval=FALSE, echo =TRUE,results="markup">>=
+atsnp.result[, pval_rank_bh := p.adjust(pval_rank, method = "BH"), by = snpid]
+atsnp.result[, qval_rank := qvalue(pval_rank)$qvalues, by = snpid]
 @ 
 
 \subsection{Additional analysis}
@@ -314,8 +365,8 @@ atSNP provides additional functions to extract the matched nucleotide subsequenc
 
 <<eval=TRUE,echo=TRUE,results="markup">>=
   
-  match_result <- MatchSubsequence(snp.tbl = motif_scores$snp.tbl,
-                                 motif.scores = motif.scores,
+  match_result <- MatchSubsequence(snp.tbl = atsnp.scores$snp.tbl,
+                                 motif.scores = atsnp.result,
                                  motif.lib = motif_library,
                                  snpids = c("rs10910078", "rs4486391"),
                                  motifs = names(motif_library)[1:2],
@@ -328,11 +379,11 @@ To visualize how each motif is matched to each allele using the \Rfunction{plotM
 
 <<include=TRUE,eval=TRUE, echo=TRUE,fig.align="center",dpi=600,fig.width=6,fig.height=6>>=
 
-  plotMotifMatch(snp.tbl = motif_scores$snp.tbl,
-               motif.scores = motif_scores$motif.scores,
-               snpid = motif_scores$snp.tbl$snpid[1],
+  plotMotifMatch(snp.tbl = atsnp.scores$snp.tbl,
+               motif.scores = atsnp.scores$motif.scores,
+               snpid = atsnp.scores$snp.tbl$snpid[1],
                motif.lib = motif_library,
-               motif = motif_scores$motif.scores$motif[1])
+               motif = atsnp.scores$motif.scores$motif[1])
 
 @
 

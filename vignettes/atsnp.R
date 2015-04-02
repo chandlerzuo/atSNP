@@ -27,23 +27,27 @@ tidy.opt = list(width.cutoff = 60)
 library(atSNP)
 
 ## ----eval=TRUE, echo=TRUE, results = "markup"-------------------------------------------
-data(encode_motif)
-length(motif_encode)
-motif_encode[seq(3)]
+data(encode_library)
+length(encode_motif)
+encode_motif[seq(3)]
 
 ## ----eval=TRUE, echo=TRUE, results="markup",tidy=TRUE-----------------------------------
-motif_encode[[1]]
-GetIUPACSequence(motif_encode[[1]])
+encode_motif[[1]]
+GetIUPACSequence(encode_motif[[1]])
 
 ## ----eval=TRUE, echo=TRUE, results = "markup",tidy=TRUE---------------------------------
-length(motif_info)
-head(motif_info)
+length(encode_motifinfo)
+head(encode_motifinfo)
 
 ## ----eval=TRUE, echo=TRUE, results="markup",tidy=TRUE-----------------------------------
-motif_info[names(motif_encode[1])]
+encode_motifinfo[names(encode_motif[1])]
+
+## ----eval=TRUE, echo = TRUE, results = "markup", tidy = TRUE----------------------------
+data(jaspar_library)
+jaspar_motif[[1]]
+jaspar_motifinfo[names(jaspar_motif[1])]
 
 ## ----eval=FALSE, echo=TRUE, results="hide"----------------------------------------------
-#  
 #  pwms <- LoadMotifLibrary(
 #   "http://meme.nbcr.net/meme/examples/sample-dna-motif.meme-io")
 #  pwms <- LoadMotifLibrary(
@@ -105,28 +109,55 @@ snp_info1 <- LoadSNPData(snpids = c("rs5050", "rs616488", "rs11249433"),
   str(snpInfo)
 ## to look at the motif information
   data(encode_motif)
-  motif_info[names(motif_library)]
+  encode_motifinfo[names(motif_library)]
 
 
 ## ----eval=TRUE, echo=TRUE, results="markup"---------------------------------------------
 
-  motif_score <- ComputeMotifScore(motif_library, snpInfo, ncores = 2)
-  motif_score$snp.tbl
-  motif_score$motif.scores[, list(snpid, motif, log_lik_ref,
-                                log_lik_snp, log_lik_ratio)]
+  atsnp.scores <- ComputeMotifScore(motif_library, snpInfo, ncores = 2)
+  head(atsnp.scores$snp.tbl)
+  head(atsnp.scores$motif.scores[, list(snpid, motif, log_lik_ref,
+                                log_lik_snp, log_lik_ratio)])
 
 ## ----eval=TRUE,echo=TRUE,results="markup"-----------------------------------------------
   
-  motif.scores <- ComputePValues(motif.lib = motif_library, snp.info = snpInfo,
-                                 motif.scores = motif_scores$motif.scores,
+  atsnp.result <- ComputePValues(motif.lib = motif_library, snp.info = snpInfo,
+                                 motif.scores = atsnp.scores$motif.scores,
 				 ncores = 2)
-  motif.scores[, list(snpid, motif, pval_ref, pval_snp, pval_rank, pval_diff)]
+  head(atsnp.result[, list(snpid, motif, pval_ref, pval_snp, pval_rank, pval_diff)])
 
+
+## ----eval=TRUE, echo = TRUE, results="markup"-------------------------------------------
+head(atsnp.result[order(pval_rank), list(snpid, motif, pval_ref, pval_snp, pval_rank)])
+
+## ----eval=TRUE, echo = TRUE, results = "markup"-----------------------------------------
+atsnp.result[pval_rank <= 0.1, list(snpid, motif, pval_ref, pval_snp, pval_rank)]
+
+## ----eval=FALSE, echo = TRUE, results="hide"--------------------------------------------
+#  atsnp.result[, pval_rank_bh := p.adjust(pval_rank, method = "BH")]
+
+## ----eval=TRUE, echo = FALSE, results="hide"--------------------------------------------
+atsnp.result[, pval_rank_bh := p.adjust(pval_rank, method = "BH")]
+
+## ----eval=TRUE, echo = FALSE, results="markup"------------------------------------------
+atsnp.result[, list(snpid, motif, pval_rank, pval_rank_bh)]
+
+## ----eval=FALSE, echo =TRUE,results="markup"--------------------------------------------
+#  library(qvalue)
+#  atsnp.result[, qval_rank := qvalue(pval_rank)$qvalues]
+
+## ----eval=FALSE, echo =TRUE,results="markup"--------------------------------------------
+#  atsnp.result[, pval_rank_bh := p.adjust(pval_rank, method = "BH"), by = motif]
+#  atsnp.result[, qval_rank := qvalue(pval_rank)$qvalues, by = motif]
+
+## ----eval=FALSE, echo =TRUE,results="markup"--------------------------------------------
+#  atsnp.result[, pval_rank_bh := p.adjust(pval_rank, method = "BH"), by = snpid]
+#  atsnp.result[, qval_rank := qvalue(pval_rank)$qvalues, by = snpid]
 
 ## ----eval=TRUE,echo=TRUE,results="markup"-----------------------------------------------
   
-  match_result <- MatchSubsequence(snp.tbl = motif_scores$snp.tbl,
-                                 motif.scores = motif.scores,
+  match_result <- MatchSubsequence(snp.tbl = atsnp.scores$snp.tbl,
+                                 motif.scores = atsnp.result,
                                  motif.lib = motif_library,
                                  snpids = c("rs10910078", "rs4486391"),
                                  motifs = names(motif_library)[1:2],
@@ -136,11 +167,11 @@ snp_info1 <- LoadSNPData(snpids = c("rs5050", "rs616488", "rs11249433"),
 
 ## ----include=TRUE,eval=TRUE, echo=TRUE,fig.align="center",dpi=600,fig.width=6,fig.height=6----
 
-  plotMotifMatch(snp.tbl = motif_scores$snp.tbl,
-               motif.scores = motif_scores$motif.scores,
-               snpid = motif_scores$snp.tbl$snpid[1],
+  plotMotifMatch(snp.tbl = atsnp.scores$snp.tbl,
+               motif.scores = atsnp.scores$motif.scores,
+               snpid = atsnp.scores$snp.tbl$snpid[1],
                motif.lib = motif_library,
-               motif = motif_scores$motif.scores$motif[1])
+               motif = atsnp.scores$motif.scores$motif[1])
 
 
 ## ----eval=TRUE,echo=FALSE,results="markup",cache=FALSE----------------------------------
