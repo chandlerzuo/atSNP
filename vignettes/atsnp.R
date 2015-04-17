@@ -49,7 +49,7 @@ jaspar_motifinfo[names(jaspar_motif[1])]
 
 ## ----eval=FALSE, echo=TRUE, results="hide"----------------------------------------------
 #  pwms <- LoadMotifLibrary(
-#   "http://meme.nbcr.net/meme/examples/sample-dna-motif.meme-io")
+#   "http://meme.nbcr.net/meme/doc/examples/sample-dna-motif.meme-io")
 #  pwms <- LoadMotifLibrary(
 #   "http://compbio.mit.edu/encode-motifs/motifs.txt",
 #   tag = ">", transpose = FALSE, field = 1,
