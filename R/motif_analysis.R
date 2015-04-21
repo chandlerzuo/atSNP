@@ -140,14 +140,23 @@ LoadSNPData <- function(filename = NULL, genome.lib = "BSgenome.Hsapiens.UCSC.hg
     }
     ## load the corresponding snp library
     library(package = snp.lib, character.only = TRUE)
-    snp.loc <- rsid2loc(snpids)
+    snp.loc <- tryCatch({rsid2loc(snpids)}, error = function(e) return(e$message))
+    ## remove rsids not included in the database
+    if(class(snp.loc) == "character") {
+      rsid.rm <- myStrSplit(snp.loc, split = c(", ", ": "))[[1]][-1]
+      rsid.rm <- paste("rs", rsid.rm, sep = "")
+      message("The following rsids are not included in the database and discarded: ", paste(rsid.rm, collapse = ", "))
+      snpids <- snpids[!snpids %in% rsid.rm]
+      snp.loc <- rsid2loc(snpids)
+    }
+    
     snp.alleles <- rsid2alleles(snpids)
     snp.alleles <- IUPAC_CODE_MAP[snp.alleles]
     gr <- rsidsToGRanges(snpids)
     snp.strands <- as.character(GenomicRanges::as.data.frame(gr)$strand)
     if(sum(nchar(snp.alleles) > 2) > 0) {
-      message("The following SNPs do not have 2 alleles: ")
-      message(paste(snpids[nchar(snp.alleles) != 2], collapse = ", "))
+      message("Warning: the following SNPs have more than 2 alleles. Only the first two alleles are used as the SNP and the reference allele.")
+      message(paste(snpids[nchar(snp.alleles) > 2], collapse = ", "))
     }
     ## retain only SNPs with >= 2 alleles
     ids <- which(sapply(snp.alleles, nchar) >= 2)
@@ -232,6 +241,90 @@ LoadSNPData <- function(filename = NULL, genome.lib = "BSgenome.Hsapiens.UCSC.hg
   sequences <- sequences[, c(a1.ref.base.id, a2.ref.base.id), drop = FALSE]
   ref.base <- c(a1[a1.ref.base.id], a2[a2.ref.base.id])
   snp.base <- c(a2[a1.ref.base.id], a1[a2.ref.base.id])
+  return(list(
+              sequence_matrix= sequences,
+              ref_base = ref.base,
+              snp_base = snp.base,
+              transition = transition,
+              prior = prior
+              ))
+}
+
+#' @name LoadFastqData
+#' @title Load the SNP data from fastq files.
+#' @description Load SNP data.
+#' @parameter ref.data Fastq file name for the reference allele sequences.
+#' @parameter snp.data Fastq file name for the SNP allele sequences.
+#' @param default.par A boolean for whether using the default Markov parameters. Default: FALSE.
+#' @return A list object containing the following components:
+#' \tabular{ll}{
+#' sequence_matrix \tab A list of integer vectors representing the deroxyribose sequence around each SNP.\cr
+#' a1 \tab An integer vector for the deroxyribose at the SNP location on the reference genome.\cr
+#' a2 \tab An integer vector for the deroxyribose at the SNP location on the SNP genome.\cr
+#' }
+#' The results are coded as: "A"-1, "C"-2, "G"-3, "T"-4.
+#' @author Chandler Zuo \email{zuo@@stat.wisc.edu}
+#' @examples \dontrun{LoadFastqData("~/atsnp_git/sample_1.fq", "~/atsnp_git/sample_2.fq")}
+LoadFastqData <- function(ref.data, snp.data, default.par = FALSE) {
+  refdat <- read.table(ref.data)
+  snpdat <- read.table(snp.data)
+  if(nrow(refdat) != nrow(snpdat)) {
+    stop("Error: 'ref.data' and 'snp.data' should have the same number of rows.")
+  }
+  n <- nrow(refdat)
+  ids <- 4 * seq(n / 4) - 2
+  refseqs <- as.character(refdat[ids, 1])
+  snpseqs <- as.character(snpdat[ids, 1])
+  codes <- seq(4)
+  names(codes) <- c("A", "C", "G", "T")
+  refmat <- sapply(refseqs,
+                   function(x)
+                   codes[strsplit(x, "")[[1]]])
+  snpmat <- sapply(refseqs,
+                   function(x)
+                   codes[strsplit(x, "")[[1]]])
+  colnames(refmat) <- colnames(snpmat) <- rownames(refmat) <- rownames(snpmat) <- NULL
+  m <- nrow(refmat)
+  if(nrow(refmat) != nrow(snpmat)) {
+    stop("Error: the sequences for the SNP alleles and the reference alleles have different lengths.")
+  }
+  if(m %% 2 == 0) {
+    stop("Error: each sequence must have an odd number of length.")
+  }
+  
+  id.na1 <- which(apply(refmat, 2, function(x) sum(is.na(x))) > 0)
+  id.na2 <- which(is.na(snpmat[(m + 1) / 2, ]))
+  id.na <- union(id.na1, id.na2)
+  if(length(id.na) > 0) {
+    message("The following sequences include bases other than A, C, G, T: ", paste(id.na, collapse = ", "))
+  }
+
+  id.wrong <- which(apply((refmat != snpmat)[-(m + 1) / 2, ], 2, sum) > 0)
+  if(length(id.wrong) > 0) {
+    message("The following sequences have unidentical nucleotides between the SNP and the reference allele at positions other than the central location.")
+  }
+
+  ids <- union(id.wrong, id.na)
+  if(length(ids) > 0) {
+    sequences <- refmat[, -ids, drop = FALSE]
+    ref.base <- refmat[(m + 1) / 2, -ids]
+    snp.base <- snpmat[(m + 1) / 2, -ids]
+  } else {
+    sequences <- refmat
+    ref.base <- refmat[(m + 1) / 2, ]
+    snp.base <- snpmat[(m + 1) / 2, ]
+  }
+
+  if(!default.par) {
+    transition <- .Call("transition_matrix", sequences, package = "atSNP")
+    prior <- apply(transition, 1, sum)
+    prior <- prior / sum(prior)
+    transition <- transition / apply(transition, 1, sum)
+    names(prior) <- colnames(transition) <- rownames(transition) <- c("A", "C", "G", "T")
+  } else {
+    data(default_par)
+  }
+
   return(list(
               sequence_matrix= sequences,
               ref_base = ref.base,
