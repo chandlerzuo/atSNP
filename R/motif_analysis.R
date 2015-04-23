@@ -108,6 +108,10 @@ LoadMotifLibrary <- function(filename, tag = "MOTIF", transpose = FALSE, field =
 #' sequence_matrix \tab A list of integer vectors representing the deroxyribose sequence around each SNP.\cr
 #' a1 \tab An integer vector for the deroxyribose at the SNP location on the reference genome.\cr
 #' a2 \tab An integer vector for the deroxyribose at the SNP location on the SNP genome.\cr
+#' rsid.missing \tab If the data source is a list of rsids, this field records rsids for SNPs that are discarded because they are not in the SNPlocs package.\cr
+#' rsid.duplicate \tab If the data source is a list of rsids, this field records rsids for SNPs that based on the SNPlocs package, this locus has more than 2 alleles.\cr
+#' rsid.na \tab This field records rsids for SNPs that are discarded because the nucleotide sequences contain none ACGT characters.\cr
+#' rsid.rm \tab If the data source is a table, this field records rsids for SNPs that are discarded because the nucleotide on the reference genome matches neither 'a1' or 'a2' in the data source.\cr
 #' }
 #' The results are coded as: "A"-1, "C"-2, "G"-3, "T"-4.
 #' @author Chandler Zuo \email{zuo@@stat.wisc.edu}
@@ -120,6 +124,7 @@ LoadSNPData <- function(filename = NULL, genome.lib = "BSgenome.Hsapiens.UCSC.hg
 			snpids = NULL, half.window.size = 30, default.par = FALSE,
                         mutation = FALSE, ...) {
   useFile <- FALSE
+  rsid.rm <- rsid.missing <- rsid.duplicate <- rsid.na <- NULL
   if(!is.null(filename)) {
     if(file.exists(filename)) {
       useFile <- TRUE
@@ -143,10 +148,11 @@ LoadSNPData <- function(filename = NULL, genome.lib = "BSgenome.Hsapiens.UCSC.hg
     snp.loc <- tryCatch({rsid2loc(snpids)}, error = function(e) return(e$message))
     ## remove rsids not included in the database
     if(class(snp.loc) == "character") {
-      rsid.rm <- myStrSplit(snp.loc, split = c(", ", ": "))[[1]][-1]
-      rsid.rm <- paste("rs", rsid.rm, sep = "")
-      message("The following rsids are not included in the database and discarded: ", paste(rsid.rm, collapse = ", "))
-      snpids <- snpids[!snpids %in% rsid.rm]
+      rsid.missing <- myStrSplit(snp.loc, split = c(", ", ": "))[[1]][-1]
+      rsid.missing <- paste("rs", rsid.missing, sep = "")
+      message("Warning: the following rsids are not included in the database and discarded: ")
+      message(paste(rsid.missing, collapse = ", "))
+      snpids <- snpids[!snpids %in% rsid.missing]
       snp.loc <- rsid2loc(snpids)
     }
     
@@ -155,8 +161,9 @@ LoadSNPData <- function(filename = NULL, genome.lib = "BSgenome.Hsapiens.UCSC.hg
     gr <- rsidsToGRanges(snpids)
     snp.strands <- as.character(GenomicRanges::as.data.frame(gr)$strand)
     if(sum(nchar(snp.alleles) > 2) > 0) {
-      message("Warning: the following SNPs have more than 2 alleles. Only the first two alleles are used as the SNP and the reference allele.")
-      message(paste(snpids[nchar(snp.alleles) > 2], collapse = ", "))
+      message("Warning: the following SNPs have more than 2 alleles, and only the first two alleles are used as the SNP and the reference allele:")
+      rsid.duplicate <- snpids[nchar(snp.alleles) > 2]
+      message(paste(rsid.duplicate, collapse = ", "))
     }
     ## retain only SNPs with >= 2 alleles
     ids <- which(sapply(snp.alleles, nchar) >= 2)
@@ -205,7 +212,8 @@ LoadSNPData <- function(filename = NULL, genome.lib = "BSgenome.Hsapiens.UCSC.hg
   names(a1) <- names(a2) <- NULL
   keep.id <- which(apply(sequences, 2, function(x) sum(is.na(x))) == 0)
   if(length(keep.id) < nrow(tbl)) {
-    message("The following rows are discarded because the reference genome sequences contain non ACGT characters:")
+    message("Warning: the following rows are discarded because the reference genome sequences contain non ACGT characters:")
+    rsid.na <- tbl[-keep.id, ]$snpid
     print(tbl[-keep.id, ])
   }
   ## remove sequences containing non ACGT characters
@@ -230,8 +238,10 @@ LoadSNPData <- function(filename = NULL, genome.lib = "BSgenome.Hsapiens.UCSC.hg
     a2.ref.base.id <- a2.ref.base.id[!a2.ref.base.id %in% a1.ref.base.id]
     discard.id <- setdiff(seq_along(a1), c(a1.ref.base.id, a2.ref.base.id))
     if(length(discard.id) > 0) {
-      message(length(discard.id), " sequences are discarded because the reference nucleotide matches to neither a1 nor a2.")
-      print(tbl[keep.id[discard.id], ])
+      message("Warning: the following sequences are discarded because the reference nucleotide matches to neither a1 nor a2:")
+      rsid.rm <- as.character(tbl[keep.id[discard.id], ]$snpid)
+      message("snpid\tchr\tsnp\ta1\ta2")
+      message(paste(apply(tbl[keep.id[discard.id], c("snpid", "chr", "snp", "a1", "a2")], 1, function(x) paste(x, collapse = "\t")), collapse = "\n"))
     }
   } else {
     ## single nucleotide mutation data
@@ -246,15 +256,19 @@ LoadSNPData <- function(filename = NULL, genome.lib = "BSgenome.Hsapiens.UCSC.hg
               ref_base = ref.base,
               snp_base = snp.base,
               transition = transition,
-              prior = prior
+              prior = prior,
+              rsid.na = rsid.na,
+              rsid.rm = rsid.rm,
+              rsid.duplicate = rsid.duplicate,
+              rsid.missing = rsid.missing
               ))
 }
 
-#' @name LoadFastqData
-#' @title Load the SNP data from fastq files.
+#' @name LoadFastaData
+#' @title Load the SNP data from fasta files.
 #' @description Load SNP data.
-#' @parameter ref.data Fastq file name for the reference allele sequences.
-#' @parameter snp.data Fastq file name for the SNP allele sequences.
+#' @param ref.data Fastq file name for the reference allele sequences.
+#' @param snp.data Fastq file name for the SNP allele sequences.
 #' @param default.par A boolean for whether using the default Markov parameters. Default: FALSE.
 #' @return A list object containing the following components:
 #' \tabular{ll}{
@@ -264,17 +278,25 @@ LoadSNPData <- function(filename = NULL, genome.lib = "BSgenome.Hsapiens.UCSC.hg
 #' }
 #' The results are coded as: "A"-1, "C"-2, "G"-3, "T"-4.
 #' @author Chandler Zuo \email{zuo@@stat.wisc.edu}
-#' @examples \dontrun{LoadFastqData("~/atsnp_git/sample_1.fq", "~/atsnp_git/sample_2.fq")}
-LoadFastqData <- function(ref.data, snp.data, default.par = FALSE) {
+#' @examples \dontrun{LoadFastaData("http://pages.stat.wisc.edu/~keles/atSNP-Data/sample_1.fasta", "http://pages.stat.wisc.edu/~keles/atSNP-Data/sample_2.fasta")}
+#' @useDynLib atSNP
+#' @export
+LoadFastaData <- function(ref.data, snp.data, default.par = FALSE) {
   refdat <- read.table(ref.data)
   snpdat <- read.table(snp.data)
   if(nrow(refdat) != nrow(snpdat)) {
     stop("Error: 'ref.data' and 'snp.data' should have the same number of rows.")
   }
   n <- nrow(refdat)
-  ids <- 4 * seq(n / 4) - 2
+  ids <- 2 * seq(n / 2)
   refseqs <- as.character(refdat[ids, 1])
   snpseqs <- as.character(snpdat[ids, 1])
+  if(var(sapply(refseqs, nchar)) != 0) {
+    stop("Error: sequences in 'ref.data' have different lengths.")
+  }
+  if(var(sapply(snpseqs, nchar)) != 0) {
+    stop("Error: sequences in 'snp.data' have different lengths.")
+  }
   codes <- seq(4)
   names(codes) <- c("A", "C", "G", "T")
   refmat <- sapply(refseqs,
@@ -296,12 +318,14 @@ LoadFastqData <- function(ref.data, snp.data, default.par = FALSE) {
   id.na2 <- which(is.na(snpmat[(m + 1) / 2, ]))
   id.na <- union(id.na1, id.na2)
   if(length(id.na) > 0) {
-    message("The following sequences include bases other than A, C, G, T: ", paste(id.na, collapse = ", "))
+    message("Warning: the following sequences are discarded, because they include bases other than A, C, G, T: ")
+    message(paste(id.na, collapse = ", "))
   }
 
   id.wrong <- which(apply((refmat != snpmat)[-(m + 1) / 2, ], 2, sum) > 0)
   if(length(id.wrong) > 0) {
-    message("The following sequences have unidentical nucleotides between the SNP and the reference allele at positions other than the central location.")
+    message("Warning: the following sequences are discarded, because they have unidentical nucleotides between the SNP and the reference allele at positions other than the central location: ")
+    message(paste(id.wrong, collapse = ", "))
   }
 
   ids <- union(id.wrong, id.na)
@@ -525,10 +549,16 @@ MatchSubsequence <- function(snp.tbl, motif.scores, motif.lib, snpids = NULL, mo
     motifs <- unique(motif.scores$motif)
   }
   if(sum(! motifs %in% names(motif.lib)) > 0) {
-    stop("Error: some motifs are not included in 'motif.lib'.")
+    motif.discard <- setdiff(motifs, unique(names(motif.lib)))
+    message("Warning: the following motifs are not included in 'motif.lib' and are discarded: ")
+    message(paste(motif.discard, collapse = ", "))
+    motifs <- setdiff(motifs, motif.discard)
   }
   if(sum(! snpids %in% motif.scores$snpid) > 0) {
-    stop("Error: some snpids are not included in 'motif.scores'.")
+    snp.discard <- setdiff(snpids, unique(motif.scores$snpid))
+    message("Warning: the following snpids are not included in 'motif.scores' and are discarded: ")
+    message(paste(snp.discard, collapse = ", "))
+    snpids <- setdiff(snpids, snp.discard)
   }
   snpids <- unique(snpids)
   motifs <- unique(motifs)

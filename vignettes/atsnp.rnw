@@ -99,7 +99,11 @@ Notice that the annotation packages are usually large and this installation step
 
 \section{Example}
 
-\subsection{Load motif and SNP data}
+\subsection{Load the motif library}
+
+\software{atSNP} includes two motif libraries in the package: the ENCODE derived motif library, and the JASPAR database motif library. In addition, \software{atSNP} can load user defined motif libraries in a variety of formats.
+
+\subsubsection{ENCODE derived motif library}
 
 \software{atSNP} provides a default motif library downloaded from \url{compbio.mit.edu/encode-motifs/motifs.txt}. This library contains 2065 known and discovered motifs from ENCODE TF ChIP-seq data sets. The following commands allows to load this motif library:
 
@@ -128,7 +132,7 @@ library(atSNP)
 <<eval=TRUE, echo=TRUE, results = "markup">>=
 data(encode_library)
 length(encode_motif)
-encode_motif[seq(3)]
+encode_motif[1]
 @ 
 
 Here, the motif library is represented by \Robject{encode\_motif},
@@ -153,6 +157,8 @@ Here, the entry names of this vector are the same as the names of the motif libr
 encode_motifinfo[names(encode_motif[1])]
 @ 
 
+\subsubsection{JASPAR database motif library}
+
 Our package also includes the JASPAR library downloaded from \url{http://jaspar.genereg.net/html/DOWNLOAD/JASPAR_CORE/pfm/nonredundant/pfm_all.txt}. The data object \Robject{jaspar\_library} contains a list of 593 PWMs \Robject{jaspar\_motif} and a character vector \Robject{jaspar\_motifinfo}.
 
 <<eval=TRUE, echo = TRUE, results = "markup", tidy = TRUE>>=
@@ -164,27 +170,38 @@ jaspar_motifinfo[names(jaspar_motif[1])]
 % Following my earlier comment, it may be useful to be able to
 % introduce the PWM with counts as above
 
+\subsubsection{User defined motif library}
+
 Users can also provide a list of PWMs as the motif library via the \Rfunction{LoadMotifLibrary} function. In this function, 'tag' specifies the string that marks the start of each block of PWM; 'skiprows' is the number of description lines before the PWM; 'skipcols' is the number of columns to be skipped in the PWM matrix; 'transpose' is TRUE if the PWM has 4 rows representing A, C, G, T or FALSE if otherwise; 'field' is the position of the motif name within the description line; 'sep' is a vector of separators in the PWM; 'pseudocount' is the number added to the raw matrices, recommended to be 1 if the matrices are in fact position frequency matrices. These arguments provide the flexibility of loading a number of varying formatted files. The PWMs are returned as a list object. This function flexibly adapts to a variety of different formats. Some examples using online accessible files from other research groups are shown below.
 
 <<eval=FALSE, echo=TRUE, results="hide">>=
+## Source: http://meme.nbcr.net/meme/doc/examples/sample-dna-motif.meme-io
 pwms <- LoadMotifLibrary(
- "http://meme.nbcr.net/meme/doc/examples/sample-dna-motif.meme-io")
+ "http://pages.stat.wisc.edu/~keles/atSNP-Data/sample-dna-motif.meme-io.txt")
+
+## Source: http://compbio.mit.edu/encode-motifs/motifs.txt
 pwms <- LoadMotifLibrary(
- "http://compbio.mit.edu/encode-motifs/motifs.txt",
+ "http://pages.stat.wisc.edu/~keles/atSNP-Data/motifs.txt",
  tag = ">", transpose = FALSE, field = 1, 
  sep = c("\t", " ", ">"), skipcols = 1, 
  skiprows = 1, pseudocount = 0)
+
+## Source: http://johnsonlab.ucsf.edu/mochi_files/JASPAR_motifs_H_sapiens.txt
 pwms <- LoadMotifLibrary(
- "http://johnsonlab.ucsf.edu/mochi_files/JASPAR_motifs_H_sapiens.txt",
+ "http://pages.stat.wisc.edu/~keles/atSNP-Data/JASPAR_motifs_H_sapiens.txt",
  tag = "/NAME",skiprows = 1, skipcols = 0, transpose = FALSE,
  field = 2)
+
+## Source: http://jaspar.genereg.net/html/DOWNLOAD/ARCHIVE/JASPAR2010/all_data/matrix_only/matrix.txt
 pwms <- LoadMotifLibrary(
- "http://jaspar.genereg.net/html/DOWNLOAD/ARCHIVE/JASPAR2010/all_data/matrix_only/matrix.txt", 
+ "http://pages.stat.wisc.edu/~keles/atSNP-Data/matrix.txt", 
  tag = ">", skiprows = 1, skipcols = 1, transpose = TRUE, 
  field = 1, sep = c("\t", " ", "\\[", "\\]", ">"),
  pseudocount = 1)
+
+## Source: http://jaspar.genereg.net/html/DOWNLOAD/JASPAR_CORE/pfm/nonredundant/pfm_vertebrates.txt
 pwms <- LoadMotifLibrary(
- "http://jaspar.genereg.net/html/DOWNLOAD/JASPAR_CORE/pfm/nonredundant/pfm_vertebrates.txt",
+ "http://pages.stat.wisc.edu/~keles/atSNP-Data/pfm_vertebrates.txt",
  tag = ">", skiprows = 1, skipcols = 0, transpose = TRUE, field = 1, 
  sep = c(">", "\t", " "), pseudocount = 1)
 
@@ -195,11 +212,17 @@ pwms <- LoadMotifLibrary(
 
 @ 
 
+\subsection{Load the SNP Data}
+
+\software{atSNP} can load the SNP data in three formats: a table including full SNP information, a list of dbSNP's rsids, and a pair of fasta files.
+
+\subsubsection{Load SNP data through a table}
+
 % Perhaps it may useful to add explicit links to those databases, or
 % an example highlighting what those the tag parameter means in one
 % (or all) of this databases
 
-The data set for the SNP information must be a table including five columns:
+In this case, the table that provides the SNP information must include five columns:
 
 \begin{itemize}
 \item chr: the chromosome ID;
@@ -214,30 +237,20 @@ The data set for the SNP information must be a table including five columns:
 This data set can be loaded using the \Rfunction{LoadSNPData} function. The 'genome.lib' argument specifies the annotation package name corresponding to the SNP data set, with the default as 'BSgenome.Hsapiens.UCSC.hg19'. Each side of the SNP is extended by a number of base pairs specified by the 'half.window.size' argument. \Rfunction{LoadSNPData} extracts the genome sequence within such windows around each SNP using the 'genome.lib' package. An example is the following:
 
 The following codes generate a synthetic SNP data and loads it back in \R{}:
+
 <<eval=TRUE, echo=TRUE, results="markup",tidy=FALSE>>=
 
-  data(example)
-  write.table(snp_tbl, file = "test_snp_file.txt",
+data(example)
+write.table(snp_tbl, file = "test_snp_file.txt",
             row.names = FALSE, quote = FALSE)
-  snp_info <- LoadSNPData("test_snp_file.txt", genome.lib = "BSgenome.Hsapiens.UCSC.hg19",
-                          half.window.size = 30, default.par = TRUE, mutation = FALSE)
-  ncol(snp_info$sequence) == nrow(snp_tbl)
+snp_info <- LoadSNPData("test_snp_file.txt", genome.lib = "BSgenome.Hsapiens.UCSC.hg19",
+                        half.window.size = 30, default.par = TRUE, mutation = FALSE)
+ncol(snp_info$sequence) == nrow(snp_tbl)
+snp_info$rsid.rm
 
 @
 
-Alternatively, users can also provide a list of rsids for the SNPs. In this case, \Rfunction{LoadSNPData} looks up the SNP location and the allele information using the annotation package specified by 'snp.lib'. The default value of 'snp.lib' is 'SNPlocs.Hsapiens.dbSNP.20120608'.
-
-<<eval=TRUE, echo=TRUE, results="markup", tidy=FALSE>>=
-
-snp_info1 <- LoadSNPData(snpids = c("rs5050", "rs616488", "rs11249433"),
-                         genome.lib = "BSgenome.Hsapiens.UCSC.hg19",
-  			 snp.lib = "SNPlocs.Hsapiens.dbSNP.20120608",
- 			 half.window.size = 30,
-			 default.par = TRUE,
-			 mutation = FALSE)
-@
-
-The 'mutation' argument specifies whether the data set is related to SNP or general single nucleotide mutation. By default, 'mutation=FALSE'. In this case, \Rfunction{LoadSNPData} get the nucleotides on the reference genome based on the genome coordinates specified by 'chr' and 'snp' and match them to 'a1' and 'a2' alleles. 'a1' and 'a2' nucleotides are assigned to the refrence or the SNP allele based on which one matches to the reference nucleotide. If neither allele matches to the reference nucleotide, the corresponding row in the SNP information file is discarded. Alternatively, if 'mutation=TRUE', no row is discarded. \Rfunction{LoadSNPData} takes the reference sequences around the SNP locations, replaces the reference nucleotides at the SNP locations by 'a1' nucleotides to construct the 'reference' sequences, and by 'a2' nucleotides to construct the 'SNP' sequences. Notice that in this case, in the subsequent analysis, whenever we refer to the ``reference'' or the ``SNP'' allele, it actually means the ``a1'' or the ``a2'' allele.
+There are two important arguments in function \Rfunction{LoadSNPData}. First, the 'mutation' argument specifies whether the data set is related to SNP or general single nucleotide mutation. By default, 'mutation=FALSE'. In this case, \Rfunction{LoadSNPData} get the nucleotides on the reference genome based on the genome coordinates specified by 'chr' and 'snp' and match them to 'a1' and 'a2' alleles from the \Biocannopkg{BSgenome} package. 'a1' and 'a2' nucleotides are assigned to the refrence or the SNP allele based on which one matches to the reference nucleotide. If neither allele matches to the reference nucleotide, the corresponding row in the SNP information file is discarded. These discarded SNPs are captured by the 'rsid.rm' field in the output. Alternatively, if 'mutation=TRUE', no row is discarded. \Rfunction{LoadSNPData} takes the reference sequences around the SNP locations, replaces the reference nucleotides at the SNP locations by 'a1' nucleotides to construct the 'reference' sequences, and by 'a2' nucleotides to construct the 'SNP' sequences. Notice that in this case, in the subsequent analysis, whenever we refer to the ``reference'' or the ``SNP'' allele, it actually means the ``a1'' or the ``a2'' allele.
 
 % manually wrapping the lines works better than setting tidy = TRUE
 <<eval=TRUE, echo=TRUE, results="markup",tidy=FALSE>>=
@@ -251,8 +264,7 @@ The 'mutation' argument specifies whether the data set is related to SNP or gene
 
 % This example is not showing in the pdf vignette
 
-If 'default.par = FALSE', \Rfunction{LoadSNPData} simultaneously estimates the parameters for the first order Markov model in the reference genome using the nucleotides within the SNP windows. Otherwise, it loads a set of parameter values pre-fitted from sequences around all the SNPs in the NHGRI GWAS catalog (\cite{nhgri-gwas}). We recommend setting 'default.par = TRUE' when we have fewer than 1000 SNPs. \Rfunction{LoadSNPData} returns a list object with five fields:
-
+Second, the 'default.par' argument specifies how to estimate the first order Markov model parameters. If 'default.par = FALSE', \Rfunction{LoadSNPData} simultaneously estimates the parameters for the first order Markov model in the reference genome using the nucleotides within the SNP windows. Otherwise, it loads a set of parameter values pre-fitted from sequences around all the SNPs in the NHGRI GWAS catalog (\cite{nhgri-gwas}). We recommend setting 'default.par = TRUE' when we have fewer than 1000 SNPs. \Rfunction{LoadSNPData} returns a list object with five fields:
 \begin{itemize}
 \item \$sequence\_matrix: a matrix with (2$\times$'half.window.size' + 1), with each column corresponding to one SNP. The entries 1-4 represent the A, C, G, T nucleotides.
 \item \$ref\_base: a vector coding the reference allele nucleotides for all SNPs.
@@ -261,7 +273,53 @@ If 'default.par = FALSE', \Rfunction{LoadSNPData} simultaneously estimates the p
 \item \$transition: the transition matrix for the first order Markov model.
 \end{itemize}
 
-A toy sample data set including a preloaded motif library and a SNP set is included in the package:
+Because \Rfunction{LoadSNPData} looks up the nucleotide at the SNP location from the \Biocannopkg{BSgenome} package, 
+
+\subsubsection{Load SNP data through dbSNP's rsids}
+
+\Rfunction{LoadSNPData} also allows users to load a list of rsids for the SNPs. In this case, the function looks up the SNP location and the allele information using the annotation package specified by 'snp.lib'. The default value of 'snp.lib' is 'SNPlocs.Hsapiens.dbSNP.20120608'.
+
+<<eval=TRUE, echo=TRUE, results="markup", tidy=FALSE>>=
+
+snp_info1 <- LoadSNPData(snpids = c("rs5050", "rs616488", "rs11249433",
+                           "rs182799", "rs12565013", "rs11208590"),
+                         genome.lib = "BSgenome.Hsapiens.UCSC.hg19",
+  			 snp.lib = "SNPlocs.Hsapiens.dbSNP.20120608",
+ 			 half.window.size = 30,
+			 default.par = TRUE,
+			 mutation = FALSE)
+@
+
+\Rfunction{LoadSNPData} may warn about the SNPs with inconsistent information and returns them in the output. The 'rsid.missing' output field captures SNPs that are not included in the \Biocannopkg{SNPlocs} package. The 'rsid.duplicate' output field captures SNPs with more than 2 alleles based on \Biocannopkg{SNPlocs} package. The 'rsid.rm' output field captures SNPs whose nucleotides in the reference genome do not match to either allele provided by the data source. SNPs in the 'rsid.missing' and 'rsid.rm' fields are discarded.
+
+<<eval=TRUE, echo=TRUE, results="markup", tidy=TRUE>>=
+snp_info1$rsid.missing
+snp_info1$rsid.duplicate
+snp_info1$rsid.rm
+@ 
+
+\subsubsection{Load SNP data through a pair of fasta files}
+
+Users can also provide SNP data through a pair of fasta files, one for the sequences around the SNP location for each allele. An example of such files is at \url{http://pages.stat.wisc.edu/~keles/atSNP-Data/sample_1.fasta} and \url{http://pages.stat.wisc.edu/~keles/atSNP-Data/sample_2.fasta}. We require that such a pair of fasta files must satisfy the following conditions:
+
+\begin{enumerate}
+\item All sequences from both files must be of the same odd number of length.
+\item Sequences from the same position in each file are a pair of alleles. Their nucleotides must be the same except for the central nucleotide.
+\end{enumerate}
+
+Such a pair of files can be loaded by function \Rfunction{LoadFastaData}:
+
+<<eval=TRUE, echo = TRUE, results="markup",tidy=FALSE>>=
+snp_info2 <- LoadFastaData("http://pages.stat.wisc.edu/~keles/atSNP-Data/sample_1.fasta",
+                           "http://pages.stat.wisc.edu/~keles/atSNP-Data/sample_2.fasta",
+                           default.par = TRUE)
+@ 
+
+\subsection{Affinity score tests}
+
+\subsubsection{Load the example data}
+
+We use a toy example data set included in the package to introduce the usage of functions for affinity score tests.
 
 <<eval=TRUE, echo=TRUE, results="markup",tidy=TRUE>>=
 
@@ -274,8 +332,7 @@ A toy sample data set including a preloaded motif library and a SNP set is inclu
 
 @ 
 
-
-\subsection{Affinity score tests}
+\subsubsection{Compute affinity scores}
 
 The binding affinity scores for all pairs of SNP and PWM can be computed by the \Rfunction{ComputeMotifScore} function. It returns a list of two fields: 'snp.tbl' is a \Rclass{data.table} containing the nucleotide sequences for each SNP; 'motif.scores' is a \Rclass{data.table} containing the binding affinity scores for each SNP-motif pair.
 
@@ -290,6 +347,8 @@ The binding affinity scores for all pairs of SNP and PWM can be computed by the 
 % I wonder if it is possible there is an example with smaller sequences.
 
 The affinity scores for the reference and the SNP alleles are represented by the 'log\_lik\_ref' and 'log\_lik\_snp' columns in '\$motif.scores'. The affinity score change is included in the 'log\_lik\_ratio' column. These three affinity scores are tested in the subsequent steps. '\$motif.scores' also include other columns for the position of the best matching subsequence on each allele. For a complete description on all these columns, users can look up the help documentation.
+
+\subsubsection{Compute p-values}
 
 After we have computed the binding affinity scores, they can be tested using the \Rfunction{ComputePValues} function. The result is a \Rclass{data.table} extending the affinity score table by six columns: 
 
@@ -325,7 +384,9 @@ Second, we can also select the SNP-PWM pairs subject to a threshold in 'pval\_ra
 atsnp.result[pval_rank <= 0.1, list(snpid, motif, pval_ref, pval_snp, pval_rank)]
 @ 
 
-In addition, we can apply multiple testing adjustment to the p-values. \software{atSNP} does not implement any multiple testing adjustment internally. Users have the flexibility of choosing the adjustment method based on their specific application. For example, if we want to adjust 'pval\_rank' from all pairs of SNP-PWM pairs using the Benjamini-Hochberg's procedure, we may compute:
+\subsubsection{Multiple testing adjustment}
+
+We can apply multiple testing adjustment to the p-values. \software{atSNP} does not implement any multiple testing adjustment internally. Users have the flexibility of choosing the adjustment method based on their specific application. For example, if we want to adjust 'pval\_rank' from all pairs of SNP-PWM pairs using the Benjamini-Hochberg's procedure, we may compute:
 
 <<eval=FALSE, echo = TRUE, results="hide">>=
 atsnp.result[, pval_rank_bh := p.adjust(pval_rank, method = "BH")]

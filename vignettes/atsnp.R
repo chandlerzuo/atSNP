@@ -29,7 +29,7 @@ library(atSNP)
 ## ----eval=TRUE, echo=TRUE, results = "markup"-------------------------------------------
 data(encode_library)
 length(encode_motif)
-encode_motif[seq(3)]
+encode_motif[1]
 
 ## ----eval=TRUE, echo=TRUE, results="markup",tidy=TRUE-----------------------------------
 encode_motif[[1]]
@@ -48,24 +48,33 @@ jaspar_motif[[1]]
 jaspar_motifinfo[names(jaspar_motif[1])]
 
 ## ----eval=FALSE, echo=TRUE, results="hide"----------------------------------------------
+#  ## Source: http://meme.nbcr.net/meme/doc/examples/sample-dna-motif.meme-io
 #  pwms <- LoadMotifLibrary(
-#   "http://meme.nbcr.net/meme/doc/examples/sample-dna-motif.meme-io")
+#   "http://pages.stat.wisc.edu/~keles/atSNP-Data/sample-dna-motif.meme-io.txt")
+#  
+#  ## Source: http://compbio.mit.edu/encode-motifs/motifs.txt
 #  pwms <- LoadMotifLibrary(
-#   "http://compbio.mit.edu/encode-motifs/motifs.txt",
+#   "http://pages.stat.wisc.edu/~keles/atSNP-Data/motifs.txt",
 #   tag = ">", transpose = FALSE, field = 1,
 #   sep = c("\t", " ", ">"), skipcols = 1,
 #   skiprows = 1, pseudocount = 0)
+#  
+#  ## Source: http://johnsonlab.ucsf.edu/mochi_files/JASPAR_motifs_H_sapiens.txt
 #  pwms <- LoadMotifLibrary(
-#   "http://johnsonlab.ucsf.edu/mochi_files/JASPAR_motifs_H_sapiens.txt",
+#   "http://pages.stat.wisc.edu/~keles/atSNP-Data/JASPAR_motifs_H_sapiens.txt",
 #   tag = "/NAME",skiprows = 1, skipcols = 0, transpose = FALSE,
 #   field = 2)
+#  
+#  ## Source: http://jaspar.genereg.net/html/DOWNLOAD/ARCHIVE/JASPAR2010/all_data/matrix_only/matrix.txt
 #  pwms <- LoadMotifLibrary(
-#   "http://jaspar.genereg.net/html/DOWNLOAD/ARCHIVE/JASPAR2010/all_data/matrix_only/matrix.txt",
+#   "http://pages.stat.wisc.edu/~keles/atSNP-Data/matrix.txt",
 #   tag = ">", skiprows = 1, skipcols = 1, transpose = TRUE,
 #   field = 1, sep = c("\t", " ", "\\[", "\\]", ">"),
 #   pseudocount = 1)
+#  
+#  ## Source: http://jaspar.genereg.net/html/DOWNLOAD/JASPAR_CORE/pfm/nonredundant/pfm_vertebrates.txt
 #  pwms <- LoadMotifLibrary(
-#   "http://jaspar.genereg.net/html/DOWNLOAD/JASPAR_CORE/pfm/nonredundant/pfm_vertebrates.txt",
+#   "http://pages.stat.wisc.edu/~keles/atSNP-Data/pfm_vertebrates.txt",
 #   tag = ">", skiprows = 1, skipcols = 0, transpose = TRUE, field = 1,
 #   sep = c(">", "\t", " "), pseudocount = 1)
 #  
@@ -77,22 +86,14 @@ jaspar_motifinfo[names(jaspar_motif[1])]
 
 ## ----eval=TRUE, echo=TRUE, results="markup",tidy=FALSE----------------------------------
 
-  data(example)
-  write.table(snp_tbl, file = "test_snp_file.txt",
+data(example)
+write.table(snp_tbl, file = "test_snp_file.txt",
             row.names = FALSE, quote = FALSE)
-  snp_info <- LoadSNPData("test_snp_file.txt", genome.lib = "BSgenome.Hsapiens.UCSC.hg19",
-                          half.window.size = 30, default.par = TRUE, mutation = FALSE)
-  ncol(snp_info$sequence) == nrow(snp_tbl)
+snp_info <- LoadSNPData("test_snp_file.txt", genome.lib = "BSgenome.Hsapiens.UCSC.hg19",
+                        half.window.size = 30, default.par = TRUE, mutation = FALSE)
+ncol(snp_info$sequence) == nrow(snp_tbl)
+snp_info$rsid.rm
 
-
-## ----eval=TRUE, echo=TRUE, results="markup", tidy=FALSE---------------------------------
-
-snp_info1 <- LoadSNPData(snpids = c("rs5050", "rs616488", "rs11249433"),
-                         genome.lib = "BSgenome.Hsapiens.UCSC.hg19",
-  			 snp.lib = "SNPlocs.Hsapiens.dbSNP.20120608",
- 			 half.window.size = 30,
-			 default.par = TRUE,
-			 mutation = FALSE)
 
 ## ----eval=TRUE, echo=TRUE, results="markup",tidy=FALSE----------------------------------
 
@@ -101,6 +102,26 @@ snp_info1 <- LoadSNPData(snpids = c("rs5050", "rs616488", "rs11249433"),
   ncol(mutation_info$sequence) == nrow(snp_tbl)
   file.remove("test_snp_file.txt")
 
+
+## ----eval=TRUE, echo=TRUE, results="markup", tidy=FALSE---------------------------------
+
+snp_info1 <- LoadSNPData(snpids = c("rs5050", "rs616488", "rs11249433",
+                           "rs182799", "rs12565013", "rs11208590"),
+                         genome.lib = "BSgenome.Hsapiens.UCSC.hg19",
+  			 snp.lib = "SNPlocs.Hsapiens.dbSNP.20120608",
+ 			 half.window.size = 30,
+			 default.par = TRUE,
+			 mutation = FALSE)
+
+## ----eval=TRUE, echo=TRUE, results="markup", tidy=TRUE----------------------------------
+snp_info1$rsid.missing
+snp_info1$rsid.duplicate
+snp_info1$rsid.rm
+
+## ----eval=TRUE, echo = TRUE, results="markup",tidy=FALSE--------------------------------
+snp_info2 <- LoadFastaData("http://pages.stat.wisc.edu/~keles/atSNP-Data/sample_1.fasta",
+                           "http://pages.stat.wisc.edu/~keles/atSNP-Data/sample_2.fasta",
+                           default.par = TRUE)
 
 ## ----eval=TRUE, echo=TRUE, results="markup",tidy=TRUE-----------------------------------
 
