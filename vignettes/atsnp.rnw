@@ -96,7 +96,6 @@ Notice that the annotation packages are usually large and this installation step
 % explicit warning that installing this two packages may take some
 % time (as I recall those are heavy ones)
 
-
 \section{Example}
 
 \subsection{Load the motif library}
@@ -337,7 +336,6 @@ We use a toy example data set included in the package to introduce the usage of 
 The binding affinity scores for all pairs of SNP and PWM can be computed by the \Rfunction{ComputeMotifScore} function. It returns a list of two fields: 'snp.tbl' is a \Rclass{data.table} containing the nucleotide sequences for each SNP; 'motif.scores' is a \Rclass{data.table} containing the binding affinity scores for each SNP-motif pair.
 
 <<eval=TRUE, echo=TRUE, results="markup">>=
-
   atsnp.scores <- ComputeMotifScore(motif_library, snpInfo, ncores = 2)
   head(atsnp.scores$snp.tbl)
   head(atsnp.scores$motif.scores[, list(snpid, motif, log_lik_ref,

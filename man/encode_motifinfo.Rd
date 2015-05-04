@@ -6,7 +6,7 @@
 \title{The information for the motif library downloaded from http://compbio.mit.edu/encode-motifs/motifs.txt.}
 \format{A character vector.}
 \description{
-This is a character vector that be loaded by 'data(encode_library)'. The names of this vector are the same as the names for 'encode_motif'. The entries of this vector are the corresponding motif information parsed from the raw file.
+This is a character vector that be loaded by 'data(encode_library)'. The names of this vector are the same as the names for \code{\link{encode_motif}}. The entries of this vector are the corresponding motif information parsed from the raw file.
 }
 \author{
 Chandler Zuo zuo@stat.wisc.edu

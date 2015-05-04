@@ -7,9 +7,9 @@
 ComputePValues(motif.lib, snp.info, motif.scores, ncores = 1, figdir = NULL)
 }
 \arguments{
-\item{motif.lib}{A list object with the output format of function 'LoadMotifLibrary'.}
+\item{motif.lib}{A list object with the output format of function \code{\link{LoadMotifLibrary}}.}
 
-\item{snp.info}{A list object with the output format of function 'LoadSNPData'.}
+\item{snp.info}{A list object with the output format of function \code{\link{LoadSNPData}}.}
 
 \item{motif.scores}{A data.table object containing at least the following columns:
 \tabular{ll}{
@@ -23,7 +23,7 @@ log_lik_snp \tab The log-likelihood score for the SNP allele.\cr
 \item{figdir}{A string for the path to print p-value plots for monitoring results. Default: NULL (no figure).}
 }
 \value{
-A data.table extending 'motif.scores' by the following additional columns:
+A data.table extending \code{motif.scores} by the following additional columns:
 \tabular{ll}{
 pval_ref \tab P-values for scores on the reference allele.\cr
 pval_snp \tab P-values for scores on the SNP allele.\cr

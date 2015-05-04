@@ -134,7 +134,6 @@ snp_info2 <- LoadFastaData("http://pages.stat.wisc.edu/~keles/atSNP-Data/sample_
 
 
 ## ----eval=TRUE, echo=TRUE, results="markup"---------------------------------------------
-
   atsnp.scores <- ComputeMotifScore(motif_library, snpInfo, ncores = 2)
   head(atsnp.scores$snp.tbl)
   head(atsnp.scores$motif.scores[, list(snpid, motif, log_lik_ref,

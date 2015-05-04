@@ -24,7 +24,7 @@
 #' @param snpids A subset of snpids to compute the subsequences. Default: NULL, when all snps are computed.
 #' @param motifs A subset of motifs to compute the subsequences. Default: NULL, when all motifs are computed.
 #' @param ncores The number of cores used for parallel computing. Default: 10
-#' @return A data.table containing all columns from the function, 'MatchSubsequence'. Refer 'MatchSubsequence' for more details. In addition, the following columns are added:
+#' @return A data.table containing all columns from the function, \code{\link{MatchSubsequence}}. In addition, the following columns are added:
 #' \tabular{ll}{
 #' snp_ref_start, snp_ref_end, snp_ref_length \tab Location and Length of the best matching augmented subsequence on both the reference and SNP allele.\cr
 #' ref_aug_match_seq_forward \tab Best matching augmented subsequence or its corresponding sequence to the forward strand on the reference allele.\cr 

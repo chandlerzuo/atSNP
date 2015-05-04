@@ -10,7 +10,7 @@
 #' @param sep A vector of chars for the string separators to parse each lines of the matrix. Default: c(" ", "\\t").
 #' @param pseudocount An integer for the pseudocount added to each of the original matrices. Default: 0. Recommended to be 1 if the original matrices are position frequency matrices.
 #' @details This function reads the formatted file containing motif information and convert them into a list of position weight matrices. The list of arguments should provide enough flexibility of importing a varying number of formats. Som eexamples are the following:
-#' For MEME format, the suggested arguments are: tag = 'Motif', skiprows = 2, skipcols = 0, transpose = FALSE, field = 2, sep = " ";
+#' For MEME format, the suggested arguments are: tag = 'Motif', skiprows = 2, skipcols = 0, transpose = FALSE, field = 2, sep = ' ';
 #' For motif files from JOHNSON lab (i.e. http://johnsonlab.ucsf.edu/mochi_files/JASPAR_motifs_H_sapiens.txt), the suggested arguments are: tag = '/NAME', skiprows = 1, skipcols = 0, transpose = FALSE, field = 2, sep = "\\t";
 #' For JASPAR pfm matrices (i.e. http://jaspar.genereg.net/html/DOWNLOAD/JASPAR_CORE/pfm/nonredundant/pfm_vertebrates.txt), the suggested arguments are: tag = ">", skiprows = 1, skipcols = 0, transpose = TRUE, field = 1, sep = "\\t";
 #' For the TRANSFAC library provided by UCF bioinformatics groups (i.e. http://gibbs.biomed.ucf.edu/PreDREM/download/nonredundantmotif.transfac), the suggested arguments are: tag = "DE", skiprows = 1, skipcols = 1, transpose = FALSE, field = 2, sep = "\\t".
@@ -92,17 +92,17 @@ LoadMotifLibrary <- function(filename, tag = "MOTIF", transpose = FALSE, field =
 #' a2 \tab The deoxyribose for the other allele.\cr
 #' }
 #' If this file exists already, it is used to extract the SNP information. Otherwise, SNP information extracted using argument 'snpids' is outputted to this file. 
-#' @param snpids A vector of rs ids for the SNPs. This argument is overidden if the file with name 'filename' exists.
+#' @param snpids A vector of rs ids for the SNPs. This argument is overidden if the file with name \code{filename} exists.
 #‘ @param snp.lib A string of the library name to obtain the SNP information based on rs ids. Default: "SNPlocs.Hsapiens.dbSNP.20120608".
 #' @param genome.lib A string of the library name for the genome version. Default: "BSgenome.Hsapiens.UCSC.hg19".
 #' @param half.window.size An integer for the half window size around the SNP within which the motifs are matched. Default: 30.
 #' @param default.par A boolean for whether using the default Markov parameters. Default: FALSE.
 #' @param mutation A boolean for whether this is mutation data. See details for more information. Default: FALSE.
-#' @param ... Other parameters passed to 'read.table'.
+#' @param ... Other parameters passed to \code{\link[utils]{read.table}}.
 #' @details This function extracts the nucleotide sequence within a window around each SNP and code them using 1-A, 2-C, 3-G, 4-T.\cr
-#' There are two ways of obtaining the nucleotide sequences. If 'filename' is not NULL and the file exists, it should contain the positions and alleles for each SNP. Based on such information, the sequences around SNP positions are extracted using the Bioconductor annotation package specified by 'genome.lib'. Users should make sure that this annotation package corresponds to the correct species and genome version of the actual data. Alternatively, users can also provide a vector of rs ids via the argument 'snpids'. The SNP locations and allele information is then obtained via the Bioconductor annotation package specified by 'snp.lib', and passed on to the package specified by 'genome.lib' to further obtain the nucleotide sequences.\cr
-#' If 'mutation=FALSE' (default), this function assumes that the data is for SNP analysis, and the reference genome should be consistent with either the a1 or a2 nucleotide. When extracting the genome sequence around each SNP position, this function compares the nucleotide at the SNP location on the reference genome with both a1 and a2 to distinguish between the reference allele and the SNP allele. If the nucleotide extracted from the reference genome does not match either a1 or a2, the SNP is discarded.\cr
-#' Alternatively, if 'mutation=TRUE', this function assumes that the data is for general single nucleotide mutation analysis. After extracting the genome sequence around each SNP position, it replaces the nucleotide at the SNP location by the a1 nucleotide as the 'reference' allele sequence, and by the a2 nucleotide as the 'snp' allele sequence. It does NOT discard the sequence even if neither a1 or a2 matches the reference genome. When this data set is used in other functions, such as 'ComputeMotifScore', 'ComputePValues', all the results (i.e. affinity scores and their p-values) for the reference allele are indeed for the a1 allele, and results for the SNP allele are indeed for the a2 allele.
+#' There are two ways of obtaining the nucleotide sequences. If \code{filename} is not NULL and the file exists, it should contain the positions and alleles for each SNP. Based on such information, the sequences around SNP positions are extracted using the Bioconductor annotation package specified by \code{genome.lib}. Users should make sure that this annotation package corresponds to the correct species and genome version of the actual data. Alternatively, users can also provide a vector of rs ids via the argument \code{snpids}. The SNP locations and allele information is then obtained via the Bioconductor annotation package specified by \code{snp.lib}, and passed on to the package specified by \code{genome.lib} to further obtain the nucleotide sequences.\cr
+#' If \code{mutation=FALSE} (default), this function assumes that the data is for SNP analysis, and the reference genome should be consistent with either the a1 or a2 nucleotide. When extracting the genome sequence around each SNP position, this function compares the nucleotide at the SNP location on the reference genome with both a1 and a2 to distinguish between the reference allele and the SNP allele. If the nucleotide extracted from the reference genome does not match either a1 or a2, the SNP is discarded.\cr
+#' Alternatively, if \code{mutation=TRUE}, this function assumes that the data is for general single nucleotide mutation analysis. After extracting the genome sequence around each SNP position, it replaces the nucleotide at the SNP location by the a1 nucleotide as the 'reference' allele sequence, and by the a2 nucleotide as the 'snp' allele sequence. It does NOT discard the sequence even if neither a1 or a2 matches the reference genome. When this data set is used in other functions, such as \code{\link{ComputeMotifScore}}, \code{\link{ComputePValues}}, all the results (i.e. affinity scores and their p-values) for the reference allele are indeed for the a1 allele, and results for the SNP allele are indeed for the a2 allele.
 #' @return A list object containing the following components:
 #' \tabular{ll}{
 #' sequence_matrix \tab A list of integer vectors representing the deroxyribose sequence around each SNP.\cr
@@ -361,18 +361,18 @@ LoadFastaData <- function(ref.data, snp.data, default.par = FALSE) {
 #' @name ComputeMotifScore
 #' @title Compute the scores for SNP effects on motifs.
 #' @description Compute the log-likelihood scores for motifs.
-#' @param motif.lib A list object with the output format of function 'LoadMotifLibrary'.
-#' @param snp.info A list object with the output format of function 'LoadSNPData'.
+#' @param motif.lib A list object with the output format of function \code{\link{LoadMotifLibrary}}.
+#' @param snp.info A list object with the output format of function \code{\link{LoadSNPData}}.
 #' @param ncores An integer for the number of parallel process. Default: 1.
 #' @details This function computes the binding affinity scores for both alleles at each SNP window. For each pair of SNP and motif, it finds the subsequence from both strand that maximizes the affinity binding score. It returns both the matching positions and the maximized affinity scores.
-#' @return A list of two data.table's. Field 'snp.tbl' contains:
+#' @return A list of two data.table's. Field \code{snp.tbl} contains:
 #' \tabular{cc}{
 #' snpid \tab SNP id.\cr
 #' ref_seq \tab Reference allele nucleotide sequence.\cr
 #' snp_seq \tab SNP allele nucleotide sequence.\cr
 #' ref_seq_rev \tab Reference allele nucleotide sequence on the reverse strand.\cr
 #' snp_seq_rev \tab SNP allele nucleotide sequence on the reverse strand.\cr}
-#' Field 'motif.score' contains:
+#' Field \code{motif.score} contains:
 #' \tabular{cc}{
 #' motif \tab Name of the motif.\cr
 #' motif_len \tab Length of the motif.\cr
@@ -527,7 +527,7 @@ ComputeMotifScore <- function(motif.lib, snp.info, ncores = 1) {
 #' @param snpids A subset of snpids to compute the subsequences. Default: NULL, when all snps are computed.
 #' @param motifs A subset of motifs to compute the subsequences. Default: NULL, when all motifs are computed.
 #' @param ncores The number of cores used for parallel computing.
-#' @return A data.table containing all columns in both 'snp.tbl' and 'motif.scores'. In addition, the following columns are added:
+#' @return A data.table containing all columns in both \code{snp.tbl} and \code{motif.scores}. In addition, the following columns are added:
 #' \tabular{ll}{
 #' ref_match_seq \tab Best matching subsequence on the reference allele.\cr
 #' snp_match_seq \tab Best matching subsequence on the SNP allele.\cr
@@ -636,8 +636,8 @@ MatchSubsequence <- function(snp.tbl, motif.scores, motif.lib, snpids = NULL, mo
 #' @name ComputePValues
 #' @title Compute p-values for affinity scores.
 #' @description This function computes the p-values for allele-specific affinity scores and between-allele affinity score changes using the importance sampling technique.
-#' @param motif.lib A list object with the output format of function 'LoadMotifLibrary'.
-#' @param snp.info A list object with the output format of function 'LoadSNPData'.
+#' @param motif.lib A list object with the output format of function \code{\link{LoadMotifLibrary}}.
+#' @param snp.info A list object with the output format of function \code{\link{LoadSNPData}}.
 #' @param motif.scores A data.table object containing at least the following columns:
 #' \tabular{ll}{
 #' motif \tab The name of the motif.\cr
@@ -646,7 +646,7 @@ MatchSubsequence <- function(snp.tbl, motif.scores, motif.lib, snpids = NULL, mo
 #' }
 #' @param ncores An integer for the number of parallel process. Default: 1.
 #' @param figdir A string for the path to print p-value plots for monitoring results. Default: NULL (no figure).
-#' @return A data.table extending 'motif.scores' by the following additional columns:
+#' @return A data.table extending \code{motif.scores} by the following additional columns:
 #' \tabular{ll}{
 #' pval_ref \tab P-values for scores on the reference allele.\cr
 #' pval_snp \tab P-values for scores on the SNP allele.\cr

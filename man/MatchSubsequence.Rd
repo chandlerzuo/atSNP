@@ -38,7 +38,7 @@ log_reduce_odds \tab Difference in log-likelihood ratio between reference allele
 \item{ncores}{The number of cores used for parallel computing.}
 }
 \value{
-A data.table containing all columns in both 'snp.tbl' and 'motif.scores'. In addition, the following columns are added:
+A data.table containing all columns in both \code{snp.tbl} and \code{motif.scores}. In addition, the following columns are added:
 \tabular{ll}{
 ref_match_seq \tab Best matching subsequence on the reference allele.\cr
 snp_match_seq \tab Best matching subsequence on the SNP allele.\cr

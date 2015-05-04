@@ -7,21 +7,21 @@
 ComputeMotifScore(motif.lib, snp.info, ncores = 1)
 }
 \arguments{
-\item{motif.lib}{A list object with the output format of function 'LoadMotifLibrary'.}
+\item{motif.lib}{A list object with the output format of function \code{\link{LoadMotifLibrary}}.}
 
-\item{snp.info}{A list object with the output format of function 'LoadSNPData'.}
+\item{snp.info}{A list object with the output format of function \code{\link{LoadSNPData}}.}
 
 \item{ncores}{An integer for the number of parallel process. Default: 1.}
 }
 \value{
-A list of two data.table's. Field 'snp.tbl' contains:
+A list of two data.table's. Field \code{snp.tbl} contains:
 \tabular{cc}{
 snpid \tab SNP id.\cr
 ref_seq \tab Reference allele nucleotide sequence.\cr
 snp_seq \tab SNP allele nucleotide sequence.\cr
 ref_seq_rev \tab Reference allele nucleotide sequence on the reverse strand.\cr
 snp_seq_rev \tab SNP allele nucleotide sequence on the reverse strand.\cr}
-Field 'motif.score' contains:
+Field \code{motif.score} contains:
 \tabular{cc}{
 motif \tab Name of the motif.\cr
 motif_len \tab Length of the motif.\cr
