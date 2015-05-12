@@ -42,7 +42,7 @@
 #' @examples
 #' data(example)
 #' dtMotifMatch(motif_scores$snp.tbl, motif_scores$motif.scores, motif_scores$snp.tbl$snpid, motif_scores$motif.scores$motif[1], motif.lib = motif_library)
-#' @import data.table doMC
+#' @import data.table
 #' @export
 dtMotifMatch<-function(motif.lib, snp.tbl, motif.scores, snpids=NULL, motifs=NULL, ncores=10) {
   if (all(any(class(snpids) != "character",  length(snpids)==0), is.null(snpids)==FALSE)) {
@@ -119,7 +119,7 @@ dtMotifMatch<-function(motif.lib, snp.tbl, motif.scores, snpids=NULL, motifs=NUL
 #' @examples
 #' data(example)
 #' plotMotifMatch(motif_scores$snp.tbl, motif_scores$motif.scores, motif_scores$snp.tbl$snpid[1], motif_scores$motif.scores$motif[1], motif.lib = motif_library)
-#' @import data.table motifStack doMC
+#' @import data.table motifStack
 #' @export
 plotMotifMatch<-function(snp.tbl, motif.scores, snpid, motif, motif.lib, cex.main = 2, ...) {
   if (class(snpid) != "character" | length(snpid)!=1) {

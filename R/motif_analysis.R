@@ -118,6 +118,7 @@ LoadMotifLibrary <- function(filename, tag = "MOTIF", transpose = FALSE, field =
 #' @examples
 #' \dontrun{LoadSNPData("/p/keles/ENCODE-CHARGE/volume2/SNP/hg19_allinfo.bed")}
 #' @useDynLib atSNP
+#' @importFrom GenomicRanges as.data.frame
 #' @export
 LoadSNPData <- function(filename = NULL, genome.lib = "BSgenome.Hsapiens.UCSC.hg19",
 			snp.lib = "SNPlocs.Hsapiens.dbSNP.20120608",
@@ -389,7 +390,7 @@ LoadFastaData <- function(ref.data, snp.data, default.par = FALSE) {
 #' data(example)
 #' ComputeMotifScore(motif_library, snpInfo, ncores = 2)
 #' @useDynLib atSNP
-#' @import data.table doMC
+#' @import data.table foreach
 #' @export
 ComputeMotifScore <- function(motif.lib, snp.info, ncores = 1) {
   ## check arguments
@@ -418,8 +419,9 @@ ComputeMotifScore <- function(motif.lib, snp.info, ncores = 1) {
                           motif_len = sapply(motif.lib, nrow))
 
   ncores <- min(c(ncores, length(snp.info$ref_base)))
-  registerDoMC(ncores)
 
+  startParallel(ncores)
+  
   motif_score_par <- foreach(i = seq(ncores)) %dopar% {
     k <- as.integer(length(snp.info$ref_base) / ncores)
     if(i < ncores) {
@@ -467,6 +469,8 @@ ComputeMotifScore <- function(motif.lib, snp.info, ncores = 1) {
     motif_score_tbl
     
   }
+
+  endParallel()
 
   motif.scores <- motif_score_par[[1]]
   if(ncores > 1) {
@@ -539,7 +543,7 @@ ComputeMotifScore <- function(motif.lib, snp.info, ncores = 1) {
 #' data(example)
 #' MatchSubsequence(motif_scores$snp.tbl, motif_scores$motif.scores, motif_library)
 #' @useDynLib atSNP
-#' @import data.table doMC
+#' @import data.table foreach
 #' @export
 MatchSubsequence <- function(snp.tbl, motif.scores, motif.lib, snpids = NULL, motifs = NULL, ncores = 2) {
   if(is.null(snpids)) {
@@ -575,7 +579,8 @@ MatchSubsequence <- function(snp.tbl, motif.scores, motif.lib, snpids = NULL, mo
   setkey(motif.tbl, motif)
 
   ncores <- min(c(ncores, length(snpids)))
-  registerDoMC(ncores)
+
+  startParallel(ncores)
 
   motif_score_par <- foreach(i = seq(ncores)) %dopar% {
     k <- as.integer(length(snpids) / ncores)
@@ -622,6 +627,8 @@ MatchSubsequence <- function(snp.tbl, motif.scores, motif.lib, snpids = NULL, mo
                         snp_seq_ref_match)]
   }
 
+  endParallel()
+
   motif_score_tbl <- motif_score_par[[1]]
   if(ncores > 1) {
     for(i in 2:ncores) {
@@ -659,27 +666,29 @@ MatchSubsequence <- function(snp.tbl, motif.scores, motif.lib, snpids = NULL, mo
 #' @examples
 #' data(example)
 #' ComputePValues(motif_library, snpInfo, motif_scores$motif.scores, ncores = 4) 
-#' @import doMC Rcpp data.table
+#' @import foreach Rcpp data.table
 #' @useDynLib atSNP
 #' @export
 ComputePValues <- function(motif.lib, snp.info, motif.scores, ncores = 1, figdir = NULL) {
   ncores <- min(c(ncores, length(motif.lib)))
-    registerDoMC(ncores)
-    results <- as.list(seq_along(motif.lib))
-    nsets <- as.integer(length(motif.lib) / ncores)
-    if(FALSE) {
-        for(i in seq(nsets)) {
-            message(i)
-            if(i < nsets) {
-                ids <- seq(ncores) + (i - 1) * ncores
-            } else {
-                ids <- ((nsets - 1) * ncores + 1) : length(motif.lib)
-            }
-        }
+  
+  startParallel(ncores)
+
+  results <- as.list(seq_along(motif.lib))
+  nsets <- as.integer(length(motif.lib) / ncores)
+  if(FALSE) {
+    for(i in seq(nsets)) {
+      message(i)
+      if(i < nsets) {
+        ids <- seq(ncores) + (i - 1) * ncores
+      } else {
+        ids <- ((nsets - 1) * ncores + 1) : length(motif.lib)
+      }
     }
-    results <- foreach(motifid = seq_along(motif.lib)) %dopar% {
-      rowids <- which(motif.scores$motif == names(motif.lib)[motifid])
-      scores <- cbind(motif.scores$log_lik_ref[rowids],
+  }
+  results <- foreach(motifid = seq_along(motif.lib)) %dopar% {
+    rowids <- which(motif.scores$motif == names(motif.lib)[motifid])
+    scores <- cbind(motif.scores$log_lik_ref[rowids],
                     motif.scores$log_lik_snp[rowids])
     pwm <- motif.lib[[motifid]]
     pwm[pwm < 1e-10] <- 1e-10
@@ -690,12 +699,12 @@ ComputePValues <- function(motif.lib, snp.info, motif.scores, ncores = 1, figdir
       }
     }
     set.seed(motifid)
-
-      if(nrow(scores) > 5000) {
-        p <- 5 / nrow(scores)
-      } else {
-        p <- 1 / nrow(scores)
-      }
+    
+    if(nrow(scores) > 5000) {
+      p <- 5 / nrow(scores)
+    } else {
+      p <- 1 / nrow(scores)
+    }
     
     m <- 20
     b <- (1 / p) ^ ( 1 / sum(seq(m)))
@@ -849,9 +858,9 @@ ComputePValues <- function(motif.lib, snp.info, motif.scores, ncores = 1, figdir
     message("Finished testing motif No. ", motifid)
     ##    save(list = ls(), file = paste("/p/keles/ENCODE-CHARGE/volume2/SNP/test/motif", motifid, ".Rda", sep= ""))
     if(!is.null(figdir)) {
-    if(!file.exists(figdir)) {
-    dir.create(fig.dir)
-    }
+      if(!file.exists(figdir)) {
+        dir.create(fig.dir)
+      }
       plotdat <- data.frame(
                             score = c(scores),
                             p.value = c(pval_a[, seq(2)]),
@@ -882,6 +891,8 @@ ComputePValues <- function(motif.lib, snp.info, motif.scores, ncores = 1, figdir
          pval_diff = pval_diff,
          pval_rank = pval_rank)
   }
+
+  endParallel()
   
   for(i in seq(length(results))) {
     motif.scores[results[[i]]$rowids, pval_ref := results[[i]]$pval_a[, 1]]

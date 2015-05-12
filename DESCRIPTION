@@ -2,7 +2,7 @@ Package: atSNP
 Type: Package
 Title: Affinity test for identifying regulatory SNPs.
 Version: 1.0
-Date: 2014-10-21
+Date: 2015-05-12
 Author: Chandler Zuo, Sunyoung Shin
 Maintainer: Chandler Zuo<zuo@stat.wisc.edu> Sunyoung Shin<shin@stat.wisc.edu>
 Description: Affinity test for regulatory SNPs.
@@ -12,5 +12,7 @@ Suggests: testthat, BiocStyle, BSgenome.Hsapiens.UCSC.hg19, SNPlocs.Hsapiens.dbS
 Depends:
     Rcpp,
     data.table,
-    doMC,
+    doParallel,
+    foreach,
+    GenomicRanges,
     motifStack

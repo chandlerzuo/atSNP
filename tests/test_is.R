@@ -2,6 +2,12 @@ library(atSNP)
 library(testthat)
 data(example)
 
+if(.Platform$OS.type == "unix") {
+  registerDoParallel(4)
+} else {
+  registerDoParallel(cl <- makeCluster(4))
+}
+
 trans_mat <- matrix(rep(snpInfo$prior, each = 4), nrow = 4)
 id <- 1
 test_pwm <- motif_library[[id]]
@@ -117,7 +123,7 @@ test_that("Error: sample distributions are not expected.", {
   delta <- cbind(matrix(
                         sum(snpInfo$prior * delta[, 1]),
                         nrow = 4, ncol = motif_len - 1), delta)
-  registerDoMC(4)
+
   results <- foreach(i = seq(motif_len * 2)) %dopar% {
     ## generate 1000 samples
     sample <- sapply(seq(1000), function(x)
@@ -131,6 +137,7 @@ test_that("Error: sample distributions are not expected.", {
     emp_freq2 <- get_freq(sample[seq(2 * motif_len), ] - 1)
     max(abs(emp_freq1 - target_freq)) > max(abs(emp_freq2 - target_freq))
   }
+  
   print(sum(unlist(results)))
   print(pbinom(sum(unlist(results)), size = 20, prob = 0.5))
 })
@@ -228,4 +235,8 @@ if(FALSE) {
 
   hist(log(test1[22, ]) / 0.01)
   hist(log(test2[21, ]) / 0.15)
+}
+
+if(.Platform$OS.type != "unix") {
+  stopCluster(cl)
 }

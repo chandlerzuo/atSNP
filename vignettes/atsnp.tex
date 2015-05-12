@@ -113,7 +113,7 @@ We are working to make the package available through bioconductor. The developin
 \begin{itemize}
 \item \CRANpkg{data.table} is used for formatting results that are easy for users to query.
 \item \Biocpkg{motifStack} is relied upon to draw sequence logo plots.
-\item \CRANpkg{doMC} is used for parallel computation.
+\item \CRANpkg{doParallel} and \CRANpkg{foreach} are used for parallel computation.
 \item \CRANpkg{Rcpp} interfaces the C++ codes that implements the importance sampling algorithm.
 \end{itemize}
   
@@ -176,7 +176,7 @@ Notice that the annotation packages are usually large and this installation step
 \end{alltt}
 
 
-{\ttfamily\noindent\itshape\color{messagecolor}{\#\# Loading required package: Rcpp\\\#\# Loading required package: data.table\\\#\# \\\#\# Attaching package: 'data.table'\\\#\# \\\#\# The following object is masked from 'package:GenomicRanges':\\\#\# \\\#\#\ \ \ \  last\\\#\# \\\#\# Loading required package: doMC\\\#\# Loading required package: foreach\\\#\# Loading required package: iterators\\\#\# Loading required package: motifStack\\\#\# Loading required package: grImport\\\#\# Loading required package: grid\\\#\# Loading required package: XML\\\#\# Loading required package: MotIV\\\#\# \\\#\# Attaching package: 'MotIV'\\\#\# \\\#\# The following object is masked from 'package:stats':\\\#\# \\\#\#\ \ \ \  filter\\\#\# \\\#\# Loading required package: ade4\\\#\# \\\#\# Attaching package: 'ade4'\\\#\# \\\#\# The following object is masked from 'package:BSgenome':\\\#\# \\\#\#\ \ \ \  score\\\#\# \\\#\# The following object is masked from 'package:Biostrings':\\\#\# \\\#\#\ \ \ \  score\\\#\# \\\#\# The following object is masked from 'package:GenomicRanges':\\\#\# \\\#\#\ \ \ \  score\\\#\# \\\#\# The following object is masked from 'package:IRanges':\\\#\# \\\#\#\ \ \ \  score}}\end{kframe}
+{\ttfamily\noindent\itshape\color{messagecolor}{\#\# Loading required package: Rcpp\\\#\# Loading required package: data.table\\\#\# \\\#\# Attaching package: 'data.table'\\\#\# \\\#\# The following object is masked from 'package:GenomicRanges':\\\#\# \\\#\#\ \ \ \  last\\\#\# \\\#\# Loading required package: doParallel\\\#\# Loading required package: foreach\\\#\# Loading required package: iterators\\\#\# Loading required package: motifStack\\\#\# Loading required package: grImport\\\#\# Loading required package: grid\\\#\# Loading required package: XML\\\#\# Loading required package: MotIV\\\#\# \\\#\# Attaching package: 'MotIV'\\\#\# \\\#\# The following object is masked from 'package:stats':\\\#\# \\\#\#\ \ \ \  filter\\\#\# \\\#\# Loading required package: ade4\\\#\# \\\#\# Attaching package: 'ade4'\\\#\# \\\#\# The following object is masked from 'package:BSgenome':\\\#\# \\\#\#\ \ \ \  score\\\#\# \\\#\# The following object is masked from 'package:Biostrings':\\\#\# \\\#\#\ \ \ \  score\\\#\# \\\#\# The following object is masked from 'package:GenomicRanges':\\\#\# \\\#\#\ \ \ \  score\\\#\# \\\#\# The following object is masked from 'package:IRanges':\\\#\# \\\#\#\ \ \ \  score}}\end{kframe}
 \end{knitrout}
 
 \begin{knitrout}
@@ -851,7 +851,7 @@ To visualize how each motif is matched to each allele using the \Rfunction{plotM
 ##  [1] SNPlocs.Hsapiens.dbSNP.20120608_0.99.9 atSNP_1.0                             
 ##  [3] motifStack_1.6.5                       ade4_1.6-2                            
 ##  [5] MotIV_1.18.0                           grImport_0.9-0                        
-##  [7] XML_3.98-1.1                           doMC_1.3.3                            
+##  [7] XML_3.98-1.1                           doParallel_1.0.8                      
 ##  [9] iterators_1.0.7                        foreach_1.4.2                         
 ## [11] data.table_1.9.4                       Rcpp_0.11.4                           
 ## [13] BSgenome.Hsapiens.UCSC.hg19_1.3.19     BSgenome_1.30.0                       
