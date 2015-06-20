@@ -118,7 +118,7 @@ LoadMotifLibrary <- function(filename, tag = "MOTIF", transpose = FALSE, field =
 #' @examples
 #' \dontrun{LoadSNPData("/p/keles/ENCODE-CHARGE/volume2/SNP/hg19_allinfo.bed")}
 #' @useDynLib atSNP
-#' @importFrom GenomicRanges as.data.frame
+#' @import GenomicRanges
 #' @export
 LoadSNPData <- function(filename = NULL, genome.lib = "BSgenome.Hsapiens.UCSC.hg19",
 			snp.lib = "SNPlocs.Hsapiens.dbSNP.20120608",

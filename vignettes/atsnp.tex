@@ -112,8 +112,9 @@ We are working to make the package available through bioconductor. The developin
 
 \begin{itemize}
 \item \CRANpkg{data.table} is used for formatting results that are easy for users to query.
-\item \Biocpkg{motifStack} is relied upon to draw sequence logo plots.
 \item \CRANpkg{doParallel} and \CRANpkg{foreach} are used for parallel computation.
+\item \Biocpkg{GenomicRanges} is used for operating genomic intervals.
+\item \Biocpkg{motifStack} is relied upon to draw sequence logo plots.
 \item \CRANpkg{Rcpp} interfaces the C++ codes that implements the importance sampling algorithm.
 \end{itemize}
   
@@ -176,7 +177,9 @@ Notice that the annotation packages are usually large and this installation step
 \end{alltt}
 
 
-{\ttfamily\noindent\itshape\color{messagecolor}{\#\# Loading required package: Rcpp\\\#\# Loading required package: data.table\\\#\# \\\#\# Attaching package: 'data.table'\\\#\# \\\#\# The following object is masked from 'package:GenomicRanges':\\\#\# \\\#\#\ \ \ \  last\\\#\# \\\#\# Loading required package: doParallel\\\#\# Loading required package: foreach\\\#\# Loading required package: iterators\\\#\# Loading required package: motifStack\\\#\# Loading required package: grImport\\\#\# Loading required package: grid\\\#\# Loading required package: XML\\\#\# Loading required package: MotIV\\\#\# \\\#\# Attaching package: 'MotIV'\\\#\# \\\#\# The following object is masked from 'package:stats':\\\#\# \\\#\#\ \ \ \  filter\\\#\# \\\#\# Loading required package: ade4\\\#\# \\\#\# Attaching package: 'ade4'\\\#\# \\\#\# The following object is masked from 'package:BSgenome':\\\#\# \\\#\#\ \ \ \  score\\\#\# \\\#\# The following object is masked from 'package:Biostrings':\\\#\# \\\#\#\ \ \ \  score\\\#\# \\\#\# The following object is masked from 'package:GenomicRanges':\\\#\# \\\#\#\ \ \ \  score\\\#\# \\\#\# The following object is masked from 'package:IRanges':\\\#\# \\\#\#\ \ \ \  score}}\end{kframe}
+{\ttfamily\noindent\itshape\color{messagecolor}{\#\# Loading required package: Rcpp\\\#\# Loading required package: data.table\\\#\# \\\#\# Attaching package: 'data.table'\\\#\# \\\#\# The following object is masked from 'package:GenomicRanges':\\\#\# \\\#\#\ \ \ \  last\\\#\# \\\#\# Loading required package: doParallel\\\#\# Loading required package: foreach\\\#\# Loading required package: iterators\\\#\# Loading required package: motifStack\\\#\# Loading required package: grImport\\\#\# Loading required package: grid\\\#\# Loading required package: XML\\\#\# Loading required package: MotIV\\\#\# \\\#\# Attaching package: 'MotIV'\\\#\# \\\#\# The following object is masked from 'package:stats':\\\#\# \\\#\#\ \ \ \  filter\\\#\# \\\#\# Loading required package: ade4\\\#\# \\\#\# Attaching package: 'ade4'\\\#\# \\\#\# The following object is masked from 'package:BSgenome':\\\#\# \\\#\#\ \ \ \  score\\\#\# \\\#\# The following object is masked from 'package:Biostrings':\\\#\# \\\#\#\ \ \ \  score\\\#\# \\\#\# The following object is masked from 'package:GenomicRanges':\\\#\# \\\#\#\ \ \ \  score\\\#\# \\\#\# The following object is masked from 'package:IRanges':\\\#\# \\\#\#\ \ \ \  score}}
+
+{\ttfamily\noindent\color{warningcolor}{\#\# Warning: replacing previous import by 'data.table::last' when loading 'atSNP'}}\end{kframe}
 \end{knitrout}
 
 \begin{knitrout}

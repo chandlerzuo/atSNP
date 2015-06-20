@@ -60,8 +60,9 @@ install_github("chandlerzuo/atSNP")
 
 \begin{itemize}
 \item \CRANpkg{data.table} is used for formatting results that are easy for users to query.
-\item \Biocpkg{motifStack} is relied upon to draw sequence logo plots.
 \item \CRANpkg{doParallel} and \CRANpkg{foreach} are used for parallel computation.
+\item \Biocpkg{GenomicRanges} is used for operating genomic intervals.
+\item \Biocpkg{motifStack} is relied upon to draw sequence logo plots.
 \item \CRANpkg{Rcpp} interfaces the C++ codes that implements the importance sampling algorithm.
 \end{itemize}
   
