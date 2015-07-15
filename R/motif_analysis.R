@@ -282,16 +282,25 @@ LoadSNPData <- function(filename = NULL, genome.lib = "BSgenome.Hsapiens.UCSC.hg
 #' @examples \dontrun{LoadFastaData("http://pages.stat.wisc.edu/~keles/atSNP-Data/sample_1.fasta", "http://pages.stat.wisc.edu/~keles/atSNP-Data/sample_2.fasta")}
 #' @useDynLib atSNP
 #' @export
-LoadFastaData <- function(ref.data, snp.data, default.par = FALSE) {
+LoadFastaData <- function(ref.data, snp.data, snpids=NULL, default.par = FALSE) {
   refdat <- read.table(ref.data)
   snpdat <- read.table(snp.data)
   if(nrow(refdat) != nrow(snpdat)) {
     stop("Error: 'ref.data' and 'snp.data' should have the same number of rows.")
   }
   n <- nrow(refdat)
+  if(n%%2==1) {
+    stop("Error: 'ref.data' and 'snp.data' should have an even number of rows.")
+    }
+
   ids <- 2 * seq(n / 2)
   refseqs <- as.character(refdat[ids, 1])
   snpseqs <- as.character(snpdat[ids, 1])
+  
+  if(is.null(snpids)) {
+   snpids<-gsub(">", "", as.character(refdat[ids-1,1]))
+ } 
+ 
   if(var(sapply(refseqs, nchar)) != 0) {
     stop("Error: sequences in 'ref.data' have different lengths.")
   }
@@ -349,7 +358,8 @@ LoadFastaData <- function(ref.data, snp.data, default.par = FALSE) {
   } else {
     data(default_par)
   }
-
+  colnames(sequences)<-snpids
+  
   return(list(
               sequence_matrix= sequences,
               ref_base = ref.base,
