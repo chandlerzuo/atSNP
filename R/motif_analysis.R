@@ -312,7 +312,7 @@ LoadFastaData <- function(ref.data, snp.data, snpids=NULL, default.par = FALSE) 
   refmat <- sapply(refseqs,
                    function(x)
                    codes[strsplit(x, "")[[1]]])
-  snpmat <- sapply(refseqs,
+  snpmat <- sapply(snpseqs,
                    function(x)
                    codes[strsplit(x, "")[[1]]])
   colnames(refmat) <- colnames(snpmat) <- rownames(refmat) <- rownames(snpmat) <- NULL
