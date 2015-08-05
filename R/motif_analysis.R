@@ -168,8 +168,10 @@ LoadSNPData <- function(filename = NULL, genome.lib = "BSgenome.Hsapiens.UCSC.hg
 	  break
 	}
     }
-    message("Warning: the following rsids are not included in the database and discarded: ")
-    message(paste(rsid.missing.all, collapse = ", "))
+    if(!is.null(rsid.missing.all)) {
+      message("Warning: the following rsids are not included in the database and discarded: ")
+      message(paste(rsid.missing.all, collapse = ", "))
+    }
     
     snp.alleles <- rsid2alleles(snpids)
     snp.alleles <- IUPAC_CODE_MAP[snp.alleles]
