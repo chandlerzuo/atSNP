@@ -108,6 +108,7 @@ LoadMotifLibrary <- function(filename, tag = "MOTIF", transpose = FALSE, field =
 #' sequence_matrix \tab A list of integer vectors representing the deroxyribose sequence around each SNP.\cr
 #' a1 \tab An integer vector for the deroxyribose at the SNP location on the reference genome.\cr
 #' a2 \tab An integer vector for the deroxyribose at the SNP location on the SNP genome.\cr
+#' snpid \tab A string vector for the SNP rsids.\cr
 #' rsid.missing \tab If the data source is a list of rsids, this field records rsids for SNPs that are discarded because they are not in the SNPlocs package.\cr
 #' rsid.duplicate \tab If the data source is a list of rsids, this field records rsids for SNPs that based on the SNPlocs package, this locus has more than 2 alleles.\cr
 #' rsid.na \tab This field records rsids for SNPs that are discarded because the nucleotide sequences contain none ACGT characters.\cr
@@ -144,52 +145,77 @@ LoadSNPData <- function(filename = NULL, genome.lib = "BSgenome.Hsapiens.UCSC.hg
     if(is.null(snpids)) {
       stop("Error: either 'snpids' should be a vector, or 'filename' should be the file name that contains the SNP information.")
     }
+    snpid.index <- seq(length(snpids))
     ## load the corresponding snp library
     library(package = snp.lib, character.only = TRUE)
-    snp.loc <- tryCatch({rsid2loc(snpids)}, error = function(e) return(e$message))
-    ## remove rsids not included in the database
-    if(class(snp.loc) == "character") {
-      rsid.missing <- myStrSplit(snp.loc, split = c(", ", ": "))[[1]][-1]
-      rsid.missing <- paste("rs", rsid.missing, sep = "")
-      message("Warning: the following rsids are not included in the database and discarded: ")
-      message(paste(rsid.missing, collapse = ", "))
-      snpids <- snpids[!snpids %in% rsid.missing]
-      snp.loc <- rsid2loc(snpids)
+    rsid.missing.all <- NULL
+    while(TRUE) {
+        snp.loc <- tryCatch({rsid2loc(snpids)}, error = function(e) return(e$message))
+        ## remove rsids not included in the database
+        if(class(snp.loc) == "character") {
+          rsid.missing <- myStrSplit(snp.loc, split = c(", ", ": "))[[1]][-1]
+	  if(length(rsid.missing) > 1 & rsid.missing[length(rsid.missing)] <= rsid.missing[length(rsid.missing) - 1]) {
+	      rsid.missing <- rsid.missing[-length(rsid.missing)]
+	  }
+          rsid.missing <- paste("rs", rsid.missing, sep = "")
+	  rsid.missing.all <- c(rsid.missing.all, rsid.missing)
+          snpids <- snpids[!snpids %in% rsid.missing]
+          snp.loc <- tryCatch({rsid2loc(snpids)}, error = function(e) return(e$message))
+        } else {
+	  break
+	}
     }
+    message("Warning: the following rsids are not included in the database and discarded: ")
+    message(paste(rsid.missing.all, collapse = ", "))
     
     snp.alleles <- rsid2alleles(snpids)
     snp.alleles <- IUPAC_CODE_MAP[snp.alleles]
     gr <- rsidsToGRanges(snpids)
     snp.strands <- as.character(GenomicRanges::as.data.frame(gr)$strand)
     if(sum(nchar(snp.alleles) > 2) > 0) {
-      message("Warning: the following SNPs have more than 2 alleles, and only the first two alleles are used as the SNP and the reference allele:")
+      message("Warning: the following SNPs have more than 2 alleles. All pairs of nucleotides are considered as pairs of the SNP and the reference allele:")
       rsid.duplicate <- snpids[nchar(snp.alleles) > 2]
       message(paste(rsid.duplicate, collapse = ", "))
     }
     ## retain only SNPs with >= 2 alleles
-    ids <- which(sapply(snp.alleles, nchar) >= 2)
-    snp.loc <- snp.loc[ids]
-    snp.alleles <- snp.alleles[ids]
-    snpids <- snpids[ids]
-    snp.alleles <- strsplit(snp.alleles, "")
-    snp.strands <- snp.strands[ids]
-    a1 <- sapply(snp.alleles, function(x) x[1])
-    a2 <- sapply(snp.alleles, function(x) x[2])
-    ## revert the alleles on the reverse strand
-    id.rev <- which(snp.strands != "+")
-    if(length(id.rev) > 0) {  
-      rev.codes <- c("A", "C", "G", "T")
-      names(rev.codes) <- rev(rev.codes)
-      a1[id.rev] <- rev.codes[a1[id.rev]]
-      a2[id.rev] <- rev.codes[a2[id.rev]]
-    }
-
-    tbl <- data.frame(
+    tbl <- NULL
+    for(nalleles in 2:4) {
+        ids <- which(sapply(snp.alleles, nchar) == nalleles)
+	if(length(ids) == 0) {
+            next
+	}
+	snp.loc <- snp.loc[ids]
+    	snp.alleles <- snp.alleles[ids]
+    	snp.ids <- snpids[ids]
+	snp.alleles <- strsplit(snp.alleles, "")
+    	snp.strands <- snp.strands[ids]
+	## get all pairs of alleles
+	for(i_allele1 in seq(nalleles - 1)) {
+		for(i_allele2 in (i_allele1 + 1):nalleles) {
+		      a1 <- sapply(snp.alleles, function(x) x[i_allele1])
+		      a2 <- sapply(snp.alleles, function(x) x[i_allele2])
+		}
+	   	## revert the alleles on the reverse strand
+    		id.rev <- which(snp.strands != "+")
+    		if(length(id.rev) > 0) {  
+      	    	    rev.codes <- c("A", "C", "G", "T")
+      	    	    names(rev.codes) <- rev(rev.codes)
+      	    	    a1[id.rev] <- rev.codes[a1[id.rev]]
+      	    	    a2[id.rev] <- rev.codes[a2[id.rev]]
+		}
+ 		tbl <- rbind(tbl,
+		    data.frame(
                       snp = snp.loc,
 		      chr = as.character(sub("ch", "chr", names(snp.loc))),
 		      a1 = as.character(a1),
                       a2 = as.character(a2),
-		      snpid = as.character(snpids))
+		      snpid = as.character(snp.ids),
+		      index = snpid.index[ids])
+		      
+		      )
+	}
+    }
+   
     if(!is.null(filename)) {
       write.table(tbl, file = filename, row.names = FALSE, col.names = TRUE, quote = FALSE)
     }
@@ -206,7 +232,7 @@ LoadSNPData <- function(filename = NULL, genome.lib = "BSgenome.Hsapiens.UCSC.hg
   names(codes) <- c("A", "C", "G", "T")
   sequences <- sapply(seqvec, function(x) codes[strsplit(x, "")[[1]]])
   sequences <- matrix(sequences, ncol = length(seqvec))
-  colnames(sequences) <- as.character(tbl$snpid)
+  snpid.output <- as.character(tbl$snpid)
   rownames(sequences) <- NULL
   a1 <- codes[as.character(tbl$a1)]
   a2 <- codes[as.character(tbl$a2)]
@@ -221,6 +247,8 @@ LoadSNPData <- function(filename = NULL, genome.lib = "BSgenome.Hsapiens.UCSC.hg
   sequences <- sequences[, keep.id, drop = FALSE]
   a1 <- a1[keep.id]
   a2 <- a2[keep.id]
+  snpid.output <- snpid.output[keep.id]
+  snpid.index <- snpid.index[keep.id]
   ## whether use the default parameters
   if(!default.par) {
     transition <- .Call("transition_matrix", sequences, package = "atSNP")
@@ -250,12 +278,21 @@ LoadSNPData <- function(filename = NULL, genome.lib = "BSgenome.Hsapiens.UCSC.hg
     a2.ref.base.id <- numeric(0)
   }
   sequences <- sequences[, c(a1.ref.base.id, a2.ref.base.id), drop = FALSE]
+  snpid.output <- snpid.output[c(a1.ref.base.id, a2.ref.base.id)]
   ref.base <- c(a1[a1.ref.base.id], a2[a2.ref.base.id])
   snp.base <- c(a2[a1.ref.base.id], a1[a2.ref.base.id])
+  snpid.index <- snpid.index[c(a1.ref.base.id, a2.ref.base.id)]
+  ## Keep the order of SNPs as in the input file
+  if(useFile) {
+      output.index = seq(ncol(sequences))
+  } else {
+      output.index = order(snpid.index)
+  }
   return(list(
-              sequence_matrix= sequences,
-              ref_base = ref.base,
-              snp_base = snp.base,
+              sequence_matrix= sequences[, output.index],
+              ref_base = ref.base[output.index],
+              snp_base = snp.base[output.index],
+	      snpids = snpid.output[output.index],
               transition = transition,
               prior = prior,
               rsid.na = rsid.na,
