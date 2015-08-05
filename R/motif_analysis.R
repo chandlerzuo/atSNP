@@ -141,6 +141,7 @@ LoadSNPData <- function(filename = NULL, genome.lib = "BSgenome.Hsapiens.UCSC.hg
     if(sum(!c("snp", "chr", "a1", "a2", "snpid") %in% names(tbl)) > 0) {
       stop("Error: 'filename' must be a table containing 'snp' and 'chr' columns.")
     }
+    snpid.index <- seq(nrow(tbl))
   } else {
     if(is.null(snpids)) {
       stop("Error: either 'snpids' should be a vector, or 'filename' should be the file name that contains the SNP information.")
