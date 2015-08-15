@@ -467,7 +467,7 @@ Because \Rfunction{LoadSNPData} looks up the nucleotide at the SNP location from
 \end{alltt}
 
 
-{\ttfamily\noindent\itshape\color{messagecolor}{\#\# Warning: the following rsids are not included in the database and discarded: \\\#\# rs182799\\\#\# Warning: the following SNPs have more than 2 alleles, and only the first two alleles are used as the SNP and the reference allele:\\\#\# rs12565013, rs11208590\\\#\# Warning: the following sequences are discarded because the reference nucleotide matches to neither a1 nor a2:\\\#\# snpid	chr	snp	a1	a2\\\#\# rs11208590	chr1	41108149	A	C}}\end{kframe}
+{\ttfamily\noindent\itshape\color{messagecolor}{\#\# Warning: the following rsids are not included in the database and discarded: \\\#\# rs182799\\\#\# Warning: the following SNPs have more than 2 alleles. All pairs of nucleotides are considered as pairs of the SNP and the reference allele:\\\#\# rs12565013, rs11208590\\\#\# Warning: the following sequences are discarded because the reference nucleotide matches to neither a1 nor a2:\\\#\# snpid	chr	snp	a1	a2\\\#\# rs12565013	chr1	3203137	C	T}}\end{kframe}
 \end{knitrout}
 
 \Rfunction{LoadSNPData} may warn about the SNPs with inconsistent information and returns them in the output. The 'rsid.missing' output field captures SNPs that are not included in the \Biocannopkg{SNPlocs} package. The 'rsid.duplicate' output field captures SNPs with more than 2 alleles based on \Biocannopkg{SNPlocs} package. The 'rsid.rm' output field captures SNPs whose nucleotides in the reference genome do not match to either allele provided by the data source. SNPs in the 'rsid.missing' and 'rsid.rm' fields are discarded.
@@ -490,7 +490,7 @@ Because \Rfunction{LoadSNPData} looks up the nucleotide at the SNP location from
 \hlstd{snp_info1}\hlopt{$}\hlstd{rsid.rm}
 \end{alltt}
 \begin{verbatim}
-## [1] "rs11208590"
+## [1] "rs12565013"
 \end{verbatim}
 \end{kframe}
 \end{knitrout}

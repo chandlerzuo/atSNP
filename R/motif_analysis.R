@@ -189,19 +189,19 @@ LoadSNPData <- function(filename = NULL, genome.lib = "BSgenome.Hsapiens.UCSC.hg
 	if(length(ids) == 0) {
             next
 	}
-	snp.loc <- snp.loc[ids]
-    	snp.alleles <- snp.alleles[ids]
-    	snp.ids <- snpids[ids]
-	snp.alleles <- strsplit(snp.alleles, "")
-    	snp.strands <- snp.strands[ids]
+	snp.loc.n <- snp.loc[ids]
+    	snp.alleles.n <- snp.alleles[ids]
+    	snp.ids.n <- snpids[ids]
+	snp.alleles.n <- strsplit(snp.alleles.n, "")
+    	snp.strands.n <- snp.strands[ids]
 	## get all pairs of alleles
 	for(i_allele1 in seq(nalleles - 1)) {
 		for(i_allele2 in (i_allele1 + 1):nalleles) {
-		      a1 <- sapply(snp.alleles, function(x) x[i_allele1])
-		      a2 <- sapply(snp.alleles, function(x) x[i_allele2])
+		      a1 <- sapply(snp.alleles.n, function(x) x[i_allele1])
+		      a2 <- sapply(snp.alleles.n, function(x) x[i_allele2])
 		}
 	   	## revert the alleles on the reverse strand
-    		id.rev <- which(snp.strands != "+")
+    		id.rev <- which(snp.strands.n != "+")
     		if(length(id.rev) > 0) {  
       	    	    rev.codes <- c("A", "C", "G", "T")
       	    	    names(rev.codes) <- rev(rev.codes)
@@ -210,11 +210,11 @@ LoadSNPData <- function(filename = NULL, genome.lib = "BSgenome.Hsapiens.UCSC.hg
 		}
  		tbl <- rbind(tbl,
 		    data.frame(
-                      snp = snp.loc,
-		      chr = as.character(sub("ch", "chr", names(snp.loc))),
+                      snp = snp.loc.n,
+		      chr = as.character(sub("ch", "chr", names(snp.loc.n))),
 		      a1 = as.character(a1),
                       a2 = as.character(a2),
-		      snpid = as.character(snp.ids),
+		      snpid = as.character(snp.ids.n),
 		      index = snpid.index[ids])
 		      
 		      )

@@ -4,7 +4,7 @@
 \alias{LoadFastaData}
 \title{Load the SNP data from fasta files.}
 \usage{
-LoadFastaData(ref.data, snp.data, default.par = FALSE)
+LoadFastaData(ref.data, snp.data, snpids = NULL, default.par = FALSE)
 }
 \arguments{
 \item{ref.data}{Fastq file name for the reference allele sequences.}

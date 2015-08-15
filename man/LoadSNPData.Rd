@@ -37,6 +37,7 @@ A list object containing the following components:
 sequence_matrix \tab A list of integer vectors representing the deroxyribose sequence around each SNP.\cr
 a1 \tab An integer vector for the deroxyribose at the SNP location on the reference genome.\cr
 a2 \tab An integer vector for the deroxyribose at the SNP location on the SNP genome.\cr
+snpid \tab A string vector for the SNP rsids.\cr
 rsid.missing \tab If the data source is a list of rsids, this field records rsids for SNPs that are discarded because they are not in the SNPlocs package.\cr
 rsid.duplicate \tab If the data source is a list of rsids, this field records rsids for SNPs that based on the SNPlocs package, this locus has more than 2 alleles.\cr
 rsid.na \tab This field records rsids for SNPs that are discarded because the nucleotide sequences contain none ACGT characters.\cr
