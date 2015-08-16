@@ -290,7 +290,7 @@ snp_info1 <- LoadSNPData(snpids = c("rs5050", "rs616488", "rs11249433",
 			 mutation = FALSE)
 @
 
-\Rfunction{LoadSNPData} may warn about the SNPs with inconsistent information and returns them in the output. The 'rsid.missing' output field captures SNPs that are not included in the \Biocannopkg{SNPlocs} package. The 'rsid.duplicate' output field captures SNPs with more than 2 alleles based on \Biocannopkg{SNPlocs} package. The 'rsid.rm' output field captures SNPs whose nucleotides in the reference genome do not match to either allele provided by the data source. SNPs in the 'rsid.missing' and 'rsid.rm' fields are discarded.
+\Rfunction{LoadSNPData} may warn about the SNPs with inconsistent information and returns them in the output. The 'rsid.missing' output field captures SNPs that are not included in the \Biocannopkg{SNPlocs} package. The 'rsid.duplicate' output field captures SNPs with more than 2 alleles based on \Biocannopkg{SNPlocs} package. The 'rsid.rm' output field captures SNPs whose nucleotides in the reference genome do not match to either allele provided by the data source. SNPs in the 'rsid.missing' and 'rsid.rm' fields are discarded. For SNPs in 'rsid.duplicate', we extract all pairs of alleles as reference and SNP pairs. If 'mutation=TRUE', we include all of them in the output. If 'mutation=FALSE', these pairs are further filtered based on whether one allele matches to the reference genome nucleotide. The remaining alleles are contained in the output.
 
 <<eval=TRUE, echo=TRUE, results="markup", tidy=TRUE>>=
 snp_info1$rsid.missing

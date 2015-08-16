@@ -102,7 +102,8 @@ LoadMotifLibrary <- function(filename, tag = "MOTIF", transpose = FALSE, field =
 #' @details This function extracts the nucleotide sequence within a window around each SNP and code them using 1-A, 2-C, 3-G, 4-T.\cr
 #' There are two ways of obtaining the nucleotide sequences. If \code{filename} is not NULL and the file exists, it should contain the positions and alleles for each SNP. Based on such information, the sequences around SNP positions are extracted using the Bioconductor annotation package specified by \code{genome.lib}. Users should make sure that this annotation package corresponds to the correct species and genome version of the actual data. Alternatively, users can also provide a vector of rs ids via the argument \code{snpids}. The SNP locations and allele information is then obtained via the Bioconductor annotation package specified by \code{snp.lib}, and passed on to the package specified by \code{genome.lib} to further obtain the nucleotide sequences.\cr
 #' If \code{mutation=FALSE} (default), this function assumes that the data is for SNP analysis, and the reference genome should be consistent with either the a1 or a2 nucleotide. When extracting the genome sequence around each SNP position, this function compares the nucleotide at the SNP location on the reference genome with both a1 and a2 to distinguish between the reference allele and the SNP allele. If the nucleotide extracted from the reference genome does not match either a1 or a2, the SNP is discarded.\cr
-#' Alternatively, if \code{mutation=TRUE}, this function assumes that the data is for general single nucleotide mutation analysis. After extracting the genome sequence around each SNP position, it replaces the nucleotide at the SNP location by the a1 nucleotide as the 'reference' allele sequence, and by the a2 nucleotide as the 'snp' allele sequence. It does NOT discard the sequence even if neither a1 or a2 matches the reference genome. When this data set is used in other functions, such as \code{\link{ComputeMotifScore}}, \code{\link{ComputePValues}}, all the results (i.e. affinity scores and their p-values) for the reference allele are indeed for the a1 allele, and results for the SNP allele are indeed for the a2 allele.
+#' Alternatively, if \code{mutation=TRUE}, this function assumes that the data is for general single nucleotide mutation analysis. After extracting the genome sequence around each SNP position, it replaces the nucleotide at the SNP location by the a1 nucleotide as the 'reference' allele sequence, and by the a2 nucleotide as the 'snp' allele sequence. It does NOT discard the sequence even if neither a1 or a2 matches the reference genome. When this data set is used in other functions, such as \code{\link{ComputeMotifScore}}, \code{\link{ComputePValues}}, all the results (i.e. affinity scores and their p-values) for the reference allele are indeed for the a1 allele, and results for the SNP allele are indeed for the a2 allele.\cr
+#' If the input is a list of rsid's, the SNP information extracted from \code{snp.lib} may contain more than two alleles for a single location. For such cases, \code{\link{LoadSNPData}} first extracts all pairs of alleles associated with those locations. If 'mutation=TRUE', all those pairs are considered as pairs of reference and SNP alleles, and their information is contained in 'sequence_matrix', 'a1', 'a2' and 'snpid'. If 'mutation=FALSE', \code{\link{LoadSNPData}} further filters these pairs based on whether one allele matches to the reference genome nucleotide extracted from \code{genome.lib}. Only those pairs with one allele matching the reference genome nucleotide is considered as pairs of reference and SNP alleles, with their information contained in 'sequence_matrix', 'a1', 'a2' and 'snpid'.\cr
 #' @return A list object containing the following components:
 #' \tabular{ll}{
 #' sequence_matrix \tab A list of integer vectors representing the deroxyribose sequence around each SNP.\cr
@@ -110,7 +111,7 @@ LoadMotifLibrary <- function(filename, tag = "MOTIF", transpose = FALSE, field =
 #' a2 \tab An integer vector for the deroxyribose at the SNP location on the SNP genome.\cr
 #' snpid \tab A string vector for the SNP rsids.\cr
 #' rsid.missing \tab If the data source is a list of rsids, this field records rsids for SNPs that are discarded because they are not in the SNPlocs package.\cr
-#' rsid.duplicate \tab If the data source is a list of rsids, this field records rsids for SNPs that based on the SNPlocs package, this locus has more than 2 alleles.\cr
+#' rsid.duplicate \tab If the data source is a list of rsids, this field records rsids for SNPs that based on the SNPlocs package, this locus has more than 2 alleles. \cr
 #' rsid.na \tab This field records rsids for SNPs that are discarded because the nucleotide sequences contain none ACGT characters.\cr
 #' rsid.rm \tab If the data source is a table, this field records rsids for SNPs that are discarded because the nucleotide on the reference genome matches neither 'a1' or 'a2' in the data source.\cr
 #' }
@@ -199,31 +200,33 @@ LoadSNPData <- function(filename = NULL, genome.lib = "BSgenome.Hsapiens.UCSC.hg
 		for(i_allele2 in (i_allele1 + 1):nalleles) {
 		      a1 <- sapply(snp.alleles.n, function(x) x[i_allele1])
 		      a2 <- sapply(snp.alleles.n, function(x) x[i_allele2])
+		
+	   	      ## revert the alleles on the reverse strand
+         	      id.rev <- which(snp.strands.n != "+")
+    		      if(length(id.rev) > 0) {  
+      	    	          rev.codes <- c("A", "C", "G", "T")
+      	    	          names(rev.codes) <- rev(rev.codes)
+      	    	          a1[id.rev] <- rev.codes[a1[id.rev]]
+      	    	          a2[id.rev] <- rev.codes[a2[id.rev]]
+		      }
+ 		      tbl <- rbind(tbl,
+		          data.frame(
+                            snp = snp.loc.n,
+		            chr = as.character(sub("ch", "chr", names(snp.loc.n))),
+		            a1 = as.character(a1),
+                            a2 = as.character(a2),
+		            snpid = as.character(snp.ids.n),
+		            index = snpid.index[ids])
+		            )
 		}
-	   	## revert the alleles on the reverse strand
-    		id.rev <- which(snp.strands.n != "+")
-    		if(length(id.rev) > 0) {  
-      	    	    rev.codes <- c("A", "C", "G", "T")
-      	    	    names(rev.codes) <- rev(rev.codes)
-      	    	    a1[id.rev] <- rev.codes[a1[id.rev]]
-      	    	    a2[id.rev] <- rev.codes[a2[id.rev]]
-		}
- 		tbl <- rbind(tbl,
-		    data.frame(
-                      snp = snp.loc.n,
-		      chr = as.character(sub("ch", "chr", names(snp.loc.n))),
-		      a1 = as.character(a1),
-                      a2 = as.character(a2),
-		      snpid = as.character(snp.ids.n),
-		      index = snpid.index[ids])
-		      
-		      )
 	}
     }
-   
+
+    tbl <- tbl[order(tbl$index), ]
     if(!is.null(filename)) {
-      write.table(tbl, file = filename, row.names = FALSE, col.names = TRUE, quote = FALSE)
+      write.table(tbl[, c('snp', 'chr', 'a1', 'a2', 'snpid')], file = filename, row.names = FALSE, col.names = TRUE, quote = FALSE)
     }
+    snpid.index <- tbl$index
   }
 
   ## load the corresponding genome version
