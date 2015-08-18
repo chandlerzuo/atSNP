@@ -467,7 +467,7 @@ ComputeMotifScore <- function(motif.lib, snp.info, ncores = 1) {
   }
 
   motifs <- names(motif.lib)
-  snpids <- colnames(snp.info$sequence_matrix)
+  snpids <- snp.info$snpids
   nsnps <- ncol(snp.info$sequence_matrix)
   nmotifs <- length(motif.lib)
   
