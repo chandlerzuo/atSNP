@@ -410,7 +410,8 @@ LoadFastaData <- function(ref.data, snp.data, snpids=NULL, default.par = FALSE) 
               ref_base = ref.base,
               snp_base = snp.base,
               transition = transition,
-              prior = prior
+              prior = prior,
+	      snpids = snpids
               ))
 }
 
