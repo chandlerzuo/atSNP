@@ -157,7 +157,7 @@ LoadSNPData <- function(filename = NULL, genome.lib = "BSgenome.Hsapiens.UCSC.hg
         if(class(snp.loc) == "character") {
           rsid.missing <- myStrSplit(snp.loc, split = c(", ", ": "))[[1]][-1]
 	  if(length(rsid.missing) > 1) {
-	    if(rsid.missing[length(rsid.missing)] <= rsid.missing[length(rsid.missing) - 1]) {
+	    if(as.integer(rsid.missing[length(rsid.missing)]) <= as.integer(rsid.missing[length(rsid.missing) - 1])) {
 	      rsid.missing <- rsid.missing[-length(rsid.missing)]
 	    }
 	  }
@@ -172,6 +172,7 @@ LoadSNPData <- function(filename = NULL, genome.lib = "BSgenome.Hsapiens.UCSC.hg
     if(!is.null(rsid.missing.all)) {
       message("Warning: the following rsids are not included in the database and discarded: ")
       message(paste(rsid.missing.all, collapse = ", "))
+      rsid.missing <- rsid.missing.all
     }
     
     snp.alleles <- rsid2alleles(snpids)
