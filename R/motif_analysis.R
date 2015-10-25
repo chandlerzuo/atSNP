@@ -155,7 +155,8 @@ LoadSNPData <- function(filename = NULL, genome.lib = "BSgenome.Hsapiens.UCSC.hg
         snp.loc <- tryCatch({rsid2loc(snpids)}, error = function(e) return(e$message))
         ## remove rsids not included in the database
         if(class(snp.loc) == "character") {
-          rsid.missing <- myStrSplit(snp.loc, split = c(",", ":", " "))[[1]][-1]
+          rsid.missing <- myStrSplit(snp.loc, split = c(": "))[[1]][-1]
+          rsid.missing <- myStrSplit(rsid.missing, split = c(",", " "))[[1]]
 	  if(length(rsid.missing) > 1) {
 	    if(as.integer(rsid.missing[length(rsid.missing)]) <= as.integer(rsid.missing[length(rsid.missing) - 1])) {
 	      rsid.missing <- rsid.missing[-length(rsid.missing)]
