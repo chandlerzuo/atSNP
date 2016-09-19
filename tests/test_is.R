@@ -1,11 +1,18 @@
 library(atSNP)
+library(testthat)
 data(example)
 
+if(.Platform$OS.type == "unix") {
+  registerDoParallel(4)
+} else {
+  registerDoParallel(cl <- makeCluster(4))
+}
+
 trans_mat <- matrix(rep(snpInfo$prior, each = 4), nrow = 4)
-id <- 7
-test_pwm <- motif_library$matrix[[id]]
-##test_pwm <- motif_library$matrix[["ALX3_jolma_DBD_M449"]]
-scores <- as.matrix(motif_scores$motif.scores[motif == names(motif_library$matrix)[id], list(log_lik_ref, log_lik_snp)])
+id <- 1
+test_pwm <- motif_library[[id]]
+##test_pwm <- motif_library[["ALX3_jolma_DBD_M449"]]
+scores <- as.matrix(motif_scores$motif.scores[motif == names(motif_library)[id], list(log_lik_ref, log_lik_snp)])
 
 motif_len <- nrow(test_pwm)
 
@@ -116,7 +123,7 @@ test_that("Error: sample distributions are not expected.", {
   delta <- cbind(matrix(
                         sum(snpInfo$prior * delta[, 1]),
                         nrow = 4, ncol = motif_len - 1), delta)
-  registerDoMC(4)
+
   results <- foreach(i = seq(motif_len * 2)) %dopar% {
     ## generate 1000 samples
     sample <- sapply(seq(1000), function(x)
@@ -130,6 +137,7 @@ test_that("Error: sample distributions are not expected.", {
     emp_freq2 <- get_freq(sample[seq(2 * motif_len), ] - 1)
     max(abs(emp_freq1 - target_freq)) > max(abs(emp_freq2 - target_freq))
   }
+  
   print(sum(unlist(results)))
   print(pbinom(sum(unlist(results)), size = 20, prob = 0.5))
 })
@@ -144,7 +152,7 @@ test_that("Error: the chosen pvalues should have the smaller variance.", {
   }
   for(p in c(0.01, 0.05, 0.1)) {
       theta <- .Call("test_find_theta", test_pwm, snpInfo$prior, trans_mat, quantile(c(scores), 1 - p), package = "atSNP")
-      p_values <- .Call("test_p_value", test_pwm, snpInfo$prior, snpInfo$transition, c(scores), theta, package = "atSNP")
+      p_values <- .Call("test_p_value", test_pwm, snpInfo$prior, snpInfo$transition, c(scores), theta, 1000, package = "atSNP")
     p_values_s <- .structure(p_values)
     expect_equal(p_values_s[, 2], apply(p_values[, c(2, 4)], 1, min))
   }
@@ -159,11 +167,11 @@ if(FALSE) {
 ## test the theta
 
   theta <- .Call("test_find_theta", test_pwm, snpInfo$prior, trans_mat, quantile(c(scores), 0.01), package = "atSNP")
-  p_values_1 <- .Call("test_p_value", test_pwm, snpInfo$prior, snpInfo$transition, c(scores), theta, package = "atSNP")
+  p_values_1 <- .Call("test_p_value", test_pwm, snpInfo$prior, snpInfo$transition, c(scores), theta, 1000, package = "atSNP")
   theta <- .Call("test_find_theta", test_pwm, snpInfo$prior, trans_mat, quantile(c(scores), 0.9), package = "atSNP")
-  p_values_9 <- .Call("test_p_value", test_pwm, snpInfo$prior, snpInfo$transition, c(scores), theta, package = "atSNP")
+  p_values_9 <- .Call("test_p_value", test_pwm, snpInfo$prior, snpInfo$transition, c(scores), theta, 1000, package = "atSNP")
   theta <- .Call("test_find_theta", test_pwm, snpInfo$prior, trans_mat, quantile(c(scores), 0.99), package = "atSNP")
-  p_values_99 <- .Call("test_p_value", test_pwm, snpInfo$prior, snpInfo$transition, c(scores), theta, package = "atSNP")
+  p_values_99 <- .Call("test_p_value", test_pwm, snpInfo$prior, snpInfo$transition, c(scores), theta, 1000, package = "atSNP")
   
   par(mfrow = c(1, 3))
   plot(log(p_values_1[, 1]) ~ c(scores))
@@ -171,9 +179,9 @@ if(FALSE) {
   plot(log(p_values_99[, 1]) ~ c(scores))
 
   theta <- .Call("test_find_theta", test_pwm, snpInfo$prior, trans_mat, quantile(c(scores), 0.9), package = "atSNP")
-  p_values_9 <- .Call("test_p_value", test_pwm, snpInfo$prior, trans_mat, c(scores), theta, package = "atSNP")
+  p_values_9 <- .Call("test_p_value", test_pwm, snpInfo$prior, trans_mat, c(scores), theta, 1000, package = "atSNP")
   theta <- .Call("test_find_theta", test_pwm, snpInfo$prior, trans_mat, quantile(c(scores), 0.99), package = "atSNP")
-  p_values_99 <- .Call("test_p_value", test_pwm, snpInfo$prior, trans_mat, c(scores), theta, package = "atSNP")
+  p_values_99 <- .Call("test_p_value", test_pwm, snpInfo$prior, trans_mat, c(scores), theta, 1000, package = "atSNP")
   
   pval_test <- function(x) {
     delta <- .Call("test_find_percentile", c(scores), x, package = "atSNP")
@@ -221,4 +229,14 @@ if(FALSE) {
   plot(p_values_99[, 1], p_values_99[, 5], xlim = c(0, 0.001), ylim = c(0, 0.001))
   abline(0, 0.1)
 
+  test1 <- sapply(seq(1000), function(x) drawonesample(0.01))
+
+  test2 <- sapply(seq(1000), function(x) drawonesample(0.15))
+
+  hist(log(test1[22, ]) / 0.01)
+  hist(log(test2[21, ]) / 0.15)
+}
+
+if(.Platform$OS.type != "unix") {
+  stopCluster(cl)
 }

@@ -11,9 +11,9 @@ Compute the probability that a random sequence can get a score higher than 'scor
 @arg trans_mat A 4 x 4 transition matrix.
 @arg scores A matrix with 2 columns, with each column corresponding to one allele.
 @arg p The upper percentile of the scores which is used as the mean of the importance sampling distribution.
-@return A matrix with 3 columns. The first two columns are the p-values for the log-likelihood scores of each allele. The third column are the p-values for the likelihood ratios.
+@return A matrix with 8 columns. Column 1-2 are simple estimates of p-values and their variances. Column 3-4 are ratio estimates of p-values and their variances. Column 5-6 are simple estimates of conditional p-values and their variances. Column 7-8 are ratio estimates for conditional p-values and their variances.
 */
-NumericMatrix p_value(NumericMatrix pwm, NumericVector stat_dist, NumericMatrix trans_mat, NumericVector scores, double theta) {
+NumericMatrix p_value(NumericMatrix pwm, NumericVector stat_dist, NumericMatrix trans_mat, NumericVector scores, double theta, int n_sample) {
 	// double score_percentile = find_percentile(scores, p);
 	// printf("percentile:%3.3f\n", score_percentile);
 	// find the tilting parameter
@@ -74,7 +74,6 @@ NumericMatrix p_value(NumericMatrix pwm, NumericVector stat_dist, NumericMatrix 
 		for(int j = 0; j < 4; j ++)
 			p_values(i, j) = 0;
 	
-	int n_sample = 1e4;
 	double mean_sample = 0;
 	double mean_adj_score = 0;
 	double mean_wei = 0;
@@ -397,14 +396,15 @@ SEXP test_find_percentile(SEXP _scores, SEXP _p) {
 	return(wrap(ret));
 }
 
-SEXP test_p_value(SEXP _pwm, SEXP _stat_dist, SEXP _trans_mat, SEXP _scores, SEXP _theta) {
+SEXP test_p_value(SEXP _pwm, SEXP _stat_dist, SEXP _trans_mat, SEXP _scores, SEXP _theta, SEXP _n_sample) {
 	NumericMatrix pwm(_pwm);
 	NumericVector stat_dist(_stat_dist);
 	NumericMatrix trans_mat(_trans_mat);
 	NumericVector scores(_scores);
 	double theta = as<double>(_theta);
+	double n_sample = as<int>(_n_sample);
 	
-	NumericMatrix p_values = p_value(pwm, stat_dist, trans_mat, scores, theta);
+	NumericMatrix p_values = p_value(pwm, stat_dist, trans_mat, scores, theta, n_sample);
 	return(wrap(p_values));
 }
 

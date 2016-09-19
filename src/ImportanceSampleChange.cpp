@@ -13,14 +13,13 @@ Compute the probability that a random sequence can get a score higher than 'scor
 @arg p The upper percentile of the scores which is used as the mean of the importance sampling distribution.
 @return A matrix with 3 columns. The first two columns are the p-values for the log-likelihood scores of each allele. The third column are the p-values for the likelihood ratios.
 */
-NumericMatrix p_value_change(NumericMatrix pwm, NumericMatrix wei_mat, NumericMatrix adj_mat, NumericVector stat_dist, NumericMatrix trans_mat, NumericVector scores, double score_percentile) {
+Rcpp::List p_value_change(NumericMatrix pwm, NumericMatrix wei_mat, NumericMatrix adj_mat, NumericVector stat_dist, NumericMatrix trans_mat, NumericVector scores, NumericVector pval_ratio, double score_percentile, int n_sample) {
 	// double score_percentile = find_percentile_change(scores, p);
 	//	printf("percentile:%3.3f\n", score_percentile);
 	// find the tilting parameter
 	double theta = find_theta_change(wei_mat, adj_mat, score_percentile);
 	//printf("theta:%3.3f\n", theta);
 	NumericMatrix p_values(scores.size(), 4);
-	NumericMatrix moments(scores.size(), 4);
 	NumericVector sample_score(5);
 	int start_pos;
 
@@ -44,15 +43,13 @@ NumericMatrix p_value_change(NumericMatrix pwm, NumericMatrix wei_mat, NumericMa
 	for(int i = 0; i < p_values.nrow(); i ++) {
 		for(int j = 0; j < 4; j ++) {
 			p_values(i, j) = 0;
-			moments(i, j) = 0;
 		}
 	}	
-	int n_sample = 1e4;
 	double wei = 0;
-	double mean_change = 0;
 	double mean_score = 0;
-	double wei_sum = 0;
-	double wei2_sum = 0;
+	NumericVector weights(n_sample);
+	double score[n_sample][4];
+	NumericMatrix score_diff_sam(n_sample, 3);
 	for(int i = 0; i < n_sample; i ++) {
 		sample = importance_sample_change(adj_mat, stat_dist, trans_mat, wei_mat, theta);
 		for(int j = 0; j < motif_len * 2 - 1; j ++) {
@@ -62,45 +59,58 @@ NumericMatrix p_value_change(NumericMatrix pwm, NumericMatrix wei_mat, NumericMa
 		sample_score = compute_sample_score_change(pwm, wei_mat, adj_mat, sample_vec, stat_dist, trans_mat, start_pos, theta);
 		wei = norm_const / sample_score[0];
 		mean_score += sample_score[4];
+		// copy the weights and the scores for each allele
+		score[i][0] = sample_score[5];
+		weights[i] = wei;
+		for(int j = 0; j < 3; j ++) {
+			score[i][j + 1] = sample_score[5] - sample_score[j + 1];
+			if(sample_score[j + 1] > 0) {
+				score_diff_sam(i, j) = sample_score[j + 1];
+			} else {
+				score_diff_sam(i, j) = - sample_score[j + 1];
+			}
+		}
 		//		mean_score += sample_score[0];
-		wei_sum += wei;
-		wei2_sum += wei * wei;
-		for(int j = 0; j < scores.size(); j ++) {
-			for(int k = 1; k < 4; k ++) {
-				// SNP changes binding affinity
-				if(j == 0) {
-					mean_change += sample_score[k];
-				}
-				if(sample_score[k] >= scores(j) || sample_score[k] <= -scores(j)) {
-					moments(j, 0) += wei;
-					moments(j, 1) += wei * wei;
+	}
+
+	NumericMatrix pval_loglik(scores.size(), 3);
+	pval_loglik = sample_to_p_value(scores, weights, score_diff_sam);
+
+	// compute the sample log ranks
+	double pval_sam[4];
+	NumericMatrix pval_ratio_sam(n_sample, 3);
+	for(int i = 0; i < n_sample; i ++) {
+		for(int j = 0; j < 4; j ++) {
+			pval_sam[j] = 0;
+		}
+		for(int i1 = 0; i1 < n_sample; i1 ++) {
+			for(int j = 0; j < 4; j ++) {
+				if(score[i1][0] >= score[i][j]) {
+					pval_sam[j] += weights[i1];
 				}
 			}
 		}
-	}
-	//printf("Mean weight : %lf \n", wei_sum / n_sample);
-	//printf("Mean diff score : %lf \n", mean_change / 3 / n_sample);
-	//printf("Mean tilting score : %lf \n", mean_score / n_sample);
-	wei2_sum /= n_sample;
-	wei_sum /= n_sample;
-	double var2 = wei2_sum - wei_sum * wei_sum;
-	double grad1 = 1 / wei_sum;
-	for(int j = 0; j < scores.size(); j ++) {
-		p_values(j, 0) = moments(j, 0) / 3 / n_sample;
-		p_values(j, 1) = moments(j, 1) / 3 / n_sample - p_values(j, 0) * p_values(j, 0);
-		p_values(j, 2) = p_values(j, 0) / wei_sum;
-		double grad2 = - p_values(j, 0) * grad1 * grad1;
-		double var1 = p_values(j, 1);
-		double cov = moments(j, 1) / 3 / n_sample - p_values(j, 0) * wei_sum;
-		p_values(j, 1) /= 3 * n_sample - 1;
-		if(p_values(j, 0) != wei_sum) {
-			p_values(j, 3) = grad1 * grad1 * var1 + grad2 * grad2 * var2 + 2 * grad1 * grad2 * cov;
-			p_values(j, 3) /= 3 * n_sample - 1;
-		} else {
-			p_values(j, 3) = 1;
+		for(int j = 0; j < 4; j ++) {
+			if(pval_sam[j] < tol) {
+				pval_sam[j] = tol;
+			}
+		}
+		for(int j = 0; j < 3; j ++) {
+			pval_ratio_sam(i, j) = log(pval_sam[0]) - log(pval_sam[j + 1]);
+			if(pval_ratio_sam(i, j) < 0) {
+				pval_ratio_sam(i, j) = - pval_ratio_sam(i, j);
+			}
 		}
 	}
-	return(p_values);
+
+	NumericMatrix pval_rank(scores.size(), 4);
+	pval_rank = sample_to_p_value(pval_ratio, weights, pval_ratio_sam);
+
+	Rcpp::List ret = Rcpp::List::create(
+					    Rcpp::Named("score") = pval_loglik,
+					    Rcpp::Named("rank") = pval_rank
+					    );
+	return(ret);
 }
 
 double func_delta_change(NumericMatrix wei_mat, NumericMatrix adj_mat, double theta) {
@@ -306,12 +316,13 @@ NumericVector compute_sample_score_change(NumericMatrix pwm, NumericMatrix wei_m
 		adj_score += exp(adj_s);
 	}
 	// return value
-	NumericVector ret(5);
+	NumericVector ret(6);
 	ret[0] = adj_score;
 	ret[1] = snp_score[0];
 	ret[2] = snp_score[1];
 	ret[3] = snp_score[2];
 	ret[4] = log(wei_mat(motif_len - 1 - start_pos, sample_vec[motif_len - 1]));
+	ret[5] = rnd_score;
 	//	printf("score:%3.3f\tweight:%3.3f\tconstant:%3.3f\n", ret[0], ret[1], log(delta(0, 3)));
 	return(ret);
 }
@@ -369,6 +380,58 @@ double find_percentile_change(NumericVector scores, double p) {
 	return(heap[0]);
 }
 
+NumericMatrix sample_to_p_value(NumericVector scores, NumericVector weights, NumericMatrix sample_score){
+	double wei_sum = 0;
+	double wei2_sum = 0;
+	int n_sample = sample_score.nrow();
+	int n_scores = scores.size();
+	NumericMatrix p_values(n_scores, 4);
+	NumericMatrix moments(n_scores, 4);
+	for(int j = 0; j < n_scores; j ++) {
+		for(int k = 0; k < 2; k ++) {
+			moments(j, k) = 0;
+		}
+	}
+	for(int i = 0; i < n_sample; i ++) {
+		wei_sum += weights[i];
+		wei2_sum += weights[i] * weights[i];
+		for(int j = 0; j < n_scores; j ++) {
+			for(int k = 0; k < 3; k ++) {
+				// SNP changes binding affinity
+				if(sample_score(i, k) >= scores(j) || sample_score(i, k) <= -scores(j)) {
+					moments(j, 0) += weights[i];
+					moments(j, 1) += weights[i] * weights[i];
+				}
+			}
+		}
+	}
+	//printf("Mean weight : %lf \n", wei_sum / n_sample);
+	//printf("Mean diff score : %lf \n", mean_change / 3 / n_sample);
+	//printf("Mean tilting score : %lf \n", mean_score / n_sample);
+	wei2_sum /= n_sample;
+	wei_sum /= n_sample;
+	double var2 = wei2_sum - wei_sum * wei_sum;
+	double grad1 = 1 / wei_sum;
+	double grad2 = 0, var1 = 0, cov = 0;
+	for(int j = 0; j < n_scores; j ++) {
+		p_values(j, 0) = moments(j, 0) / 3 / n_sample;
+		p_values(j, 1) = moments(j, 1) / 3 / n_sample - p_values(j, 0) * p_values(j, 0);
+		p_values(j, 2) = p_values(j, 0) / wei_sum;
+		grad2 = - p_values(j, 0) * grad1 * grad1;
+		var1 = p_values(j, 1);
+		cov = moments(j, 1) / 3 / n_sample - p_values(j, 0) * wei_sum;
+		p_values(j, 1) /= 3 * n_sample - 1;
+		if(p_values(j, 0) != wei_sum) {
+			p_values(j, 3) = grad1 * grad1 * var1 + grad2 * grad2 * var2 + 2 * grad1 * grad2 * cov;
+			p_values(j, 3) /= 3 * n_sample - 1;
+		} else {
+			p_values(j, 3) = 1;
+		}
+	}
+	return(p_values);
+}
+
+
 SEXP test_find_percentile_change(SEXP _scores, SEXP _perc) {
 	NumericVector scores(_scores);
 	double perc = as<double>(_perc);
@@ -376,16 +439,18 @@ SEXP test_find_percentile_change(SEXP _scores, SEXP _perc) {
 	return(wrap(ret));
 }
 
-SEXP test_p_value_change(SEXP _pwm, SEXP _wei_mat, SEXP _adj_mat, SEXP _stat_dist, SEXP _trans_mat, SEXP _scores, SEXP _perc) {
+SEXP test_p_value_change(SEXP _pwm, SEXP _wei_mat, SEXP _adj_mat, SEXP _stat_dist, SEXP _trans_mat, SEXP _scores, SEXP _pval_ratio, SEXP _perc, SEXP _n_sample) {
 	NumericMatrix pwm(_pwm);
 	NumericMatrix wei_mat(_wei_mat);
 	NumericMatrix adj_mat(_adj_mat);
 	NumericVector stat_dist(_stat_dist);
 	NumericMatrix trans_mat(_trans_mat);
 	NumericVector scores(_scores);
+	NumericVector pval_ratio(_pval_ratio);
 	double perc = as<double>(_perc);
+	int n_sample = as<int>(_n_sample);
 	
-	NumericVector p_values = p_value_change(pwm, wei_mat, adj_mat, stat_dist, trans_mat, scores, perc);
+	Rcpp::List p_values = p_value_change(pwm, wei_mat, adj_mat, stat_dist, trans_mat, scores, pval_ratio, perc, n_sample);
 	return(wrap(p_values));
 }
 

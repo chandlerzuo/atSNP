@@ -1,11 +1,21 @@
 library(atSNP)
+library(testthat)
 data(example)
 
+if(.Platform$OS.type == "unix") {
+  registerDoParallel(4)
+} else {
+  registerDoParallel(cl <- makeCluster(4))
+}
+
 trans_mat <- matrix(rep(snpInfo$prior, each = 4), nrow = 4)
-id <- 5
-test_pwm <- motif_library$matrix[[id]]
-scores <- as.matrix(motif_scores$motif.scores[motif == names(motif_library$matrix)[6], list(log_lik_ref, log_lik_snp)])
+id <- 2
+test_pwm <- motif_library[[id]]
+scores <- as.matrix(motif_scores$motif.scores[motif == names(motif_library)[id], list(log_lik_ref, log_lik_snp)])
 score_diff <- apply(scores, 1, function(x) abs(diff(x)))
+
+pval_a <- .Call("test_p_value", test_pwm, snpInfo$prior, snpInfo$transition, scores, 0.15, 1000)
+pval_ratio <- abs(log(pval_a[seq(nrow(scores)),1]) - log(pval_a[seq(nrow(scores)) + nrow(scores), 1]))
 
 test_score <- test_pwm
 for(i in seq(nrow(test_score))) {
@@ -142,7 +152,7 @@ test_that("Error: sample distributions are not expected.", {
   }
   target_freq <- t(target_freq)
   target_freq <- target_freq / apply(target_freq, 1, sum)
-  registerDoMC(4)
+
   results <- foreach(i = seq(20)) %dopar% {
     ## generate 1000 samples
     sample1 <- sapply(seq(1000), function(x)
@@ -154,6 +164,7 @@ test_that("Error: sample distributions are not expected.", {
 ##    print(rbind(emp_freq1[10, ], emp_freq2[10, ], target_freq[10, ]))
     max(abs(emp_freq1 - target_freq)) > max(abs(emp_freq2 - target_freq))
   }
+
   print(sum(unlist(results)))
   print(pbinom(sum(unlist(results)), size = 20, prob = 0.5))
 })
@@ -165,7 +176,7 @@ test_that("Error: the chosen pvalues should have the smaller variance.", {
                  pval_mat[, c(2, 4)][cbind(seq_along(id), id)]))
   }
   for(p in c(0.05, 0.1, 0.2, 0.5)) {
-    p_values <- .Call("test_p_value_change", test_pwm, test_score, adj_mat, snpInfo$prior, snpInfo$transition, score_diff, quantile(score_diff, 1 - p), package = "atSNP")
+    p_values <- .Call("test_p_value_change", test_pwm, test_score, adj_mat, snpInfo$prior, snpInfo$transition, score_diff, pval_ratio, quantile(score_diff, 1 - p), 1000, package = "atSNP")$score
     p_values_s <- .structure_diff(p_values)
     expect_equal(p_values_s[, 2], apply(p_values[, c(2, 4)], 1, min))
   }
@@ -184,37 +195,46 @@ if(FALSE) {
   1e4 * (func_delta(-0.165 + 1e-4 / 2) - func_delta(-0.165 - 1e-4 / 2))
 
   ## test the theta
-  p_values_9 <- .Call("test_p_value_change", test_pwm, test_score, adj_mat, snpInfo$prior, snpInfo$transition, score_diff, quantile(score_diff, 0.9), package = "atSNP")
-  p_values_8 <- .Call("test_p_value_change", test_pwm, test_score, adj_mat, snpInfo$prior, snpInfo$transition, score_diff, quantile(score_diff, 0.8), package = "atSNP")
+  p_values_9 <- .Call("test_p_value_change", test_pwm, test_score, adj_mat, snpInfo$prior, snpInfo$transition, score_diff, pval_ratio, quantile(score_diff, 0.9), 1000, package = "atSNP")
+  p_values_8 <- .Call("test_p_value_change", test_pwm, test_score, adj_mat, snpInfo$prior, snpInfo$transition, score_diff, pval_ratio, quantile(score_diff, 0.8), 1000, package = "atSNP")
 
-  p_values_1 <- .Call("test_p_value_change", test_pwm, test_score, adj_mat, snpInfo$prior, snpInfo$transition, score_diff, quantile(score_diff, 0.1), package = "atSNP")
+  p_values_1 <- .Call("test_p_value_change", test_pwm, test_score, adj_mat, snpInfo$prior, snpInfo$transition, score_diff, pval_ratio, quantile(score_diff, 0.1), 1000, package = "atSNP")
 
-  test <- .Call("test_p_value_change", test_pwm, test_score, (adj_mat +0.25) / 2, snpInfo$prior, snpInfo$transition, score_diff, 0, package = "atSNP")
+  test <- .Call("test_p_value_change", test_pwm, test_score, (adj_mat +0.25) / 2, snpInfo$prior, snpInfo$transition, score_diff, pval_ratio, 0, 1000, package = "atSNP")
 
-  plot(log(p_values_9[, 1])- log(p_values_9[, 3]), cex = 0.1)
+  plot(p_values_9$score[, 1], p_values_9$score[, 2])
 
-  plot(p_values_9[, 1], p_values_9[, 2])
-
-  plot(p_values_9[, 1], p_values_9[, 3])
+  plot(p_values_9$score[, 1], p_values_9$score[, 3])
   
-  plot(p_values_9[, 2], p_values_9[, 4], xlim = range(p_values_9[, c(2, 4)]), ylim = range(p_values_9[, c(2, 4)]))
+  plot(p_values_9$score[, 2], p_values_9$score[, 4], xlim = range(p_values_9$score[, c(2, 4)]), ylim = range(p_values_9$score[, c(2, 4)]))
   abline(0, 1)
   
-  plot(p_values_8[, 2], p_values_8[, 4], xlim = range(p_values_8[, c(2, 4)]), ylim = range(p_values_8[, c(2, 4)]))
+  plot(p_values_8$score[, 2], p_values_8$score[, 4], xlim = range(p_values_8$score[, c(2, 4)]), ylim = range(p_values_8$score[, c(2, 4)]))
   abline(0, 1)
 
-  plot(p_values_8[, 2], p_values_9[, 2])
+  plot(p_values_8$score[, 2], p_values_9$score[, 2])
   abline(0, 1)
-
-  p_values <- cbind(p_values_9[, 1], p_values_8[, 1], p_values_9[, 3], p_values_8[, 3])[cbind(seq(nrow(p_values_9)), apply(cbind(p_values_9[, 2], p_values_8[, 2], p_values_9[, 4], p_values_8[, 4]), 1, which.min))]
+  
+  p_values <- cbind(p_values_9$score[, 1], p_values_8$score[, 1], p_values_9$score[, 3], p_values_8$score[, 3])[cbind(seq(nrow(p_values_9$score)), apply(cbind(p_values_9$score[, 2], p_values_8$score[, 2], p_values_9$score[, 4], p_values_8$score[, 4]), 1, which.min))]
   
   par(mfrow = c(1, 3))
-  plot(log(p_values_9[, 1]) ~ score_diff, ylim = c(-5, 0))
-  plot(log(p_values_8[, 1]) ~ score_diff, ylim = c(-5, 0))
+  plot(log(p_values_9$score[, 1]) ~ score_diff, ylim = c(-5, 0))
+  plot(log(p_values_8$score[, 1]) ~ score_diff, ylim = c(-5, 0))
   plot(log(p_values) ~ score_diff, ylim = c(-5, 0))
+
+  p_values <- cbind(p_values_9$rank[, 1], p_values_8$rank[, 1], p_values_9$rank[, 3], p_values_8$rank[, 3])[cbind(seq(nrow(p_values_9$rank)), apply(cbind(p_values_9$rank[, 2], p_values_8$rank[, 2], p_values_9$rank[, 4], p_values_8$rank[, 4]), 1, which.min))]
+
+  par(mfrow = c(1, 3))
+  plot(log(p_values_9$rank[, 1]) ~ pval_ratio, ylim = c(-5, 0))
+  plot(log(p_values_8$rank[, 1]) ~ pval_ratio, ylim = c(-5, 0))
+  plot(log(p_values) ~ pval_ratio, ylim = c(-5, 0))
+
+  par(mfrow = c(1, 2))
+  plot(log(p_values_9$rank[, 1]) ~ log(p_values_9$score[, 1]))
+  plot(score_diff ~ pval_ratio)
   
-  p_values_9 <- .Call("test_p_value_change", test_pwm, test_score, adj_mat, snpInfo$prior, trans_mat, score_diff, quantile(score_diff, 0.9), package = "atSNP")
-  p_values_8 <- .Call("test_p_value_change", test_pwm, test_score, adj_mat, snpInfo$prior, trans_mat, score_diff, quantile(score_diff, 0.8), package = "atSNP")
+  p_values_9 <- .Call("test_p_value_change", test_pwm, test_score, adj_mat, snpInfo$prior, trans_mat, score_diff, quantile(score_diff, 0.9), 1000, package = "atSNP")
+  p_values_8 <- .Call("test_p_value_change", test_pwm, test_score, adj_mat, snpInfo$prior, trans_mat, score_diff, quantile(score_diff, 0.8), 1000, package = "atSNP")
   
   pval_test <- function(x) {
       delta <- .Call("test_find_percentile_change", score_diff, x, package = "atSNP")
@@ -258,9 +278,14 @@ if(FALSE) {
   pval_9 <- pval_test(0.1)
 
   par(mfrow = c(1, 2))
-  plot(log(pval_8), log(p_values_8[, 1]))
+  plot(log(pval_8), log(p_values_8$score[, 1]))
   abline(0,1)  
-  plot(log(pval_9), log(p_values_9[, 1]))
+  plot(log(pval_9), log(p_values_9$score[, 1]))
   abline(0,1)
 
+}
+
+
+if(.Platform$OS.type != "unix") {
+  stopCluster(cl)
 }
