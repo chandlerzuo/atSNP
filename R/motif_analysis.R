@@ -138,6 +138,7 @@ LoadSNPData <- function(filename = NULL, genome.lib = "BSgenome.Hsapiens.UCSC.hg
       message("Warning: load SNP information from 'filename' only. The argument 'snpids' is overridden.")
     }
     tbl <- read.table(filename, header = TRUE, stringsAsFactors = FALSE, ...)
+    tbl<-tbl[c("snpid", "chr", "snp", "a1", "a2")]
     ## check if the input file has the required information
     if(sum(!c("snp", "chr", "a1", "a2", "snpid") %in% names(tbl)) > 0) {
       stop("Error: 'filename' must be a table containing 'snp' and 'chr' columns.")
@@ -152,10 +153,11 @@ LoadSNPData <- function(filename = NULL, genome.lib = "BSgenome.Hsapiens.UCSC.hg
     library(package = snp.lib, character.only = TRUE)
     rsid.missing.all <- NULL
     while(TRUE) {
-        snp.loc <- tryCatch({rsid2loc(snpids)}, error = function(e) return(e$message))
+    	snps <- get(snp.lib)
+        snp.loc <- tryCatch({snpid2loc(snps, snpids)}, error = function(e) return(e$message))
         ## remove rsids not included in the database
         if(class(snp.loc) == "character") {
-          rsid.missing <- myStrSplit(snp.loc, split = c(": "))[[1]][-1]
+          rsid.missing <- myStrSplit(snp.loc, split = c(": ", "\n"))[[1]][-1]
           rsid.missing <- myStrSplit(rsid.missing, split = c(",", " "))[[1]]
 	  if(length(rsid.missing) > 1) {
 	    if(as.integer(rsid.missing[length(rsid.missing)]) <= as.integer(rsid.missing[length(rsid.missing) - 1])) {
@@ -165,7 +167,7 @@ LoadSNPData <- function(filename = NULL, genome.lib = "BSgenome.Hsapiens.UCSC.hg
           rsid.missing <- paste("rs", rsid.missing, sep = "")
 	  rsid.missing.all <- c(rsid.missing.all, rsid.missing)
           snpids <- snpids[!snpids %in% rsid.missing]
-          snp.loc <- tryCatch({rsid2loc(snpids)}, error = function(e) return(e$message))
+          snp.loc <- tryCatch({snpid2loc(snps, snpids)}, error = function(e) return(e$message))
         } else {
 	  break
 	}
@@ -176,9 +178,9 @@ LoadSNPData <- function(filename = NULL, genome.lib = "BSgenome.Hsapiens.UCSC.hg
       rsid.missing <- rsid.missing.all
     }
 
-    snp.alleles <- rsid2alleles(snpids)
+    snp.alleles <- snpid2alleles(snps, snpids)
     snp.alleles <- IUPAC_CODE_MAP[snp.alleles]
-    gr <- rsidsToGRanges(snpids)
+    gr <- snpid2grange(snps, snpids)
     snp.strands <- as.character(GenomicRanges::as.data.frame(gr)$strand)
     if(sum(nchar(snp.alleles) > 2) > 0) {
       message("Warning: the following SNPs have more than 2 alleles. All pairs of nucleotides are considered as pairs of the SNP and the reference allele:")
@@ -233,7 +235,8 @@ LoadSNPData <- function(filename = NULL, genome.lib = "BSgenome.Hsapiens.UCSC.hg
 
   ## load the corresponding genome version
   library(package = genome.lib, character.only = TRUE)
-  seqvec <- getSeq(Hsapiens,
+  species<-get(strsplit(genome.lib, "[.]")[[1]][2])
+  seqvec <- getSeq(species,
                    as.character(tbl$chr),
                    start=tbl$snp - half.window.size,
                    end=tbl$snp + half.window.size,
@@ -299,7 +302,7 @@ LoadSNPData <- function(filename = NULL, genome.lib = "BSgenome.Hsapiens.UCSC.hg
       output.index = order(snpid.index)
   }
   return(list(
-              sequence_matrix= sequences[, output.index],
+              sequence_matrix= matrix(sequences[, output.index], nrow=2*half.window.size+1),
               ref_base = ref.base[output.index],
               snp_base = snp.base[output.index],
 	      snpids = snpid.output[output.index],
@@ -472,7 +475,8 @@ ComputeMotifScore <- function(motif.lib, snp.info, ncores = 1) {
   snpids <- snp.info$snpids
   nsnps <- ncol(snp.info$sequence_matrix)
   nmotifs <- length(motif.lib)
-
+  len_seq <- nrow(snp.info$sequence_matrix)
+  snp.info$sequence_matrix[(len_seq+1)/2,]<-snp.info$ref_base
   motif_tbl <- data.table(motif = motifs,
                           motif_len = sapply(motif.lib, nrow))
 
@@ -495,7 +499,6 @@ ComputeMotifScore <- function(motif.lib, snp.info, ncores = 1) {
       colnames(motif.scores[[i]]) <- motifs
     }
 
-    len_seq <- nrow(snp.info$sequence_matrix)
     strand_ref <- (motif.scores$match_ref_base > 0)
     ref_start <- motif.scores$match_ref_base
     ref_start[!strand_ref] <- len_seq + motif.scores$match_ref_base[!strand_ref] + 1
