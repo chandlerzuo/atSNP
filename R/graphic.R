@@ -84,7 +84,7 @@ dtMotifMatch<-function(motif.lib, snp.tbl, motif.scores, snpids=NULL, motifs=NUL
   motif.match.dt[snp_strand == "+", snp_extra_pwm_right := snp_ref_end-snp_end]
   motif.match.dt[snp_strand == "-", snp_extra_pwm_right := snp_start-snp_ref_start]
   setkey(motif.match.dt, snpid)
-   motif.match.dt
+  return(motif.match.dt)
 }
 
 #' @name plotMotifMatch
@@ -121,7 +121,7 @@ dtMotifMatch<-function(motif.lib, snp.tbl, motif.scores, snpids=NULL, motifs=NUL
 #' plotMotifMatch(motif_scores$snp.tbl, motif_scores$motif.scores, motif_scores$snp.tbl$snpid[1], motif_scores$motif.scores$motif[1], motif.lib = motif_library)
 #' @import data.table motifStack
 #' @export
-plotMotifMatch<-function(snp.tbl, motif.scores, snpid, motif, motif.lib, cex.main = 2, ...) {
+plotMotifMatch<-function(snp.tbl, motif.scores, snpid, snp=NULL, motif, motif.lib, cex.main = 2, ...) {
   if (class(snpid) != "character" | length(snpid)!=1) {
     stop("snpid must be a character")
   }
@@ -133,7 +133,13 @@ plotMotifMatch<-function(snp.tbl, motif.scores, snpid, motif, motif.lib, cex.mai
   }
   
   motif.match.dt <- dtMotifMatch(snp.tbl, motif.scores, snpid, motif, ncores = 1, motif.lib = motif.lib)  
-  ##snpid, motif, ref_strand, ref_seq, pwm_ref, snp_strand, snp_seq, pwm_snp, ref_location, snp_location, snp_ref_length) {
+if(nrow(motif.match.dt)>1) {
+      if(is.null(snp)) {
+      stop(paste("Error: Multiple nucleobases on the SNP genome. Add snp= ", paste(motif.match.dt$snpbase, collapse=" or "), sep=""))
+  } else {
+  motif.match.dt<-motif.match.dt[snpbase==snp]
+  }
+  }
   
   ##Convert ACGT to 1234
   codes <- seq(4)
