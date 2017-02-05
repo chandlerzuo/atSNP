@@ -473,6 +473,7 @@ ComputeMotifScore <- function(motif.lib, snp.info, ncores = 1) {
 
   motifs <- names(motif.lib)
   snpids <- snp.info$snpids
+  snpbases<-ifelse(snp.info$snp_base==1, "A", ifelse(snp.info$snp_base==2, "C", ifelse(snp.info$snp_base==3, "G", "T")))	
   nsnps <- ncol(snp.info$sequence_matrix)
   nmotifs <- length(motif.lib)
   len_seq <- nrow(snp.info$sequence_matrix)
@@ -517,9 +518,10 @@ ComputeMotifScore <- function(motif.lib, snp.info, ncores = 1) {
                                   ref_start = c(ref_start),
                                   snp_start = c(snp_start),
                                   ref_strand = c("-", "+")[1 + as.integer(strand_ref)],
-                                  snp_strand = c("-", "+")[1 + as.integer(strand_snp)]
+                                  snp_strand = c("-", "+")[1 + as.integer(strand_snp)],
+                                  snpbase= rep(snpbases[ids], nmotifs)
                                   )
-    setkey(motif_score_tbl, motif)
+    setkey(motif_score_tbl, motif, snpbase)
     setkey(motif_tbl, motif)
     motif_score_tbl <- motif_tbl[motif_score_tbl]
     motif_score_tbl[ref_strand == "-", ref_start := ref_start - motif_len + 1]
@@ -539,7 +541,7 @@ ComputeMotifScore <- function(motif.lib, snp.info, ncores = 1) {
       motif.scores <- rbind(motif.scores, motif_score_par[[i]])
     }
   }
-
+  setkey(motif.scores, motif, snpid, snpbase)
   ## sequences on the reference genome
   ref_seqs <- apply(snp.info$sequence_matrix, 2, function(x) paste(c("A", "C", "G", "T")[x], collapse = ""))
   ref_seqs_rev <- apply(snp.info$sequence_matrix, 2, function(x) paste(c("A", "C", "G", "T")[5 - rev(x)], collapse = ""))
@@ -561,8 +563,9 @@ ComputeMotifScore <- function(motif.lib, snp.info, ncores = 1) {
                         ref_seq = ref_seqs,
                         snp_seq = snp_seqs,
                         ref_seq_rev = ref_seqs_rev,
-                        snp_seq_rev = snp_seqs_rev)
-
+                        snp_seq_rev = snp_seqs_rev,
+                        snpbase=snpbases)
+  setkey(snp_tbl, snpid, snpbase)
   return(list(snp.tbl = snp_tbl, motif.scores = motif.scores))
 }
 
@@ -653,8 +656,8 @@ MatchSubsequence <- function(snp.tbl, motif.scores, motif.lib, snpids = NULL, mo
     motif.scores <- motif.scores[snpid %in% snpids[ids], ]
     setkey(motif.scores, motif)
     motif.scores <- motif.tbl[motif.scores]
-    setkey(motif.scores, snpid)
-    setkey(snp.tbl, snpid)
+    setkey(motif.scores, snpid, snpbase)
+    setkey(snp.tbl, snpid, snpbase)
     motif.scores <- snp.tbl[motif.scores]
     motif.scores[ref_strand == "+", ref_match_seq := substr(ref_seq, ref_start, ref_end)]
     motif.scores[ref_strand == "-", ref_match_seq := substr(ref_seq_rev, len_seq - ref_end + 1, len_seq - ref_start + 1)]
@@ -685,7 +688,8 @@ MatchSubsequence <- function(snp.tbl, motif.scores, motif.lib, snpids = NULL, mo
                         ref_match_seq,
                         snp_match_seq,
                         ref_seq_snp_match,
-                        snp_seq_ref_match)]
+                        snp_seq_ref_match,
+                        snpbase)]
   }
 
   endParallel()
