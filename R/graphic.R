@@ -195,10 +195,10 @@ arrows(max(which(colSums(ref_aug_pwm)!=0))/ncol(ref_aug_pwm), -0.17, (min(which(
 }
   par(mar = c(4, 3, 1.5, 2))
 plotMotifLogo(pcm2pfm(ref_aug_match_pwm), font="mono,Courier", yaxis=FALSE, xlab="", ylab=paste("(", motif.match.dt$ref_strand, ")", sep=""), ...)
-segments(motif.match.dt[,snp_loc]/motif.match.dt[,snp_ref_length], 0, motif.match.dt[,snp_loc]/motif.match.dt[,snp_ref_length], 1, col="blue", lty=3, lwd=2)
-segments(motif.match.dt[,snp_loc]/motif.match.dt[,snp_ref_length], 1, (motif.match.dt[,snp_loc]+1)/motif.match.dt[,snp_ref_length], 1, col="blue", lty=3, lwd=2)
-segments((motif.match.dt[,snp_loc]+1)/motif.match.dt[,snp_ref_length], 0, (motif.match.dt[,snp_loc]+1)/motif.match.dt[,snp_ref_length], 1, col="blue", lty=3, lwd=2)
-segments(motif.match.dt[,snp_loc]/motif.match.dt[,snp_ref_length], 0, (motif.match.dt[,snp_loc]+1)/motif.match.dt[,snp_ref_length], 0, col="blue", lty=3, lwd=2)
+segments(snp_loc/motif.match.dt[,snp_ref_length], 0, snp_loc/motif.match.dt[,snp_ref_length], 1, col="blue", lty=3, lwd=2)
+segments(snp_loc/motif.match.dt[,snp_ref_length], 1, (snp_loc+1)/motif.match.dt[,snp_ref_length], 1, col="blue", lty=3, lwd=2)
+segments((snp_loc+1)/motif.match.dt[,snp_ref_length], 0, (snp_loc+1)/motif.match.dt[,snp_ref_length], 1, col="blue", lty=3, lwd=2)
+segments(snp_loc/motif.match.dt[,snp_ref_length], 0, (snp_loc+1)/motif.match.dt[,snp_ref_length], 0, col="blue", lty=3, lwd=2)
   if(motif.match.dt$ref_strand=="+")   {
   mtext("5'", 1,  adj=0, padj=1, col="blue", cex=1) 
   mtext("3'", 1,  adj=1, padj=1, col="blue", cex=1)
@@ -208,10 +208,10 @@ segments(motif.match.dt[,snp_loc]/motif.match.dt[,snp_ref_length], 0, (motif.mat
   }
 par(mar=c(1.5, 3, 4, 2))      
 plotMotifLogo(pcm2pfm(snp_aug_match_pwm), "Best match to the SNP genome", font="mono,Courier", yaxis=FALSE, xlab="", ylab=paste("(", motif.match.dt$snp_strand, ")", sep=""), ...)
-segments(motif.match.dt[,snp_loc]/motif.match.dt[,snp_ref_length], 0, motif.match.dt[,snp_loc]/motif.match.dt[,snp_ref_length], 1, col="blue", lty=3, lwd=2)
-segments(motif.match.dt[,snp_loc]/motif.match.dt[,snp_ref_length], 1, (motif.match.dt[,snp_loc]+1)/motif.match.dt[,snp_ref_length], 1, col="blue", lty=3, lwd=2)
-segments((motif.match.dt[,snp_loc]+1)/motif.match.dt[,snp_ref_length], 0, (motif.match.dt[,snp_loc]+1)/motif.match.dt[,snp_ref_length], 1, col="blue", lty=3, lwd=2)
-segments(motif.match.dt[,snp_loc]/motif.match.dt[,snp_ref_length], 0, (motif.match.dt[,snp_loc]+1)/motif.match.dt[,snp_ref_length], 0, col="blue", lty=3, lwd=2)
+segments(snp_loc/motif.match.dt[,snp_ref_length], 0, snp_loc/motif.match.dt[,snp_ref_length], 1, col="blue", lty=3, lwd=2)
+segments(snp_loc/motif.match.dt[,snp_ref_length], 1, (snp_loc+1)/motif.match.dt[,snp_ref_length], 1, col="blue", lty=3, lwd=2)
+segments((snp_loc+1)/motif.match.dt[,snp_ref_length], 0, (snp_loc+1)/motif.match.dt[,snp_ref_length], 1, col="blue", lty=3, lwd=2)
+segments(snp_loc/motif.match.dt[,snp_ref_length], 0, (snp_loc+1)/motif.match.dt[,snp_ref_length], 0, col="blue", lty=3, lwd=2)
   if(motif.match.dt$snp_strand=="+")   {
   mtext("5'", 1,  adj=0, padj=1, col="blue", cex=1) 
   mtext("3'", 1,  adj=1, padj=1, col="blue", cex=1)
