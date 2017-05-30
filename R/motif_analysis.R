@@ -206,7 +206,7 @@ LoadSNPData <- function(filename = NULL, genome.lib = "BSgenome.Hsapiens.UCSC.hg
 		      a2 <- sapply(snp.alleles.n, function(x) x[i_allele2])
 
 	   	      ## revert the alleles on the reverse strand
-         	      id.rev <- which(snp.strands.n != "+")
+         	      id.rev <- which(snp.strands.n == "-")
     		      if(length(id.rev) > 0) {
       	    	          rev.codes <- c("A", "C", "G", "T")
       	    	          names(rev.codes) <- rev(rev.codes)
