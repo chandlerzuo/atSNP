@@ -129,7 +129,7 @@ snp_info2 <- LoadFastaData("http://pages.stat.wisc.edu/~keles/atSNP-Data/sample_
   names(motif_library)
   str(snpInfo)
 ## to look at the motif information
-  data(encode_motif)
+  data(encode_library)
   encode_motifinfo[names(motif_library)]
 
 
@@ -153,9 +153,6 @@ head(atsnp.result[order(pval_rank), list(snpid, motif, pval_ref, pval_snp, pval_
 ## ----eval=TRUE, echo = TRUE, results = "markup"-----------------------------------------
 atsnp.result[pval_rank <= 0.1, list(snpid, motif, pval_ref, pval_snp, pval_rank)]
 
-## ----eval=FALSE, echo = TRUE, results="hide"--------------------------------------------
-#  atsnp.result[, pval_rank_bh := p.adjust(pval_rank, method = "BH")]
-
 ## ----eval=TRUE, echo = FALSE, results="hide"--------------------------------------------
 atsnp.result[, pval_rank_bh := p.adjust(pval_rank, method = "BH")]
 
@@ -168,11 +165,11 @@ atsnp.result[, list(snpid, motif, pval_rank, pval_rank_bh)]
 
 ## ----eval=FALSE, echo =TRUE,results="markup"--------------------------------------------
 #  atsnp.result[, pval_rank_bh := p.adjust(pval_rank, method = "BH"), by = motif]
-#  atsnp.result[, qval_rank := qvalue(pval_rank)$qvalues, by = motif]
+#  atsnp.result[, qval_rank := qvalue(pval_rank, pi0=1)$qvalues, by = motif]
 
 ## ----eval=FALSE, echo =TRUE,results="markup"--------------------------------------------
 #  atsnp.result[, pval_rank_bh := p.adjust(pval_rank, method = "BH"), by = snpid]
-#  atsnp.result[, qval_rank := qvalue(pval_rank)$qvalues, by = snpid]
+#  atsnp.result[, qval_rank := qvalue(pval_rank, pi0=1)$qvalues, by = snpid]
 
 ## ----eval=TRUE,echo=TRUE,results="markup"-----------------------------------------------
   
