@@ -152,35 +152,24 @@ LoadSNPData <- function(filename = NULL, genome.lib = "BSgenome.Hsapiens.UCSC.hg
     ## load the corresponding snp library
     library(package = snp.lib, character.only = TRUE)
     rsid.missing.all <- NULL
-    while(TRUE) {
     	snps <- get(snp.lib)
-        snp.loc <- tryCatch({snpsById(snps, snpids)}, error = function(e) return(e$message))
+        snp.loc <- tryCatch({snpsById(snps, snpids, ifnotfound="error")}, error = function(e) return(e$message))
         ## remove rsids not included in the database
         if(class(snp.loc) == "character") {
           rsid.missing <- myStrSplit(snp.loc, split = c(": ", "\n"))[[1]][-1]
-          rsid.missing <- myStrSplit(rsid.missing, split = c(",", " "))[[1]]
-	  if(length(rsid.missing) > 1) {
-	    if(as.integer(rsid.missing[length(rsid.missing)]) <= as.integer(rsid.missing[length(rsid.missing) - 1])) {
-	      rsid.missing <- rsid.missing[-length(rsid.missing)]
-	    }
-	  }
-          rsid.missing <- paste("rs", rsid.missing, sep = "")
-	  rsid.missing.all <- c(rsid.missing.all, rsid.missing)
+          rsid.missing.all <- myStrSplit(rsid.missing, split = c(",", " "))[[1]]
           snpids <- snpids[!snpids %in% rsid.missing]
-          snp.loc <- tryCatch({snpsById(snps, snpids)}, error = function(e) return(e$message))
-        } else {
-	  break
-	}
-    }
+          snp.loc <- snpsById(snps, snpids, ifnotfound="drop")
+        } 
+			      
     if(!is.null(rsid.missing.all)) {
       message("Warning: the following rsids are not included in the database and discarded: ")
       message(paste(rsid.missing.all, collapse = ", "))
       rsid.missing <- rsid.missing.all
     }
 
-     snp.gpos <- snpsById(snps, snpids)
-     snp.alleles <- IUPAC_CODE_MAP[snp.gpos@elementMetadata@listData$alleles_as_ambig]
-     snp.strands<-as.character(snp.gpos@strand)
+     snp.alleles <- IUPAC_CODE_MAP[snp.loc@elementMetadata@listData$alleles_as_ambig]
+     snp.strands<-as.character(snp.loc@strand)
     if(sum(nchar(snp.alleles) > 2) > 0) {
       message("Warning: the following SNPs have more than 2 alleles. All pairs of nucleotides are considered as pairs of the SNP and the reference allele:")
       rsid.duplicate <- snpids[nchar(snp.alleles) > 2]
@@ -279,7 +268,7 @@ LoadSNPData <- function(filename = NULL, genome.lib = "BSgenome.Hsapiens.UCSC.hg
     discard.id <- setdiff(seq_along(a1), c(a1.ref.base.id, a2.ref.base.id))
     if(length(discard.id) > 0) {
       message("Warning: the following sequences are discarded because the reference nucleotide matches to neither a1 nor a2:")
-      rsid.rm <- as.character(tbl[keep.id[discard.id], ]$snpid)
+      rsid.rm <- unique(as.character(tbl[keep.id[discard.id], ]$snpid))
       message("snpid\tchr\tsnp\ta1\ta2")
       message(paste(apply(tbl[keep.id[discard.id], c("snpid", "chr", "snp", "a1", "a2")], 1, function(x) paste(x, collapse = "\t")), collapse = "\n"))
     }
