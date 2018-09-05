@@ -718,7 +718,7 @@ MatchSubsequence <- function(snp.tbl, motif.scores, motif.lib, snpids = NULL, mo
 #' @author Chandler Zuo\email{zuo@@stat.wisc.edu}
 #' @examples
 #' data(example)
-#' ComputePValues(motif_library, snpInfo, motif_scores$motif.scores, ncores = 4)
+#' ComputePValues(motif_library, snpInfo, motif_scores$motif.scores, ncores = 1)
 #' @import foreach Rcpp data.table
 #' @useDynLib atSNP
 #' @export
