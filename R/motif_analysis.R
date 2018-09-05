@@ -93,7 +93,7 @@ LoadMotifLibrary <- function(filename, tag = "MOTIF", transpose = FALSE, field =
 #' }
 #' If this file exists already, it is used to extract the SNP information. Otherwise, SNP information extracted using argument 'snpids' is outputted to this file.
 #' @param snpids A vector of rs ids for the SNPs. This argument is overidden if the file with name \code{filename} exists.
-#‘ @param snp.lib A string of the library name to obtain the SNP information based on rs ids. Default: "SNPlocs.Hsapiens.dbSNP.20120608".
+#' @param snp.lib A string of the library name to obtain the SNP information based on rs ids. Default: "SNPlocs.Hsapiens.dbSNP.20120608".#' @param snp.lib A string of the library name to obtain the SNP information based on rs ids. Default: "SNPlocs.Hsapiens.dbSNP.20120608".#' @param snp.lib A string of the library name to obtain the SNP information based on rs ids. Default: "SNPlocs.Hsapiens.dbSNP.20120608".
 #' @param genome.lib A string of the library name for the genome version. Default: "BSgenome.Hsapiens.UCSC.hg19".
 #' @param half.window.size An integer for the half window size around the SNP within which the motifs are matched. Default: 30.
 #' @param default.par A boolean for whether using the default Markov parameters. Default: FALSE.
@@ -307,6 +307,7 @@ LoadSNPData <- function(filename = NULL, genome.lib = "BSgenome.Hsapiens.UCSC.hg
 #' @description Load SNP data.
 #' @param ref.data Fastq file name for the reference allele sequences.
 #' @param snp.data Fastq file name for the SNP allele sequences.
+#' @param snpids SNP IDs			  
 #' @param default.par A boolean for whether using the default Markov parameters. Default: FALSE.
 #' @return A list object containing the following components:
 #' \tabular{ll}{
