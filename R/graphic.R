@@ -110,6 +110,7 @@ dtMotifMatch<-function(motif.lib, snp.tbl, motif.scores, snpids=NULL, motifs=NUL
 #' log_reduce_odds \tab Difference in log-likelihood ratio between reference allele and SNP allele based on the best matching subsequence on the SNP allele.\cr
 #' }
 #' @param snpid A snpid to plot the sequences on the reference and SNP alleles
+#' @param snp snp nucleotide of the snpid
 #' @param motif A motif to match the sequences with its position weight matrix
 #' @param motif.lib A list of position weight matrices
 #' @param cex.main The size of the main title.
