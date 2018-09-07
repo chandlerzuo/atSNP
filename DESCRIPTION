@@ -16,3 +16,4 @@ Depends:
     foreach,
     GenomicRanges,
     motifStack
+RoxygenNote: 6.1.0
