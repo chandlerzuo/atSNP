@@ -38,13 +38,13 @@
 #' snp_extra_pwm_left \tab Left extra unmatching position on the best matching augmented subsequence of the SNP allele. \cr
 #' snp_extra_pwm_right \tab Right extra unmatching position on the best matching augmented subsequence of the SNP allele. \cr
 #' }
-#' @author Sunyoung Shin\email{shin@@stat.wisc.edu}
+#' @author Sunyoung Shin\email{sunyoung.shin@@utdallas.edu}
 #' @examples
 #' data(example)
-#' dtMotifMatch(motif_scores$snp.tbl, motif_scores$motif.scores, motif_scores$snp.tbl$snpid, motif_scores$motif.scores$motif[1], motif.lib = motif_library)
+#' dtMotifMatch(motif_scores$snp.tbl, motif_scores$motif.scores, snpids=motif_scores$snp.tbl$snpid, motifs=motif_scores$motif.scores$motif[1], motif.lib = motif_library)
 #' @import data.table
 #' @export
-dtMotifMatch<-function(motif.lib, snp.tbl, motif.scores, snpids=NULL, motifs=NULL, ncores=10) {
+dtMotifMatch<-function(snp.tbl, motif.scores, snpids=NULL, motifs=NULL, motif.lib, ncores=2) {
   if (all(any(class(snpids) != "character",  length(snpids)==0), is.null(snpids)==FALSE)) {
     stop("snpids must be a vector of class character or NULL.")
   } else if (all(any(class(motifs) != "character",  length(motifs)==0), is.null(motifs)==FALSE)) {
@@ -116,10 +116,10 @@ dtMotifMatch<-function(motif.lib, snp.tbl, motif.scores, snpids=NULL, motifs=NUL
 #' @param cex.main The size of the main title.
 #' @param ... Other parameters passed to plotMotifLogo.
 #' @return Sequence logo stacks: Reference subsequences, sequence logo of reference allele matching potision weight matrix, SNP subsequences, sequence logo of SNP allele matching potision weight matrix
-#' @author Sunyoung Shin\email{shin@@stat.wisc.edu}
+#' @author Sunyoung Shin\email{sunyoung.shin@@utdallas.edu}
 #' @examples
 #' data(example)
-#' plotMotifMatch(motif_scores$snp.tbl, motif_scores$motif.scores, motif_scores$snp.tbl$snpid[1], motif_scores$motif.scores$motif[1], motif.lib = motif_library)
+#' plotMotifMatch(motif_scores$snp.tbl, motif_scores$motif.scores, snpid=motif_scores$snp.tbl$snpid[1], motif=motif_scores$motif.scores$motif[1], motif.lib = motif_library)
 #' @import data.table motifStack
 #' @export
 plotMotifMatch<-function(snp.tbl, motif.scores, snpid, snp=NULL, motif, motif.lib, cex.main = 2, ...) {
@@ -132,8 +132,8 @@ plotMotifMatch<-function(snp.tbl, motif.scores, snpid, snp=NULL, motif, motif.li
   if(sum(! motif %in% names(motif.lib)) > 0) {
     stop("Error: The motif is not included in 'motif.lib'.")
   }
-  
-  motif.match.dt <- dtMotifMatch(snp.tbl, motif.scores, snpid, motif, ncores = 1, motif.lib = motif.lib)  
+
+  motif.match.dt <- dtMotifMatch(snp.tbl, motif.scores, snpids=snpid, motifs=motif, ncores = 1, motif.lib = motif.lib)  
 if(nrow(motif.match.dt)>1) {
       if(is.null(snp)) {
       stop(paste("Error: Multiple nucleobases on the SNP genome. Add snp= ", paste(motif.match.dt$snpbase, collapse=" or "), sep=""))
