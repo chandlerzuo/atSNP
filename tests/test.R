@@ -98,9 +98,9 @@ if(FALSE) {
 ## process the data
 data(example)
 
-motif_scores <- ComputeMotifScore(motif_library, snpInfo, ncores = 5)
+motif_scores <- ComputeMotifScore(motif_library, snpInfo, ncores = 2)
 
-motif_scores <- MatchSubsequence(motif_scores$snp.tbl, motif_scores$motif.scores, ncores = 3, motif.lib = motif_library)
+motif_scores <- MatchSubsequence(motif_scores$snp.tbl, motif_scores$motif.scores, ncores = 2, motif.lib = motif_library)
 
 motif_scores[snpid == "rs2511200" & motif == "ALX3_jolma_DBD_M449", ]
 
@@ -123,7 +123,8 @@ test_that("Error: log likelihoods are not correct.", {
   log_lik <- sapply(seq(nrow(motif_scores)),
                         function(i) {
                           motif_mat <- motif_library[[motif_scores$motif[i]]]
-                          bases <- snpInfo$sequence_matrix[motif_scores$ref_start[i]:motif_scores$ref_end[i], motif_scores$snpid[i]]
+                          colind<-which(snpInfo$snpids==motif_scores$snpid[i]) 
+                          bases <- snpInfo$sequence_matrix[motif_scores$ref_start[i]:motif_scores$ref_end[i], colind]
                           if(motif_scores$ref_strand[i] == "-")
                             bases <- 5 - rev(bases)
                           log(prod(
@@ -138,7 +139,8 @@ test_that("Error: log likelihoods are not correct.", {
   log_lik <- sapply(seq(nrow(motif_scores)),
                     function(i) {
                       motif_mat <- motif_library[[motif_scores$motif[i]]]
-                      bases <- snp_mat[motif_scores$snp_start[i]:motif_scores$snp_end[i], motif_scores$snpid[i]]
+                      colind<-which(snpInfo$snpids==motif_scores$snpid[i])
+                      bases <- snp_mat[motif_scores$snp_start[i]:motif_scores$snp_end[i], colind]
                       if(motif_scores$snp_strand[i] == "-")
                         bases <- 5 - rev(bases)
                       log(prod(
@@ -221,7 +223,8 @@ test_that("Error: the maximum log likelihood computation is not correct.", {
   ## find the maximum log likelihood on the reference sequence
   my_log_lik_ref <- sapply(seq(nrow(motif_scores)),
                            function(x) {
-                             seq_vec<- snpInfo$sequence_matrix[, motif_scores$snpid[x]]
+		                         colind<-which(snpInfo$snpids==motif_scores$snpid[x])                           	
+                             seq_vec<- snpInfo$sequence_matrix[, colind]
                              pwm <- motif_library[[motif_scores$motif[x]]]
                              return(.findMaxLog(seq_vec, pwm))
                            })
@@ -230,9 +233,10 @@ test_that("Error: the maximum log likelihood computation is not correct.", {
 
   my_log_lik_snp <- sapply(seq(nrow(motif_scores)),
                            function(x) {
-                             seq_vec<- snp_mat[, motif_scores$snpid[x]]
-                             pwm <- motif_library[[motif_scores$motif[x]]]
-                             return(.findMaxLog(seq_vec, pwm))
+                      		  colind<-which(snpInfo$snpids==motif_scores$snpid[x]) #ADDED
+                            seq_vec<- snp_mat[, colind]
+                            pwm <- motif_library[[motif_scores$motif[x]]]
+                            return(.findMaxLog(seq_vec, pwm))
                            })
   
   expect_equal(my_log_lik_ref, motif_scores$log_lik_ref)
