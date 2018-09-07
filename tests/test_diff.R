@@ -3,9 +3,9 @@ library(testthat)
 data(example)
 
 if(.Platform$OS.type == "unix") {
-  registerDoParallel(4)
+  registerDoParallel(2)
 } else {
-  registerDoParallel(cl <- makeCluster(4))
+  registerDoParallel(cl <- makeCluster(2))
 }
 
 trans_mat <- matrix(rep(snpInfo$prior, each = 4), nrow = 4)
