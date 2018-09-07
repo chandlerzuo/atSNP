@@ -187,9 +187,8 @@ atsnp.result[, list(snpid, motif, pval_rank, pval_rank_bh)]
   plotMotifMatch(snp.tbl = atsnp.scores$snp.tbl,
                motif.scores = atsnp.scores$motif.scores,
                snpid = atsnp.scores$snp.tbl$snpid[1],
-               motif.lib = motif_library,
-               motif = atsnp.scores$motif.scores$motif[1])
-
+                motif = atsnp.scores$motif.scores$motif[1],
+		motif.lib = motif_library)
 
 ## ----eval=TRUE,echo=FALSE,results="markup",cache=FALSE----------------------------------
 print(sessionInfo())
