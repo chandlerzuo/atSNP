@@ -2,9 +2,9 @@ Package: atSNP
 Type: Package
 Title: Affinity test for identifying regulatory SNPs.
 Version: 1.0
-Date: 2015-05-12
+Date: 2018-09-07
 Author: Chandler Zuo, Sunyoung Shin
-Maintainer: Chandler Zuo<zuo@stat.wisc.edu> Sunyoung Shin<shin@stat.wisc.edu>
+Maintainer: Chandler Zuo<zuo@stat.wisc.edu> Sunyoung Shin<sunyoung.shin@utdallas.edu>
 Description: Affinity test for regulatory SNPs.
 License: GPL-2
 LinkingTo: Rcpp
