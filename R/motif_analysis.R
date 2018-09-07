@@ -483,19 +483,25 @@ ComputeMotifScore <- function(motif.lib, snp.info, ncores = 1) {
     this.snp.info <- list(sequence_matrix = t(t(snp.info$sequence_matrix[, ids])),
                           ref_base = snp.info$ref_base[ids], snp_base = snp.info$snp_base[ids])
     motif.scores <- .Call("motif_score", motif.lib, this.snp.info, package = "atSNP")
-    for(i in seq_along(motif.scores)) {
-      rownames(motif.scores[[i]]) <- snpids[ids]
-      colnames(motif.scores[[i]]) <- motifs
+    for(j in seq_along(motif.scores)) {
+      rownames(motif.scores[[j]]) <- snpids[ids]
+      colnames(motif.scores[[j]]) <- motifs
     }
 
+    nids<-length(ids)
+    motif_len.m<-matrix(motif_tbl$motif_len, nids, nmotifs, byrow=TRUE)
+    rownames(motif_len.m)<-snpids[ids]
+	  
     strand_ref <- (motif.scores$match_ref_base > 0)
     ref_start <- motif.scores$match_ref_base
-    ref_start[!strand_ref] <- len_seq + motif.scores$match_ref_base[!strand_ref] + 1
+    ref_start[!strand_ref] <- len_seq + motif.scores$match_ref_base[!strand_ref] - motif_len.m[!strand_ref]+2
+    ref_end <- ref_start + motif_len.m - 1
 
     strand_snp <- (motif.scores$match_snp_base > 0)
     snp_start <- motif.scores$match_snp_base
-    snp_start[!strand_snp] <- len_seq + motif.scores$match_snp_base[!strand_snp] + 1
-
+    snp_start[!strand_snp] <- len_seq + motif.scores$match_snp_base[!strand_snp] - motif_len.m[!strand_snp]+2
+    snp_end <- snp_start + motif_len.m - 1
+	  
     motif_score_tbl <- data.table(snpid = rep(snpids[ids], nmotifs),
                                   motif = rep(motifs, each = length(ids)),
                                   log_lik_ref = c(motif.scores$log_lik_ref),
@@ -505,17 +511,15 @@ ComputeMotifScore <- function(motif.lib, snp.info, ncores = 1) {
                                   log_reduce_odds = c(motif.scores$log_reduce_odds),
                                   ref_start = c(ref_start),
                                   snp_start = c(snp_start),
-                                  ref_strand = c("-", "+")[1 + as.integer(strand_ref)],
+                                  ref_end=c(ref_end),
+                                  snp_end=c(snp_end),
+				  ref_strand = c("-", "+")[1 + as.integer(strand_ref)],
                                   snp_strand = c("-", "+")[1 + as.integer(strand_snp)],
                                   snpbase= rep(snpbases[ids], nmotifs)
                                   )
     setkey(motif_score_tbl, motif, snpbase)
     setkey(motif_tbl, motif)
     motif_score_tbl <- motif_tbl[motif_score_tbl]
-    motif_score_tbl[ref_strand == "-", ref_start := ref_start - motif_len + 1]
-    motif_score_tbl[, ref_end := ref_start + motif_len - 1]
-    motif_score_tbl[snp_strand == "-", snp_start := snp_start - motif_len + 1]
-    motif_score_tbl[, snp_end := snp_start + motif_len - 1]
 
     motif_score_tbl
 
