@@ -452,7 +452,7 @@ ComputeMotifScore <- function(motif.lib, snp.info, ncores = 1) {
   if(ncol(snp.info$sequence_matrix) != length(snp.info$ref_base) | length(snp.info$ref_base) != length(snp.info$snp_base)) {
     stop("Error: the number of columns of 'snp.info$sequence_matrix', the length of 'snp.info$ref_base' and the length of 'snp.info$snp_base' must be the same.")
   }
-  if(sum(sort(unique(c(c(snp.info$sequence_matrix), snp.info$ref_base, snp.info$snp_base))) != seq(4)) > 0) {
+  if( ! all( sort(unique(c(c(snp.info$sequence_matrix), snp.info$ref_base, snp.info$snp_base))) %in% seq(4) )) {
     stop("Error: 'snp.info$sequence_matrix', 'snp.info$ref_base', 'snp.info$snp_base' can only contain entries in 1, 2, 3, 4.")
   }
   if(nrow(snp.info$sequence_matrix) / 2 == as.integer(nrow(snp.info$sequence_matrix) / 2)) {
