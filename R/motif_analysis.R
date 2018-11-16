@@ -141,11 +141,7 @@ LoadSNPData <- function(filename = NULL, genome.lib = "BSgenome.Hsapiens.UCSC.hg
     }
     #tbl <- read.table(filename, header = TRUE, stringsAsFactors = FALSE, ...)
     tbl <- as.data.frame(fread(filename))
-<<<<<<< HEAD
-    
-=======
 
->>>>>>> f4d6cc8dbb523b5dabc3857b95056d19e1ac949f
     tbl<-tbl[c("snpid", "chr", "snp", "a1", "a2")]
     ## check if the input file has the required information
     if(sum(!c("snp", "chr", "a1", "a2", "snpid") %in% names(tbl)) > 0) {
