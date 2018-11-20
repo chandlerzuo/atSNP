@@ -28,4 +28,4 @@ atSNP will be available at Bioconductor. Currently you can download the developm
 REFERENCES
 ----------
 
-Chandler Zuo, Sunyoung Shin and Sunduz Keles (2014). "atSNP: affinity test for regulatory SNP detection". *To appear*.
+Chandler Zuo, Sunyoung Shin and Sunduz Keles (2015). "atSNP: affinity test for regulatory SNP detection". Bioinformatics, 31 (20), 3353-3355.

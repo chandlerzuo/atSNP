@@ -40,7 +40,7 @@ startParallel <- function(ncores) {
     registerDoParallel(ncores)
   } else {
     cl <- makeCluster(ncores)
-    registerDoParallel(cl)
+ #   registerDoParallel(cl)
     return(cl)
   }
 }

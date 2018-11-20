@@ -1,4 +1,5 @@
 library(atSNP)
+library(doParallel)
 library(testthat)
 
 if(FALSE) {

@@ -1,3 +1,4 @@
+inst/doc
 *.R~
 src/*.o
 src/*.so
