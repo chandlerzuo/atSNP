@@ -15,7 +15,7 @@
 #' For JASPAR pfm matrices (i.e. http://jaspar.genereg.net/html/DOWNLOAD/JASPAR_CORE/pfm/nonredundant/pfm_vertebrates.txt), the suggested arguments are: tag = ">", skiprows = 1, skipcols = 0, transpose = TRUE, field = 1, sep = "\\t";
 #' For the TRANSFAC library provided by UCF bioinformatics groups (i.e. http://gibbs.biomed.ucf.edu/PreDREM/download/nonredundantmotif.transfac), the suggested arguments are: tag = "DE", skiprows = 1, skipcols = 1, transpose = FALSE, field = 2, sep = "\\t".
 #' @return A list object of position weight matrices.
-#' @author Chandler Zuo \email{zuo@@stat.wisc.edu}
+#' @author Sunyoung Shin \email{sunyoung.shin@@utdallas.edu}, Chandler Zuo \email{zuo@@stat.wisc.edu}
 #' @examples
 #' \dontrun{
 #' pwms <- LoadMotifLibrary("http://meme.nbcr.net/meme/doc/examples/sample-dna-motif.meme-io")
@@ -93,7 +93,7 @@ LoadMotifLibrary <- function(filename, tag = "MOTIF", transpose = FALSE, field =
 #' }
 #' If this file exists already, it is used to extract the SNP information. Otherwise, SNP information extracted using argument 'snpids' is outputted to this file.
 #' @param snpids A vector of rs ids for the SNPs. This argument is overidden if the file with name \code{filename} exists.
-#' @param snp.lib A string of the library name to obtain the SNP information based on rs ids. Default: "SNPlocs.Hsapiens.dbSNP144.GRCh38".#' @param snp.lib A string of the library name to obtain the SNP information based on rs ids. Default: "SNPlocs.Hsapiens.dbSNP144.GRCh38".#' @param snp.lib A string of the library name to obtain the SNP information based on rs ids. Default: "SNPlocs.Hsapiens.dbSNP144.GRCh38".
+#' @param snp.lib A string of the library name to obtain the SNP information based on rs ids. Default: "SNPlocs.Hsapiens.dbSNP.20120608".#' @param snp.lib A string of the library name to obtain the SNP information based on rs ids. Default: "SNPlocs.Hsapiens.dbSNP.20120608".#' @param snp.lib A string of the library name to obtain the SNP information based on rs ids. Default: "SNPlocs.Hsapiens.dbSNP.20120608".
 #' @param genome.lib A string of the library name for the genome version. Default: "BSgenome.Hsapiens.UCSC.hg19".
 #' @param half.window.size An integer for the half window size around the SNP within which the motifs are matched. Default: 30.
 #' @param default.par A boolean for whether using the default Markov parameters. Default: FALSE.
@@ -119,13 +119,11 @@ LoadMotifLibrary <- function(filename, tag = "MOTIF", transpose = FALSE, field =
 #' @author Chandler Zuo \email{zuo@@stat.wisc.edu}
 #' @examples
 #' \dontrun{LoadSNPData("/p/keles/ENCODE-CHARGE/volume2/SNP/hg19_allinfo.bed")}
+#' @import BSgenome
 #' @useDynLib atSNP
-#' @import GenomicRanges
 #' @export
-
-
 LoadSNPData <- function(filename = NULL, genome.lib = "BSgenome.Hsapiens.UCSC.hg19",
-                        snp.lib = "SNPlocs.Hsapiens.dbSNP144.GRCh38",
+                        snp.lib = "SNPlocs.Hsapiens.dbSNP.20120608",
                         snpids = NULL, half.window.size = 30, default.par = FALSE,
                         mutation = FALSE, ...) {
   useFile <- FALSE
@@ -139,9 +137,7 @@ LoadSNPData <- function(filename = NULL, genome.lib = "BSgenome.Hsapiens.UCSC.hg
     if(!is.null(snpids)) {
       message("Warning: load SNP information from 'filename' only. The argument 'snpids' is overridden.")
     }
-    #tbl <- read.table(filename, header = TRUE, stringsAsFactors = FALSE, ...)
     tbl <- as.data.frame(fread(filename))
-
     tbl<-tbl[c("snpid", "chr", "snp", "a1", "a2")]
     ## check if the input file has the required information
     if(sum(!c("snp", "chr", "a1", "a2", "snpid") %in% names(tbl)) > 0) {
@@ -156,36 +152,24 @@ LoadSNPData <- function(filename = NULL, genome.lib = "BSgenome.Hsapiens.UCSC.hg
     ## load the corresponding snp library
     library(package = snp.lib, character.only = TRUE)
     rsid.missing.all <- NULL
-    while(TRUE) {
-      snps <- get(snp.lib)
-      snp.loc <- tryCatch({snpid2loc(snps, snpids)}, error = function(e) return(e$message))
-      ## remove rsids not included in the database
-      if(class(snp.loc) == "character") {
-        rsid.missing <- myStrSplit(snp.loc, split = c(": ", "\n"))[[1]][-1]
-        rsid.missing <- myStrSplit(rsid.missing, split = c(",", " "))[[1]]
-        if(length(rsid.missing) > 1) {
-          if(as.integer(rsid.missing[length(rsid.missing)]) <= as.integer(rsid.missing[length(rsid.missing) - 1])) {
-            rsid.missing <- rsid.missing[-length(rsid.missing)]
-          }
-        }
-        rsid.missing <- paste("rs", rsid.missing, sep = "")
-        rsid.missing.all <- c(rsid.missing.all, rsid.missing)
-        snpids <- snpids[!snpids %in% rsid.missing]
-        snp.loc <- tryCatch({snpid2loc(snps, snpids)}, error = function(e) return(e$message))
-      } else {
-        break
-      }
-    }
+    snps <- get(snp.lib)
+    snp.loc <- tryCatch({snpsById(snps, snpids, ifnotfound="error")}, error = function(e) return(e$message))
+    ## remove rsids not included in the database
+    if(class(snp.loc) == "character") {
+      rsid.missing <- myStrSplit(snp.loc, split = c(": ", "\n"))[[1]][-1]
+      rsid.missing.all <- myStrSplit(rsid.missing, split = c(",", " "))[[1]]
+      snpids <- snpids[!snpids %in% rsid.missing]
+      snp.loc <- snpsById(snps, snpids, ifnotfound="drop")
+    } 
+    
     if(!is.null(rsid.missing.all)) {
       message("Warning: the following rsids are not included in the database and discarded: ")
       message(paste(rsid.missing.all, collapse = ", "))
       rsid.missing <- rsid.missing.all
     }
     
-    snp.alleles <- snpid2alleles(snps, snpids)
-    snp.alleles <- IUPAC_CODE_MAP[snp.alleles]
-    gr <- snpid2grange(snps, snpids)
-    snp.strands <- as.character(GenomicRanges::as.data.frame(gr)$strand)
+    snp.alleles <- IUPAC_CODE_MAP[snp.loc@elementMetadata@listData$alleles_as_ambig]
+    snp.strands<-as.character(snp.loc@strand)
     if(sum(nchar(snp.alleles) > 2) > 0) {
       message("Warning: the following SNPs have more than 2 alleles. All pairs of nucleotides are considered as pairs of the SNP and the reference allele:")
       rsid.duplicate <- snpids[nchar(snp.alleles) > 2]
@@ -210,7 +194,7 @@ LoadSNPData <- function(filename = NULL, genome.lib = "BSgenome.Hsapiens.UCSC.hg
           a2 <- sapply(snp.alleles.n, function(x) x[i_allele2])
           
           ## revert the alleles on the reverse strand
-          id.rev <- which(snp.strands.n != "+")
+          id.rev <- which(snp.strands.n == "-")
           if(length(id.rev) > 0) {
             rev.codes <- c("A", "C", "G", "T")
             names(rev.codes) <- rev(rev.codes)
@@ -218,13 +202,12 @@ LoadSNPData <- function(filename = NULL, genome.lib = "BSgenome.Hsapiens.UCSC.hg
             a2[id.rev] <- rev.codes[a2[id.rev]]
           }
           tbl <- rbind(tbl,
-                       data.frame(
-                         snp = snp.loc.n,
-                         chr = as.character(sub("ch", "chr", names(snp.loc.n))),
-                         a1 = as.character(a1),
-                         a2 = as.character(a2),
-                         snpid = as.character(snp.ids.n),
-                         index = snpid.index[ids])
+                       data.frame(snp = as.integer(snp.loc.n@ranges), 
+                                  chr = as.character(paste0("chr", gsub("ch", "", snp.loc.n@seqnames))), 			  
+                                  a1 = as.character(a1),
+                                  a2 = as.character(a2),
+                                  snpid = as.character(snp.ids.n),
+                                  index = snpid.index[ids])
           )
         }
       }
@@ -285,7 +268,7 @@ LoadSNPData <- function(filename = NULL, genome.lib = "BSgenome.Hsapiens.UCSC.hg
     discard.id <- setdiff(seq_along(a1), c(a1.ref.base.id, a2.ref.base.id))
     if(length(discard.id) > 0) {
       message("Warning: the following sequences are discarded because the reference nucleotide matches to neither a1 nor a2:")
-      rsid.rm <- as.character(tbl[keep.id[discard.id], ]$snpid)
+      rsid.rm <- unique(as.character(tbl[keep.id[discard.id], ]$snpid))
       message("snpid\tchr\tsnp\ta1\ta2")
       message(paste(apply(tbl[keep.id[discard.id], c("snpid", "chr", "snp", "a1", "a2")], 1, function(x) paste(x, collapse = "\t")), collapse = "\n"))
     }
@@ -319,7 +302,6 @@ LoadSNPData <- function(filename = NULL, genome.lib = "BSgenome.Hsapiens.UCSC.hg
   ))
 }
 
-
 #' @name LoadFastaData
 #' @title Load the SNP data from fasta files.
 #' @description Load SNP data.
@@ -334,7 +316,7 @@ LoadSNPData <- function(filename = NULL, genome.lib = "BSgenome.Hsapiens.UCSC.hg
 #' a2 \tab An integer vector for the deroxyribose at the SNP location on the SNP genome.\cr
 #' }
 #' The results are coded as: "A"-1, "C"-2, "G"-3, "T"-4.
-#' @author Chandler Zuo \email{zuo@@stat.wisc.edu}
+#' @author Sunyoung Shin \email{sunyoung.shin@@utdallas.edu}, Chandler Zuo \email{zuo@@stat.wisc.edu}
 #' @examples \dontrun{LoadFastaData("http://pages.stat.wisc.edu/~keles/atSNP-Data/sample_1.fasta", "http://pages.stat.wisc.edu/~keles/atSNP-Data/sample_2.fasta")}
 #' @useDynLib atSNP
 #' @export
@@ -452,12 +434,12 @@ LoadFastaData <- function(ref.data, snp.data, snpids=NULL, default.par = FALSE) 
 #' log_enhance_odds \tab Difference in log-likelihood ratio between SNP allele and reference allele based on the best matching subsequence on the reference allele.\cr
 #' log_reduce_odds \tab Difference in log-likelihood ratio between reference allele and SNP allele based on the best matching subsequence on the SNP allele.\cr
 #' }
-#' @author Chandler Zuo\email{zuo@@stat.wisc.edu}
+#' @author Sunyoung Shin \email{sunyoung.shin@@utdallas.edu}, Chandler Zuo\email{zuo@@stat.wisc.edu}
 #' @examples
 #' data(example)
-#' ComputeMotifScore(motif_library, snpInfo, ncores = 2)
+#' ComputeMotifScore(motif_library, snpInfo, ncores = 1)
 #' @useDynLib atSNP
-#' @import data.table foreach
+#' @import BiocParallel data.table
 #' @export
 ComputeMotifScore <- function(motif.lib, snp.info, ncores = 1) {
   ## check arguments
@@ -489,10 +471,9 @@ ComputeMotifScore <- function(motif.lib, snp.info, ncores = 1) {
 
   ncores <- min(c(ncores, length(snp.info$ref_base)))
 
-  startParallel(ncores)
-
-  motif_score_par <- foreach(i = seq(ncores)) %dopar% {
-    k <- as.integer(length(snp.info$ref_base) / ncores)
+#  startParallel(ncores)
+  k <- as.integer(length(snp.info$ref_base) / ncores)
+  motif_score_par_i<-function(i) {
     if(i < ncores) {
       ids <- seq(k) + k * (i - 1)
     } else {
@@ -505,21 +486,21 @@ ComputeMotifScore <- function(motif.lib, snp.info, ncores = 1) {
       rownames(motif.scores[[j]]) <- snpids[ids]
       colnames(motif.scores[[j]]) <- motifs
     }
-
+    
     nids<-length(ids)
     motif_len.m<-matrix(motif_tbl$motif_len, nids, nmotifs, byrow=TRUE)
     rownames(motif_len.m)<-snpids[ids]
-	  
+    
     strand_ref <- (motif.scores$match_ref_base > 0)
     ref_start <- motif.scores$match_ref_base
     ref_start[!strand_ref] <- len_seq + motif.scores$match_ref_base[!strand_ref] - motif_len.m[!strand_ref]+2
     ref_end <- ref_start + motif_len.m - 1
-
+    
     strand_snp <- (motif.scores$match_snp_base > 0)
     snp_start <- motif.scores$match_snp_base
     snp_start[!strand_snp] <- len_seq + motif.scores$match_snp_base[!strand_snp] - motif_len.m[!strand_snp]+2
     snp_end <- snp_start + motif_len.m - 1
-	  
+    
     motif_score_tbl <- data.table(snpid = rep(snpids[ids], nmotifs),
                                   motif = rep(motifs, each = length(ids)),
                                   log_lik_ref = c(motif.scores$log_lik_ref),
@@ -531,19 +512,26 @@ ComputeMotifScore <- function(motif.lib, snp.info, ncores = 1) {
                                   snp_start = c(snp_start),
                                   ref_end=c(ref_end),
                                   snp_end=c(snp_end),
-				  ref_strand = c("-", "+")[1 + as.integer(strand_ref)],
+                                  ref_strand = c("-", "+")[1 + as.integer(strand_ref)],
                                   snp_strand = c("-", "+")[1 + as.integer(strand_snp)],
                                   snpbase= rep(snpbases[ids], nmotifs)
-                                  )
+    )
     setkey(motif_score_tbl, motif, snpbase)
     setkey(motif_tbl, motif)
     motif_score_tbl <- motif_tbl[motif_score_tbl]
-
+    
     motif_score_tbl
-
+    
   }
 
-  endParallel()
+  if(Sys.info()[["sysname"]] == "Windows"){
+    snow <- SnowParam(workers = ncores, type = "SOCK")
+    motif_score_par<-bpmapply(motif_score_par_i, seq(ncores), BPPARAM = snow,SIMPLIFY = FALSE)
+  }else{
+    motif_score_par<-bpmapply(motif_score_par_i, seq(ncores), BPPARAM = MulticoreParam(workers = ncores),
+                              SIMPLIFY = FALSE)
+  }
+#  endParallel()
 
   motif.scores <- motif_score_par[[1]]
   if(ncores > 1) {
@@ -612,12 +600,12 @@ ComputeMotifScore <- function(motif.lib, snp.info, ncores = 1) {
 #' ref_seq_snp_match \tab Subsequence on the reference allele corresponding to the best matching location on the SNP allele.\cr
 #' snp_seq_ref_match \tab Subsequence on the SNP allele corresponding to the best matching location on the reference allele.\cr
 #' }
-#' @author Chandler Zuo\email{zuo@@stat.wisc.edu}
+#' @author Sunyoung Shin \email{sunyoung.shin@@utdallas.edu}, Chandler Zuo\email{zuo@@stat.wisc.edu}
 #' @examples
 #' data(example)
 #' MatchSubsequence(motif_scores$snp.tbl, motif_scores$motif.scores, motif_library)
 #' @useDynLib atSNP
-#' @import data.table foreach
+#' @import BiocParallel data.table
 #' @export
 MatchSubsequence <- function(snp.tbl, motif.scores, motif.lib, snpids = NULL, motifs = NULL, ncores = 2) {
   if(is.null(snpids)) {
@@ -654,10 +642,9 @@ MatchSubsequence <- function(snp.tbl, motif.scores, motif.lib, snpids = NULL, mo
 
   ncores <- min(c(ncores, length(snpids)))
 
-  startParallel(ncores)
-
-  motif_score_par <- foreach(i = seq(ncores)) %dopar% {
-    k <- as.integer(length(snpids) / ncores)
+#  startParallel(ncores)
+  
+  motif_score_par_i<-function(i) {
     if(i < ncores) {
       ids <- seq(k) + k * (i - 1)
     } else {
@@ -677,7 +664,7 @@ MatchSubsequence <- function(snp.tbl, motif.scores, motif.lib, snpids = NULL, mo
     motif.scores[ref_strand == "-", snp_seq_ref_match := substr(snp_seq_rev, len_seq - ref_end + 1, len_seq - ref_start + 1)]
     motif.scores[snp_strand == "+", ref_seq_snp_match := substr(ref_seq, snp_start, snp_end)]
     motif.scores[snp_strand == "-", ref_seq_snp_match := substr(ref_seq_rev, len_seq - snp_end + 1, len_seq - snp_start + 1)]
-
+    
     motif.scores[, list(snpid,
                         motif,
                         ref_seq,
@@ -694,15 +681,24 @@ MatchSubsequence <- function(snp.tbl, motif.scores, motif.lib, snpids = NULL, mo
                         log_lik_ratio,
                         log_enhance_odds,
                         log_reduce_odds,
-			IUPAC,
+                        IUPAC,
                         ref_match_seq,
                         snp_match_seq,
                         ref_seq_snp_match,
                         snp_seq_ref_match,
                         snpbase)]
   }
-
-  endParallel()
+  
+  k <- as.integer(length(snpids) / ncores)
+  if(Sys.info()[["sysname"]] == "Windows"){
+    snow <- SnowParam(workers = ncores, type = "SOCK")
+    motif_score_par<-bpmapply(motif_score_par_i, seq(ncores), BPPARAM = snow,SIMPLIFY = FALSE)
+  }else{
+    motif_score_par<-bpmapply(motif_score_par_i, seq(ncores), BPPARAM = MulticoreParam(workers = ncores),
+                              SIMPLIFY = FALSE)
+  }
+  
+#  endParallel()
 
   motif_score_tbl <- motif_score_par[[1]]
   if(ncores > 1) {
@@ -737,18 +733,18 @@ MatchSubsequence <- function(snp.tbl, motif.scores, motif.lib, snpids = NULL, mo
 #' pval_diff \tab P-values for the difference in scores between the reference and the SNP alleles.\cr
 #' pval_rank \tab P-values for the log rank ratio between the reference and the SNP alleles.\cr
 #' }
-#' @author Chandler Zuo\email{zuo@@stat.wisc.edu}
+#' @author Sunyoung Shin \email{sunyoung.shin@@utdallas.edu}, Chandler Zuo\email{zuo@@stat.wisc.edu}
 #' @examples
 #' data(example)
 #' ComputePValues(motif_library, snpInfo, motif_scores$motif.scores, ncores = 1)
-#' @import foreach Rcpp data.table
+#' @import Rcpp BiocParallel data.table
 #' @useDynLib atSNP
 #' @export
 ComputePValues <- function(motif.lib, snp.info, motif.scores, ncores = 1, figdir = NULL) {
   ncores <- min(c(ncores, length(motif.lib)))
 
-  startParallel(ncores)
-
+#  startParallel(ncores)
+  
   results <- as.list(seq_along(motif.lib))
   nsets <- as.integer(length(motif.lib) / ncores)
   if(FALSE) {
@@ -761,7 +757,9 @@ ComputePValues <- function(motif.lib, snp.info, motif.scores, ncores = 1, figdir
       }
     }
   }
-  results <- foreach(motifid = seq_along(motif.lib)) %dopar% {
+  
+  
+  results_motif<-function(motifid) {
     rowids <- which(motif.scores$motif == names(motif.lib)[motifid])
     scores <- cbind(motif.scores$log_lik_ref[rowids],
                     motif.scores$log_lik_snp[rowids])
@@ -774,13 +772,13 @@ ComputePValues <- function(motif.lib, snp.info, motif.scores, ncores = 1, figdir
       }
     }
     set.seed(motifid)
-
+    
     if(nrow(scores) > 5000) {
       p <- 5 / nrow(scores)
     } else {
       p <- 1 / nrow(scores)
     }
-
+    
     m <- 20
     b <- (1 / p) ^ ( 1 / sum(seq(m)))
     allp <- rep(1, m + 1)
@@ -790,21 +788,21 @@ ComputePValues <- function(motif.lib, snp.info, motif.scores, ncores = 1, figdir
       step <- step * b
     }
     allp <- allp[-(m + 1)]
-
+    
     score.p <- unique(quantile(c(scores), 1 - allp))
-      if(length(score.p) > length(unique(c(scores)))) {
-        score.p <- rev(unique(sort(c(scores))))
-        allp <- seq_along(score.p) / length(c(scores))
-      }
-
+    if(length(score.p) > length(unique(c(scores)))) {
+      score.p <- rev(unique(sort(c(scores))))
+      allp <- seq_along(score.p) / length(c(scores))
+    }
+    
     pval_a <- pval_cond <- matrix(1, nrow = nrow(scores), ncol = 4)
     for(l in seq_along(allp)) {
       if(l == 1) {
         score.upp = max(scores) + 1
       } else if(l <= length(allp)) {
-          score.upp = score.p[l - 1]
+        score.upp = score.p[l - 1]
       } else {
-          score.upp = quantile(c(scores), 0.2)
+        score.upp = quantile(c(scores), 0.2)
       }
       if(l >= length(allp)) {
         score.low = min(scores) - 1
@@ -816,9 +814,9 @@ ComputePValues <- function(motif.lib, snp.info, motif.scores, ncores = 1, figdir
         next
       }
       if(l < length(allp) + 1) {
-          theta <- .Call("test_find_theta", pwm, snp.info$prior, snp.info$transition, score.p[l], package = "atSNP")
+        theta <- .Call("test_find_theta", pwm, snp.info$prior, snp.info$transition, score.p[l], package = "atSNP")
       } else {
-          theta <- 0
+        theta <- 0
       }
       ## set the importance sample size
       n_sample <- 2000
@@ -834,7 +832,7 @@ ComputePValues <- function(motif.lib, snp.info, motif.scores, ncores = 1, figdir
       pval_a.new <- .Call("test_p_value", pwm, snp.info$prior, snp.info$transition, scores[compute.id], theta, n_sample, package = "atSNP")
       pval_cond.new <- .structure(pval_a.new[, 4 + seq(4)])
       pval_a.new <- .structure(pval_a.new[, seq(4)])
-
+      
       update.id <- which(pval_a.new[, 2] < pval_a[, 3:4][compute.id])
       pval_a[compute.id[update.id]] <- pval_a.new[update.id, 1]
       pval_a[compute.id[update.id] + 2 * nrow(pval_a)] <- pval_a.new[update.id, 2]
@@ -842,43 +840,43 @@ ComputePValues <- function(motif.lib, snp.info, motif.scores, ncores = 1, figdir
       pval_cond[compute.id[update.id]] <- pval_cond.new[update.id, 1]
       pval_cond[compute.id[update.id] + 2 * nrow(pval_cond)] <- pval_cond.new[update.id, 2]
     }
-
-      pval_a[pval_a[, seq(2)] > 1] <- 1
-      pval_cond[pval_cond[, seq(2)] > 1] <- 1
-      adjusted <- FALSE
-      ## Force the p-values to be increasing
-      while(!adjusted) {
-        pval_a.sorted <- sort(pval_a[, 1:2])[rank(-c(scores))]
-        pval_cond.sorted <- sort(pval_cond[, 1:2])[rank(-c(scores))]
-        flag1 <- flag2 <- TRUE
-        if(prod(pval_a.sorted == pval_a[, seq(2)]) != 1 |
-           prod(pval_cond.sorted == pval_cond[, seq(2)]) != 1) {
-          pval_a[, 1:2] <- pval_a.sorted
-          pval_cond[, 1:2] <- pval_cond.sorted
-          flag1 <- FALSE
-        }
-        ## force the conditional p-value <= p-value
-        adjust.id <- which(pval_a[, seq(2)] < pval_cond[, seq(2)])
-        if(length(adjust.id) > 0) {
-          flag2 <- FALSE
-          pval_cond[adjust.id] <- (pval_cond[adjust.id] + pval_a[adjust.id]) / 2
-          pval_a[adjust.id] <- pval_cond[adjust.id]
-        }
-        adjusted <- flag1 & flag2
+    
+    pval_a[pval_a[, seq(2)] > 1] <- 1
+    pval_cond[pval_cond[, seq(2)] > 1] <- 1
+    adjusted <- FALSE
+    ## Force the p-values to be increasing
+    while(!adjusted) {
+      pval_a.sorted <- sort(pval_a[, 1:2])[rank(-c(scores))]
+      pval_cond.sorted <- sort(pval_cond[, 1:2])[rank(-c(scores))]
+      flag1 <- flag2 <- TRUE
+      if(prod(pval_a.sorted == pval_a[, seq(2)]) != 1 |
+         prod(pval_cond.sorted == pval_cond[, seq(2)]) != 1) {
+        pval_a[, 1:2] <- pval_a.sorted
+        pval_cond[, 1:2] <- pval_cond.sorted
+        flag1 <- FALSE
       }
-
-      rank_ratio <- abs(log(pval_a[, 1] + 1e-10) - log(pval_a[, 2] + 1e-10))
+      ## force the conditional p-value <= p-value
+      adjust.id <- which(pval_a[, seq(2)] < pval_cond[, seq(2)])
+      if(length(adjust.id) > 0) {
+        flag2 <- FALSE
+        pval_cond[adjust.id] <- (pval_cond[adjust.id] + pval_a[adjust.id]) / 2
+        pval_a[adjust.id] <- pval_cond[adjust.id]
+      }
+      adjusted <- flag1 & flag2
+    }
+    
+    rank_ratio <- abs(log(pval_a[, 1] + 1e-10) - log(pval_a[, 2] + 1e-10))
     score_diff <- apply(scores, 1, function(x) abs(diff(x)))
     score.p <- round(quantile(score_diff, c((seq(8) + 1) / 10, 0.9 + seq(9) / 100)))
-      if(round(quantile(score_diff, 0.1) + 1) < round(quantile(score_diff, 0.9))) {
-        score.p <- c(score.p,
-                     seq(round(quantile(score_diff, 0.1) + 1),
-                         round(quantile(score_diff, 0.9)),
-                         by = 2)
-                     )
-      }
+    if(round(quantile(score_diff, 0.1) + 1) < round(quantile(score_diff, 0.9))) {
+      score.p <- c(score.p,
+                   seq(round(quantile(score_diff, 0.1) + 1),
+                       round(quantile(score_diff, 0.9)),
+                       by = 2)
+      )
+    }
     score.p <- rev(sort(unique(score.p)))
-
+    
     pval_diff <- pval_rank <- matrix(1, nrow = length(score_diff), ncol = 2)
     for(l in seq_along(score.p)) {
       if(l == 1) {
@@ -899,7 +897,7 @@ ComputePValues <- function(motif.lib, snp.info, motif.scores, ncores = 1, figdir
       n_sample <- 2000
       p <- mean(score_diff >= score.p[l])
       if(p == 0) {
-          p <- 1e-4
+        p <- 1e-4
       }
       if(l <= length(allp)) {
         n_sample <- as.integer((1 - p) / p * 100)
@@ -910,7 +908,7 @@ ComputePValues <- function(motif.lib, snp.info, motif.scores, ncores = 1, figdir
       if(n_sample < 2000) {
         n_sample <- 2000
       }
-
+      
       pval_diff.new <- .Call("test_p_value_change", pwm,
                              wei.mat, pwm + 0.25, snp.info$prior,
                              snp.info$transition, score_diff[compute.id],
@@ -924,8 +922,8 @@ ComputePValues <- function(motif.lib, snp.info, motif.scores, ncores = 1, figdir
       pval_rank[compute.id[update.id], ] <- pval_rank.new[update.id, ]
       ## print(summary(pval_diff.new[,1]))
     }
-
-      ## force the monotonicity
+    
+    ## force the monotonicity
     pval_diff[, 1] <- sort(pval_diff[,1])[rank(-score_diff)]
     pval_diff[pval_diff[, 1] > 1, 1] <- 1
     pval_rank[, 1] <- sort(pval_rank[,1])[rank(-rank_ratio)]
@@ -937,16 +935,16 @@ ComputePValues <- function(motif.lib, snp.info, motif.scores, ncores = 1, figdir
         dir.create(fig.dir)
       }
       plotdat <- data.frame(
-                            score = c(scores),
-                            p.value = c(pval_a[, seq(2)]),
-                            var = c(pval_a[, 3:4]),
-                            Allele = rep(c("ref", "snp"), each = nrow(scores))
-                            )
+        score = c(scores),
+        p.value = c(pval_a[, seq(2)]),
+        var = c(pval_a[, 3:4]),
+        Allele = rep(c("ref", "snp"), each = nrow(scores))
+      )
       plotdat.diff <- data.frame(
-                                 score = score_diff,
-                                 p.value = pval_diff[,1],
-                                 var = pval_diff[,2]
-                                 )
+        score = score_diff,
+        p.value = pval_diff[,1],
+        var = pval_diff[,2]
+      )
       plotdat <- unique(plotdat)
       plotdat.diff <- unique(plotdat.diff)
       localenv <- environment()
@@ -959,15 +957,24 @@ ComputePValues <- function(motif.lib, snp.info, motif.scores, ncores = 1, figdir
       print(ggplot(aes(x = score, y = p.value), data = plotdat.diff, environment = localenv) + geom_point() + scale_y_log10(breaks = 10 ^ seq(-8, 0)) + geom_errorbar(aes(ymax = p.value + sqrt(var), ymin = p.value - sqrt(var))) + ggtitle(paste(names(motif.lib)[motifid], " Change")))
       dev.off()
     }
-
+    
     list(rowids = rowids,
          pval_a = pval_a,
          pval_cond = pval_cond,
          pval_diff = pval_diff,
          pval_rank = pval_rank)
   }
-
-  endParallel()
+  
+  if(Sys.info()[["sysname"]] == "Windows"){
+    snow <- SnowParam(workers = ncores, type = "SOCK")
+    results<-bpmapply(results_motif, seq_along(motif.lib), BPPARAM = snow,SIMPLIFY = FALSE)
+  }else{
+    results<-bpmapply(results_motif, seq_along(motif.lib), BPPARAM = MulticoreParam(workers = ncores),
+                      SIMPLIFY = FALSE)
+  }
+  
+  
+#  endParallel()
 
   for(i in seq(length(results))) {
     motif.scores[results[[i]]$rowids, pval_ref := results[[i]]$pval_a[, 1]]
@@ -986,7 +993,7 @@ ComputePValues <- function(motif.lib, snp.info, motif.scores, ncores = 1, figdir
 #' @param pwm The position weight matrix, with the columns representing A, C, G, T.
 #' @param prob The probability threshold. Default: 0.25.
 #' @return A character string.
-#' @author Chandler Zuo\email{zuo@@stat.wisc.edu}
+#' @author Sunyoung Shin \email{sunyoung.shin@@utdallas.edu}, Chandler Zuo\email{zuo@@stat.wisc.edu}
 #' @examples
 #' data(example)
 #' GetIUPACSequence(motif_library[[1]], prob = 0.2)

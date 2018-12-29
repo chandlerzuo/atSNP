@@ -1,13 +1,13 @@
 library(atSNP)
-library(doParallel)
+library(BiocParallel)
 library(testthat)
 data(example)
 
-if(.Platform$OS.type == "unix") {
-  registerDoParallel(2)
-} else {
-  registerDoParallel(cl <- makeCluster(2))
-}
+#if(.Platform$OS.type == "unix") {
+#  registerDoParallel(2)
+#} else {
+#  registerDoParallel(cl <- makeCluster(2))
+#}
 
 trans_mat <- matrix(rep(snpInfo$prior, each = 4), nrow = 4)
 id <- 1
@@ -125,7 +125,7 @@ test_that("Error: sample distributions are not expected.", {
                         sum(snpInfo$prior * delta[, 1]),
                         nrow = 4, ncol = motif_len - 1), delta)
 
-  results <- foreach(i = seq(motif_len * 2)) %dopar% {
+  results_i <- function(i) {
     ## generate 1000 samples
     sample <- sapply(seq(1000), function(x)
                      .Call("test_importance_sample",
@@ -137,6 +137,14 @@ test_that("Error: sample distributions are not expected.", {
     sample <- sapply(rep(theta, 1000), drawonesample)
     emp_freq2 <- get_freq(sample[seq(2 * motif_len), ] - 1)
     max(abs(emp_freq1 - target_freq)) > max(abs(emp_freq2 - target_freq))
+  }
+
+  if(Sys.info()[["sysname"]] == "Windows"){
+    snow <- SnowParam(workers = 2, type = "SOCK")
+    results<-bpmapply(results_i, seq(20), BPPARAM = snow,SIMPLIFY = FALSE)
+  }else{
+    results<-bpmapply(results_i, seq(20), BPPARAM = MulticoreParam(workers = 2),
+                      SIMPLIFY = FALSE)
   }
   
   print(sum(unlist(results)))
@@ -238,6 +246,6 @@ if(FALSE) {
   hist(log(test2[21, ]) / 0.15)
 }
 
-if(.Platform$OS.type != "unix") {
-  stopCluster(cl)
-}
+#if(.Platform$OS.type != "unix") {
+#  stopCluster(cl)
+#}

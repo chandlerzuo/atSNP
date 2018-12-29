@@ -1,13 +1,13 @@
 library(atSNP)
-library(doParallel)
+library(BiocParallel)
 library(testthat)
 data(example)
 
-if(.Platform$OS.type == "unix") {
-  registerDoParallel(2)
-} else {
-  registerDoParallel(cl <- makeCluster(2))
-}
+#if(.Platform$OS.type == "unix") {
+#  registerDoParallel(2)
+#} else {
+#  registerDoParallel(cl <- makeCluster(2))
+#}
 
 trans_mat <- matrix(rep(snpInfo$prior, each = 4), nrow = 4)
 id <- 1
@@ -189,20 +189,26 @@ test_that("Error: sample distributions are not expected.", {
   target_freq <- t(target_freq)
   target_freq <- target_freq / apply(target_freq, 1, sum)
 
-  results <- foreach(i = seq(20)) %dopar% {
-
+  results_i <- function(i) {
     ## generate 1000 samples
     sample1 <- sapply(seq(1000), function(x)
-                     .Call("test_importance_sample_diff",
-                           delta, snpInfo$prior, trans_mat, test_score, theta, package = "atSNP"))
+      .Call("test_importance_sample_diff",
+            delta, snpInfo$prior, trans_mat, test_score, theta, package = "atSNP"))
     emp_freq1 <- get_freq(sample1)
     
     sample2 <- sapply(rep(theta, 1000), drawonesample)
     emp_freq2 <- get_freq(sample2 - 1)
-
-##    print(rbind(emp_freq1[10, ], emp_freq2[10, ], target_freq[10, ]))
-    max(abs(emp_freq1 - target_freq)) > max(abs(emp_freq2 - target_freq))
     
+    ##    print(rbind(emp_freq1[10, ], emp_freq2[10, ], target_freq[10, ]))
+    max(abs(emp_freq1 - target_freq)) > max(abs(emp_freq2 - target_freq))
+  }
+ 
+  if(Sys.info()[["sysname"]] == "Windows"){
+    snow <- SnowParam(workers = 2, type = "SOCK")
+    results<-bpmapply(results_i, seq(20), BPPARAM = snow,SIMPLIFY = FALSE)
+  }else{
+    results<-bpmapply(results_i, seq(20), BPPARAM = MulticoreParam(workers = 2),
+                      SIMPLIFY = FALSE)
   }
   
   print(sum(unlist(results)))
@@ -305,6 +311,6 @@ if(FALSE) {
 
 }
 
-if(.Platform$OS.type != "unix") {
-  stopCluster(cl)
-}
+#if(.Platform$OS.type != "unix") {
+#  stopCluster(cl)
+#}

@@ -2,26 +2,14 @@ Package: atSNP
 Type: Package
 Title: Affinity test for identifying regulatory SNPs
 Version: 1.0
-Date: 2018-11-15
-Author: Chandler Zuo, Sunyoung Shin
+Date: 2018-12-23
+Author: Sunyoung Shin, Chandler Zuo
 Maintainer: Sunyoung Shin<sunyoung.shin@utdallas.edu>
 Description: Affinity test for regulatory SNPs.
 License: GPL-2
 LinkingTo: Rcpp
-Suggests: 
-    testthat,
-    BiocStyle,
-    BSgenome.Hsapiens.UCSC.hg19,
-    SNPlocs.Hsapiens.dbSNP144.GRCh38,
-    knitr,
-    rmarkdown
-Imports:
-    Rcpp,
-    data.table,
-    doParallel,
-    foreach,
-    GenomicRanges,
-    motifStack,
-    BiocManager
+Depends: R (>= 3.5.0)
+Suggests: testthat, BiocStyle, BSgenome.Hsapiens.UCSC.hg19, SNPlocs.Hsapiens.dbSNP144.GRCh38, knitr, rmarkdown
+Imports: Rcpp, data.table, BiocParallel, BSgenome, motifStack, BiocManager
 RoxygenNote: 6.1.1
 VignetteBuilder: knitr

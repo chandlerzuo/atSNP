@@ -49,5 +49,5 @@ pwms <- LoadMotifLibrary("http://gibbs.biomed.ucf.edu/PreDREM/download/nonredund
 }
 }
 \author{
-Chandler Zuo \email{zuo@stat.wisc.edu}
+Sunyoung Shin \email{sunyoung.shin@utdallas.edu}, Chandler Zuo \email{zuo@stat.wisc.edu}
 }
