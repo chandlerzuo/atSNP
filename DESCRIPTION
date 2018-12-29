@@ -17,5 +17,5 @@ Imports: Rcpp, data.table, BiocParallel, BSgenome, motifStack, BiocManager
 RoxygenNote: 6.1.1
 biocViews: Software, ChIPSeq, GenomeAnnotation, MotifAnnotation, Visualization
 URL: https://github.com/sunyoungshin/atSNP
-BugReports: https://github.com/chandlerzuo/atSNP/issues
+BugReports: https://github.com/sunyoungshin/atSNP/issues
 VignetteBuilder: knitr
