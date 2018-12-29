@@ -33,21 +33,3 @@ myStrSplit <- function(x, split) {
   }
   return(ret)
 }
-
-# @import doParallel
-#startParallel <- function(ncores) {
-#  if(.Platform$OS.type == "unix") {
-#    registerDoParallel(ncores)
-#  } else {
-#    cl <- makeCluster(ncores)
-# #   registerDoParallel(cl)
-#    return(cl)
-#  }
-#}
-
-# @import doParallel
-#endParallel <- function() {
-#  if(.Platform$OS.type != "unix") {
-#    stopCluster(cl)
-#  }
-#}

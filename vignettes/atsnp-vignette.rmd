@@ -24,11 +24,10 @@ editor_options:
 
 # Introduction
 
-This document provides an introduction to the affinity test for large sets of SNP-motif interactions using the *atSNP* package(**a**ffinity **t**est for regulatory **SNP** detection) [@zuo15]. *atSNP* implements in-silico methods for identifying SNPs that potentially may affect binding affinity of transcription factors. Given a set of SNPs and a library of motif position weight matrices (PWMs), *atSNP* provides three main functions for analyzing SNP effects:
+This document provides an introduction to the affinity test for large sets of SNP-motif interactions using the *atSNP* package(**a**ffinity **t**est for regulatory **SNP** detection) [@zuo15]. *atSNP* implements in-silico methods for identifying SNPs that potentially may affect binding affinity of transcription factors. Given a set of SNPs and a library of motif position weight matrices (PWMs), *atSNP* provides two main functions for analyzing SNP effects:
 
-(a) Computing the binding affinity score for each allele and each PWM.
-(b) Computing the p-values for allele-specific binding affinity scores.
-(c) Computing the p-values for affinity score changes between the two alleles for each SNP.
+(a) Computing the binding affinity score for each allele and each PWM and the p-values for the allele-specific binding affinity scores.
+(b) Computing the p-values for affinity score changes between the two alleles for each SNP.
 
 *atSNP* implements the importance sampling algorithm in @isample to compute the p-values. Compared to other bioinformatics tools, such as FIMO [@fimo] and is-rSNP [@is-rsnp] that provide similar functionalities, *atSNP* avoids computing the p-values analytically. In one of our research projects, we have used atSNP to evaluate interactions between 26K SNPs and 2K motifs within 5 hours. We found no other existing tools can finish the analysis of such a scale.
 
