@@ -6,7 +6,7 @@
 \usage{
 LoadSNPData(filename = NULL,
   genome.lib = "BSgenome.Hsapiens.UCSC.hg19",
-  snp.lib = "SNPlocs.Hsapiens.dbSNP144.GRCh38", snpids = NULL,
+  snp.lib = "SNPlocs.Hsapiens.dbSNP.20120608", snpids = NULL,
   half.window.size = 30, default.par = FALSE, mutation = FALSE, ...)
 }
 \arguments{
@@ -22,7 +22,7 @@ If this file exists already, it is used to extract the SNP information. Otherwis
 
 \item{genome.lib}{A string of the library name for the genome version. Default: "BSgenome.Hsapiens.UCSC.hg19".}
 
-\item{snp.lib}{A string of the library name to obtain the SNP information based on rs ids. Default: "SNPlocs.Hsapiens.dbSNP144.GRCh38".#' @param snp.lib A string of the library name to obtain the SNP information based on rs ids. Default: "SNPlocs.Hsapiens.dbSNP144.GRCh38".#' @param snp.lib A string of the library name to obtain the SNP information based on rs ids. Default: "SNPlocs.Hsapiens.dbSNP144.GRCh38".}
+\item{snp.lib}{A string of the library name to obtain the SNP information based on rs ids. Default: "SNPlocs.Hsapiens.dbSNP.20120608".#' @param snp.lib A string of the library name to obtain the SNP information based on rs ids. Default: "SNPlocs.Hsapiens.dbSNP.20120608".#' @param snp.lib A string of the library name to obtain the SNP information based on rs ids. Default: "SNPlocs.Hsapiens.dbSNP.20120608".}
 
 \item{snpids}{A vector of rs ids for the SNPs. This argument is overidden if the file with name \code{filename} exists.}
 

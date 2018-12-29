@@ -54,5 +54,5 @@ data(example)
 MatchSubsequence(motif_scores$snp.tbl, motif_scores$motif.scores, motif_library)
 }
 \author{
-Chandler Zuo\email{zuo@stat.wisc.edu}
+Sunyoung Shin \email{sunyoung.shin@utdallas.edu}, Chandler Zuo\email{zuo@stat.wisc.edu}
 }

@@ -31,5 +31,5 @@ Load SNP data.
 \dontrun{LoadFastaData("http://pages.stat.wisc.edu/~keles/atSNP-Data/sample_1.fasta", "http://pages.stat.wisc.edu/~keles/atSNP-Data/sample_2.fasta")}
 }
 \author{
-Chandler Zuo \email{zuo@stat.wisc.edu}
+Sunyoung Shin \email{sunyoung.shin@utdallas.edu}, Chandler Zuo \email{zuo@stat.wisc.edu}
 }

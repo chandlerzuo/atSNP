@@ -42,8 +42,8 @@ This function computes the binding affinity scores for both alleles at each SNP 
 }
 \examples{
 data(example)
-ComputeMotifScore(motif_library, snpInfo, ncores = 2)
+ComputeMotifScore(motif_library, snpInfo, ncores = 1)
 }
 \author{
-Chandler Zuo\email{zuo@stat.wisc.edu}
+Sunyoung Shin \email{sunyoung.shin@utdallas.edu}, Chandler Zuo\email{zuo@stat.wisc.edu}
 }

@@ -42,5 +42,5 @@ data(example)
 ComputePValues(motif_library, snpInfo, motif_scores$motif.scores, ncores = 1)
 }
 \author{
-Chandler Zuo\email{zuo@stat.wisc.edu}
+Sunyoung Shin \email{sunyoung.shin@utdallas.edu}, Chandler Zuo\email{zuo@stat.wisc.edu}
 }

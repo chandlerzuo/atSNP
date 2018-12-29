@@ -1,5 +1,5 @@
 library(atSNP)
-library(doParallel)
+library(BiocParallel)
 library(testthat)
 
 if(FALSE) {
