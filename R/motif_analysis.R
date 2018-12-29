@@ -439,7 +439,8 @@ LoadFastaData <- function(ref.data, snp.data, snpids=NULL, default.par = FALSE) 
 #' data(example)
 #' ComputeMotifScore(motif_library, snpInfo, ncores = 1)
 #' @useDynLib atSNP
-#' @import BiocParallel data.table
+#' @import data.table
+#' @importFrom BiocParallel bpmapply MulticoreParam
 #' @export
 ComputeMotifScore <- function(motif.lib, snp.info, ncores = 1) {
   ## check arguments
@@ -605,7 +606,8 @@ ComputeMotifScore <- function(motif.lib, snp.info, ncores = 1) {
 #' data(example)
 #' MatchSubsequence(motif_scores$snp.tbl, motif_scores$motif.scores, motif_library)
 #' @useDynLib atSNP
-#' @import BiocParallel data.table
+#' @import data.table
+#' @importFrom BiocParallel bpmapply MulticoreParam
 #' @export
 MatchSubsequence <- function(snp.tbl, motif.scores, motif.lib, snpids = NULL, motifs = NULL, ncores = 2) {
   if(is.null(snpids)) {
@@ -737,7 +739,9 @@ MatchSubsequence <- function(snp.tbl, motif.scores, motif.lib, snpids = NULL, mo
 #' @examples
 #' data(example)
 #' ComputePValues(motif_library, snpInfo, motif_scores$motif.scores, ncores = 1)
-#' @import Rcpp BiocParallel data.table
+#' @import Rcpp
+#' @import data.table
+#' @importFrom BiocParallel bpmapply MulticoreParam
 #' @useDynLib atSNP
 #' @export
 ComputePValues <- function(motif.lib, snp.info, motif.scores, ncores = 1, figdir = NULL) {

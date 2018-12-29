@@ -120,7 +120,8 @@ dtMotifMatch<-function(snp.tbl, motif.scores, snpids=NULL, motifs=NULL, motif.li
 #' @examples
 #' data(example)
 #' plotMotifMatch(motif_scores$snp.tbl, motif_scores$motif.scores, snpid=motif_scores$snp.tbl$snpid[1], motif=motif_scores$motif.scores$motif[1], motif.lib = motif_library)
-#' @import data.table motifStack
+#' @import data.table 
+#' @importFrom motifStack plotMotifLogo pcm2pfm 
 #' @export
 plotMotifMatch<-function(snp.tbl, motif.scores, snpid, snp=NULL, motif, motif.lib, cex.main = 2, ...) {
   if (class(snpid) != "character" | length(snpid)!=1) {
