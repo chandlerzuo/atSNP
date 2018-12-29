@@ -2,7 +2,7 @@ Package: atSNP
 Type: Package
 Title: Affinity test for identifying regulatory SNPs
 Version: 0.99.0
-Date: 2018-12-23
+Date: 2018-12-29
 Author: Chandler Zuo, Sunyoung Shin, Sunduz Keles
 Maintainer: Sunyoung Shin<sunyoung.shin@utdallas.edu>
 Authors@R: c(person(given = "Chandler", family = "Kuo", role = "aut"),
