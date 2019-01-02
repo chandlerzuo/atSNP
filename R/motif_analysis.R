@@ -609,7 +609,7 @@ ComputeMotifScore <- function(motif.lib, snp.info, ncores = 1) {
 #' @import data.table
 #' @importFrom BiocParallel bpmapply MulticoreParam SnowParam
 #' @export
-MatchSubsequence <- function(snp.tbl, motif.scores, motif.lib, snpids = NULL, motifs = NULL, ncores = 2) {
+MatchSubsequence <- function(snp.tbl, motif.scores, motif.lib, snpids = NULL, motifs = NULL, ncores = 1) {
   if(is.null(snpids)) {
     snpids <- unique(snp.tbl$snpid)
   }
