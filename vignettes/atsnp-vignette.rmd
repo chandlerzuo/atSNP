@@ -255,7 +255,7 @@ We use a toy example data set included in the package to introduce the usage of 
 The binding affinity scores for all pairs of SNP and PWM can be computed by the `ComputeMotifScore` function. It returns a list of two fields: 'snp.tbl' is a *data.table* containing the nucleotide sequences for each SNP; 'motif.scores' is a *data.table* containing the binding affinity scores for each SNP-motif pair.
 
 ```{r eval=TRUE, echo=TRUE, results="markup"}
-  atsnp.scores <- ComputeMotifScore(motif_library, snpInfo, ncores = 2)
+  atsnp.scores <- ComputeMotifScore(motif_library, snpInfo, ncores = 1)
   head(atsnp.scores$snp.tbl)
   head(atsnp.scores$motif.scores[, list(snpid, motif, log_lik_ref,
                                 log_lik_snp, log_lik_ratio)])
@@ -279,7 +279,7 @@ We recommend using `pval_ref`and `pval_snp` for assessing the significance of al
   
   atsnp.result <- ComputePValues(motif.lib = motif_library, snp.info = snpInfo,
                                  motif.scores = atsnp.scores$motif.scores,
-				 ncores = 2)
+				 ncores = 1)
   head(atsnp.result[, list(snpid, motif, pval_ref, pval_snp, pval_rank, pval_diff)])
 
 ``` 
@@ -338,7 +338,7 @@ atSNP provides additional functions to extract the matched nucleotide subsequenc
 
 ```{r eval=TRUE,echo=TRUE,results="markup"}
   
-  match_result <- MatchSubsequence(snp.tbl = atsnp.scores$snp.tbl, motif.scores = atsnp.result, motif.lib = motif_library, snpids = c("rs10910078", "rs4486391"), motifs = names(motif_library)[1:2], ncores = 2)
+  match_result <- MatchSubsequence(snp.tbl = atsnp.scores$snp.tbl, motif.scores = atsnp.result, motif.lib = motif_library, snpids = c("rs10910078", "rs4486391"), motifs = names(motif_library)[1:2], ncores = 1)
   match_result[, list(snpid, motif, IUPAC, ref_match_seq, snp_match_seq)]
 
 ``` 
