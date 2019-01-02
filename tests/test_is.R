@@ -3,11 +3,6 @@ library(BiocParallel)
 library(testthat)
 data(example)
 
-#if(.Platform$OS.type == "unix") {
-#  registerDoParallel(2)
-#} else {
-#  registerDoParallel(cl <- makeCluster(2))
-#}
 
 trans_mat <- matrix(rep(snpInfo$prior, each = 4), nrow = 4)
 id <- 1
@@ -140,10 +135,10 @@ test_that("Error: sample distributions are not expected.", {
   }
 
   if(Sys.info()[["sysname"]] == "Windows"){
-    snow <- SnowParam(workers = 2, type = "SOCK")
+    snow <- SnowParam(workers = 1, type = "SOCK")
     results<-bpmapply(results_i, seq(20), BPPARAM = snow,SIMPLIFY = FALSE)
   }else{
-    results<-bpmapply(results_i, seq(20), BPPARAM = MulticoreParam(workers = 2),
+    results<-bpmapply(results_i, seq(20), BPPARAM = MulticoreParam(workers = 1),
                       SIMPLIFY = FALSE)
   }
   
