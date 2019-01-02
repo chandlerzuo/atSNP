@@ -118,7 +118,7 @@ snp_info2 <- LoadFastaData("http://pages.stat.wisc.edu/~keles/atSNP-Data/sample_
 
 
 ## ----eval=TRUE, echo=TRUE, results="markup"------------------------------
-  atsnp.scores <- ComputeMotifScore(motif_library, snpInfo, ncores = 2)
+  atsnp.scores <- ComputeMotifScore(motif_library, snpInfo, ncores = 1)
   head(atsnp.scores$snp.tbl)
   head(atsnp.scores$motif.scores[, list(snpid, motif, log_lik_ref,
                                 log_lik_snp, log_lik_ratio)])
@@ -127,7 +127,7 @@ snp_info2 <- LoadFastaData("http://pages.stat.wisc.edu/~keles/atSNP-Data/sample_
   
   atsnp.result <- ComputePValues(motif.lib = motif_library, snp.info = snpInfo,
                                  motif.scores = atsnp.scores$motif.scores,
-				 ncores = 2)
+				 ncores = 1)
   head(atsnp.result[, list(snpid, motif, pval_ref, pval_snp, pval_rank, pval_diff)])
 
 
@@ -160,7 +160,7 @@ atsnp.result[, list(snpid, motif, pval_rank, pval_rank_bh)]
 
 ## ----eval=TRUE,echo=TRUE,results="markup"--------------------------------
   
-  match_result <- MatchSubsequence(snp.tbl = atsnp.scores$snp.tbl, motif.scores = atsnp.result, motif.lib = motif_library, snpids = c("rs10910078", "rs4486391"), motifs = names(motif_library)[1:2], ncores = 2)
+  match_result <- MatchSubsequence(snp.tbl = atsnp.scores$snp.tbl, motif.scores = atsnp.result, motif.lib = motif_library, snpids = c("rs10910078", "rs4486391"), motifs = names(motif_library)[1:2], ncores = 1)
   match_result[, list(snpid, motif, IUPAC, ref_match_seq, snp_match_seq)]
 
 
