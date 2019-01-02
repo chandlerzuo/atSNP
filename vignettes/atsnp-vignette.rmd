@@ -15,7 +15,7 @@ output: BiocStyle::html_document
 bibliography: document.bib    
 biblio-style: natbib
 vignette: >
-  %\VignetteIndexEntry{Vignette Title}
+  %\VignetteIndexEntry{atSNP}
   %\VignetteEncoding{UTF-8}
   %\VignetteEngine{knitr::rmarkdown}
 editor_options: 
