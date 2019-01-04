@@ -11,7 +11,7 @@ Authors@R: c(person(given = "Chandler", family = "Kuo", role = "aut"),
 Description: atSNP performs affinity tests of motif matches with the SNP or the reference genomes and SNP-led changes in motif matches.
 License: GPL-2
 LinkingTo: Rcpp
-Depends: R (>= 3.5.0)
+Depends: R (>= 3.4.4)
 Suggests: testthat, BiocStyle, BSgenome.Hsapiens.UCSC.hg19, SNPlocs.Hsapiens.dbSNP144.GRCh38, knitr, rmarkdown
 Imports: Rcpp, data.table, BiocParallel, BSgenome, motifStack, BiocManager
 RoxygenNote: 6.1.1
