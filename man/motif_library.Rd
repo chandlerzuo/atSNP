@@ -9,5 +9,5 @@
 A list of the position weight matrices corresponding to motifs, loaded by 'data(example)'.
 }
 \author{
-Chandler Zuo zuo@stat.wisc.edu
+Chandler Zuo chandler.c.zuo@gmail.com
 }

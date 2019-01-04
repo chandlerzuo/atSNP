@@ -9,5 +9,5 @@
 This motif library can be loaded by 'data(jaspar_library)'.
 }
 \author{
-Chandler Zuo zuo@stat.wisc.edu
+Chandler Zuo chandler.c.zuo@gmail.com
 }

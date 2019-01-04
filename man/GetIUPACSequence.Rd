@@ -22,5 +22,5 @@ data(example)
 GetIUPACSequence(motif_library[[1]], prob = 0.2)
 }
 \author{
-Sunyoung Shin \email{sunyoung.shin@utdallas.edu}, Chandler Zuo\email{zuo@stat.wisc.edu}
+Sunyoung Shin \email{sunyoung.shin@utdallas.edu}, Chandler Zuo\email{chandler.c.zuo@gmail.com}
 }

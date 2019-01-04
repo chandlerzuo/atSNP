@@ -13,5 +13,5 @@ motif.scores \tab A data.table containing the likelihood scores computed for eac
 }
 }
 \author{
-Chandler Zuo zuo@stat.wisc.edu
+Chandler Zuo chandler.c.zuo@gmail.com
 }

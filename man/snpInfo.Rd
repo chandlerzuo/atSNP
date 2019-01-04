@@ -14,5 +14,5 @@ prior \tab The stationary distribution used in the Markov model.\cr
 }
 }
 \author{
-Chandler Zuo zuo@stat.wisc.edu
+Chandler Zuo chandler.c.zuo@gmail.com
 }

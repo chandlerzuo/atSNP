@@ -9,5 +9,5 @@
 This is a character vector that be loaded by 'data(jaspar_library)'. The names of this vector are the same as the names for \code{\link{jaspar_motif}}. The entries of this vector are the corresponding motif information parsed from the raw file.
 }
 \author{
-Chandler Zuo zuo@stat.wisc.edu
+Chandler Zuo chandler.c.zuo@gmail.com
 }

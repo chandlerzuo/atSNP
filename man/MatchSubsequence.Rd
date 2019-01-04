@@ -5,7 +5,7 @@
 \title{Compute the matching subsequence.}
 \usage{
 MatchSubsequence(snp.tbl, motif.scores, motif.lib, snpids = NULL,
-  motifs = NULL, ncores = 2)
+  motifs = NULL, ncores = 1)
 }
 \arguments{
 \item{snp.tbl}{A data.table with the following information:
@@ -54,5 +54,5 @@ data(example)
 MatchSubsequence(motif_scores$snp.tbl, motif_scores$motif.scores, motif_library)
 }
 \author{
-Sunyoung Shin \email{sunyoung.shin@utdallas.edu}, Chandler Zuo\email{zuo@stat.wisc.edu}
+Sunyoung Shin \email{sunyoung.shin@utdallas.edu}, Chandler Zuo\email{chandler.c.zuo@gmail.com}
 }

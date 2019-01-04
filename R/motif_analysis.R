@@ -15,16 +15,9 @@
 #' For JASPAR pfm matrices (i.e. http://jaspar.genereg.net/html/DOWNLOAD/JASPAR_CORE/pfm/nonredundant/pfm_vertebrates.txt), the suggested arguments are: tag = ">", skiprows = 1, skipcols = 0, transpose = TRUE, field = 1, sep = "\\t";
 #' For the TRANSFAC library provided by UCF bioinformatics groups (i.e. http://gibbs.biomed.ucf.edu/PreDREM/download/nonredundantmotif.transfac), the suggested arguments are: tag = "DE", skiprows = 1, skipcols = 1, transpose = FALSE, field = 2, sep = "\\t".
 #' @return A list object of position weight matrices.
-#' @author Sunyoung Shin \email{sunyoung.shin@@utdallas.edu}, Chandler Zuo \email{zuo@@stat.wisc.edu}
+#' @author Sunyoung Shin \email{sunyoung.shin@@utdallas.edu}, Chandler Zuo \email{chandler.c.zuo@@gmail.com}
 #' @examples
-#' \dontrun{
-#' pwms <- LoadMotifLibrary("http://meme.nbcr.net/meme/doc/examples/sample-dna-motif.meme-io")
 #' pwms <- LoadMotifLibrary("http://compbio.mit.edu/encode-motifs/motifs.txt", tag = ">", transpose = FALSE, field = 1, sep = c("\t", " ", ">"), skipcols = 1, skiprows = 1, pseudocount = 0)
-#' pwms <- LoadMotifLibrary("http://johnsonlab.ucsf.edu/mochi_files/JASPAR_motifs_H_sapiens.txt", tag = "/NAME", skiprows = 1, skipcols = 0, transpose = FALSE, field = 2)
-#' pwms <- LoadMotifLibrary("http://jaspar.genereg.net/html/DOWNLOAD/ARCHIVE/JASPAR2010/all_data/matrix_only/matrix.txt", tag = ">", skiprows = 1, skipcols = 1, transpose = TRUE, field = 1, sep = c("\t", " ", "\\[", "\\]", ">"), pseudocount = 1)
-#' pwms <- LoadMotifLibrary("http://jaspar.genereg.net/html/DOWNLOAD/JASPAR_CORE/pfm/nonredundant/pfm_vertebrates.txt", tag = ">", skiprows = 1, skipcols = 0, transpose = TRUE, field = 1, sep = c(">", "\t", " "), pseudocount = 1)
-#' pwms <- LoadMotifLibrary("http://gibbs.biomed.ucf.edu/PreDREM/download/nonredundantmotif.transfac", tag = "DE", skiprows = 1, skipcols = 1, transpose = FALSE, field = 2, sep = "\t")
-#' }
 #' @useDynLib atSNP
 #' @export
 LoadMotifLibrary <- function(filename, tag = "MOTIF", transpose = FALSE, field = 2, sep = c("\t", " "), skipcols = 0, skiprows = 2, pseudocount = 0) {
@@ -116,9 +109,9 @@ LoadMotifLibrary <- function(filename, tag = "MOTIF", transpose = FALSE, field =
 #' rsid.rm \tab If the data source is a table and \code{mutation=FALSE}, this field records rsids for SNPs that are discarded because the nucleotide on the reference genome matches neither 'a1' or 'a2' in the data source.\cr
 #' }
 #' The results are coded as: "A"-1, "C"-2, "G"-3, "T"-4.
-#' @author Chandler Zuo \email{zuo@@stat.wisc.edu}
+#' @author Chandler Zuo \email{chandler.c.zuo@@gmail.com}
 #' @examples
-#' \dontrun{LoadSNPData("/p/keles/ENCODE-CHARGE/volume2/SNP/hg19_allinfo.bed")}
+#' LoadSNPData(snpids = c("rs53576", "rs1815739", "rs7412", "rs6152", "rs333"), genome.lib ="BSgenome.Hsapiens.UCSC.hg19", snp.lib = "SNPlocs.Hsapiens.dbSNP144.GRCh38", half.window.size = 30, default.par = TRUE, mutation = FALSE)
 #' @import BSgenome
 #' @useDynLib atSNP
 #' @export
@@ -316,8 +309,8 @@ LoadSNPData <- function(filename = NULL, genome.lib = "BSgenome.Hsapiens.UCSC.hg
 #' a2 \tab An integer vector for the deroxyribose at the SNP location on the SNP genome.\cr
 #' }
 #' The results are coded as: "A"-1, "C"-2, "G"-3, "T"-4.
-#' @author Sunyoung Shin \email{sunyoung.shin@@utdallas.edu}, Chandler Zuo \email{zuo@@stat.wisc.edu}
-#' @examples \dontrun{LoadFastaData("http://pages.stat.wisc.edu/~keles/atSNP-Data/sample_1.fasta", "http://pages.stat.wisc.edu/~keles/atSNP-Data/sample_2.fasta")}
+#' @author Sunyoung Shin \email{sunyoung.shin@@utdallas.edu}, Chandler Zuo \email{chandler.c.zuo@@gmail.com}
+#' @examples LoadFastaData("http://pages.stat.wisc.edu/~keles/atSNP-Data/sample_1.fasta", "http://pages.stat.wisc.edu/~keles/atSNP-Data/sample_2.fasta")
 #' @useDynLib atSNP
 #' @export
 LoadFastaData <- function(ref.data, snp.data, snpids=NULL, default.par = FALSE) {
@@ -434,7 +427,7 @@ LoadFastaData <- function(ref.data, snp.data, snpids=NULL, default.par = FALSE) 
 #' log_enhance_odds \tab Difference in log-likelihood ratio between SNP allele and reference allele based on the best matching subsequence on the reference allele.\cr
 #' log_reduce_odds \tab Difference in log-likelihood ratio between reference allele and SNP allele based on the best matching subsequence on the SNP allele.\cr
 #' }
-#' @author Sunyoung Shin \email{sunyoung.shin@@utdallas.edu}, Chandler Zuo\email{zuo@@stat.wisc.edu}
+#' @author Sunyoung Shin \email{sunyoung.shin@@utdallas.edu}, Chandler Zuo\email{chandler.c.zuo@@gmail.com}
 #' @examples
 #' data(example)
 #' ComputeMotifScore(motif_library, snpInfo, ncores = 1)
@@ -601,7 +594,7 @@ ComputeMotifScore <- function(motif.lib, snp.info, ncores = 1) {
 #' ref_seq_snp_match \tab Subsequence on the reference allele corresponding to the best matching location on the SNP allele.\cr
 #' snp_seq_ref_match \tab Subsequence on the SNP allele corresponding to the best matching location on the reference allele.\cr
 #' }
-#' @author Sunyoung Shin \email{sunyoung.shin@@utdallas.edu}, Chandler Zuo\email{zuo@@stat.wisc.edu}
+#' @author Sunyoung Shin \email{sunyoung.shin@@utdallas.edu}, Chandler Zuo\email{chandler.c.zuo@@gmail.com}
 #' @examples
 #' data(example)
 #' MatchSubsequence(motif_scores$snp.tbl, motif_scores$motif.scores, motif_library)
@@ -735,7 +728,7 @@ MatchSubsequence <- function(snp.tbl, motif.scores, motif.lib, snpids = NULL, mo
 #' pval_diff \tab P-values for the difference in scores between the reference and the SNP alleles.\cr
 #' pval_rank \tab P-values for the log rank ratio between the reference and the SNP alleles.\cr
 #' }
-#' @author Sunyoung Shin \email{sunyoung.shin@@utdallas.edu}, Chandler Zuo\email{zuo@@stat.wisc.edu}
+#' @author Sunyoung Shin \email{sunyoung.shin@@utdallas.edu}, Chandler Zuo\email{chandler.c.zuo@@gmail.com}
 #' @examples
 #' data(example)
 #' ComputePValues(motif_library, snpInfo, motif_scores$motif.scores, ncores = 1)
@@ -997,7 +990,7 @@ ComputePValues <- function(motif.lib, snp.info, motif.scores, ncores = 1, figdir
 #' @param pwm The position weight matrix, with the columns representing A, C, G, T.
 #' @param prob The probability threshold. Default: 0.25.
 #' @return A character string.
-#' @author Sunyoung Shin \email{sunyoung.shin@@utdallas.edu}, Chandler Zuo\email{zuo@@stat.wisc.edu}
+#' @author Sunyoung Shin \email{sunyoung.shin@@utdallas.edu}, Chandler Zuo\email{chandler.c.zuo@@gmail.com}
 #' @examples
 #' data(example)
 #' GetIUPACSequence(motif_library[[1]], prob = 0.2)
