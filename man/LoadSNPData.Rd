@@ -59,8 +59,8 @@ Alternatively, if \code{mutation=TRUE}, this function assumes that the data is f
 If the input is a list of rsid's, the SNP information extracted from \code{snp.lib} may contain more than two alleles for a single location. For such cases, \code{\link{LoadSNPData}} first extracts all pairs of alleles associated with those locations. If 'mutation=TRUE', all those pairs are considered as pairs of reference and SNP alleles, and their information is contained in 'sequence_matrix', 'a1', 'a2' and 'snpid'. If 'mutation=FALSE', \code{\link{LoadSNPData}} further filters these pairs based on whether one allele matches to the reference genome nucleotide extracted from \code{genome.lib}. Only those pairs with one allele matching the reference genome nucleotide is considered as pairs of reference and SNP alleles, with their information contained in 'sequence_matrix', 'a1', 'a2' and 'snpid'.\cr
 }
 \examples{
-\dontrun{LoadSNPData("/p/keles/ENCODE-CHARGE/volume2/SNP/hg19_allinfo.bed")}
+LoadSNPData(snpids = c("rs53576", "rs1815739", "rs7412", "rs6152", "rs333"), genome.lib ="BSgenome.Hsapiens.UCSC.hg19", snp.lib = "SNPlocs.Hsapiens.dbSNP144.GRCh38", half.window.size = 30, default.par = TRUE, mutation = FALSE)
 }
 \author{
-Chandler Zuo \email{zuo@stat.wisc.edu}
+Chandler Zuo \email{chandler.c.zuo@gmail.com}
 }

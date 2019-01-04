@@ -3,7 +3,7 @@
 #' @description A list of the position weight matrices corresponding to motifs, loaded by 'data(example)'.
 #' @docType data
 #' @format A list object.
-#' @author Chandler Zuo zuo@@stat.wisc.edu
+#' @author Chandler Zuo chandler.c.zuo@@gmail.com
 NULL
 
 #' @name snpInfo
@@ -16,7 +16,7 @@ NULL
 #' }
 #' @docType data
 #' @format A list object.
-#' @author Chandler Zuo zuo@@stat.wisc.edu
+#' @author Chandler Zuo chandler.c.zuo@@gmail.com
 NULL
 
 #' @name snp_tbl
@@ -30,7 +30,7 @@ NULL
 #' }
 #' @docType data
 #' @format A data.frame object.
-#' @author Chandler Zuo zuo@@stat.wisc.edu
+#' @author Chandler Zuo chandler.c.zuo@@gmail.com
 NULL
 
 #' @name motif_scores
@@ -42,7 +42,7 @@ NULL
 #'}
 #' @docType data
 #' @format A data.table object.
-#' @author Chandler Zuo zuo@@stat.wisc.edu
+#' @author Chandler Zuo chandler.c.zuo@@gmail.com
 NULL
 
 #' @name encode_motif
@@ -50,7 +50,7 @@ NULL
 #' @description This motif library can be loaded by 'data(encode_library)'.
 #' @docType data
 #' @format A list object.
-#' @author Chandler Zuo zuo@@stat.wisc.edu
+#' @author Chandler Zuo chandler.c.zuo@@gmail.com
 NULL
 
 #' @name encode_motifinfo
@@ -58,7 +58,7 @@ NULL
 #' @description This is a character vector that be loaded by 'data(encode_library)'. The names of this vector are the same as the names for \code{\link{encode_motif}}. The entries of this vector are the corresponding motif information parsed from the raw file.
 #' @docType data
 #' @format A character vector.
-#' @author Chandler Zuo zuo@@stat.wisc.edu
+#' @author Chandler Zuo chandler.c.zuo@@gmail.com
 NULL
 
 #' @name jaspar_motif
@@ -66,7 +66,7 @@ NULL
 #' @description This motif library can be loaded by 'data(jaspar_library)'.
 #' @docType data
 #' @format A list object.
-#' @author Chandler Zuo zuo@@stat.wisc.edu
+#' @author Chandler Zuo chandler.c.zuo@@gmail.com
 NULL
 
 #' @name jaspar_motifinfo
@@ -74,7 +74,7 @@ NULL
 #' @description This is a character vector that be loaded by 'data(jaspar_library)'. The names of this vector are the same as the names for \code{\link{jaspar_motif}}. The entries of this vector are the corresponding motif information parsed from the raw file.
 #' @docType data
 #' @format A character vector.
-#' @author Chandler Zuo zuo@@stat.wisc.edu
+#' @author Chandler Zuo chandler.c.zuo@@gmail.com
 NULL
 
 #' @name prior
@@ -82,7 +82,7 @@ NULL
 #' @description This parameter is fitted using 61bp windowns around the SNPs in the NHGRI catalog. Loaded by 'data(default_par)'.
 #' @docType data
 #' @format A numeric vector.
-#' @author Chandler Zuo zuo@@stat.wisc.edu
+#' @author Chandler Zuo chandler.c.zuo@@gmail.com
 NULL
 
 #' @name transition
@@ -90,5 +90,5 @@ NULL
 #' @description This parameter is fitted using 61bp windowns around the SNPs in the NHGRI catalog. Loaded by 'data(default_par)'.
 #' @docType data
 #' @format A 4 by 4 numeric matrix.
-#' @author Chandler Zuo zuo@@stat.wisc.edu
+#' @author Chandler Zuo chandler.c.zuo@@gmail.com
 NULL
