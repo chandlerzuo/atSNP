@@ -768,8 +768,7 @@ ComputePValues <- function(motif.lib, snp.info, motif.scores, ncores = 1, figdir
         wei.mat[i, j] <- exp(mean(log(pwm[i, j] / pwm[i, -j])))
       }
     }
-    set.seed(motifid)
-    
+
     if(nrow(scores) > 5000) {
       p <- 5 / nrow(scores)
     } else {
