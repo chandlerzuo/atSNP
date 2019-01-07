@@ -45,9 +45,9 @@
 #' @import data.table
 #' @export
 dtMotifMatch<-function(snp.tbl, motif.scores, snpids=NULL, motifs=NULL, motif.lib, ncores=2) {
-  if (all(any(class(snpids) != "character",  length(snpids)==0), is.null(snpids)==FALSE)) {
+  if (all(any(!is(snpids, "character"),  length(snpids)==0), is.null(snpids)==FALSE)) {
     stop("snpids must be a vector of class character or NULL.")
-  } else if (all(any(class(motifs) != "character",  length(motifs)==0), is.null(motifs)==FALSE)) {
+  } else if (all(any(!is(motifs, "character"),  length(motifs)==0), is.null(motifs)==FALSE)) {
     stop("motifs must be a vector of class character or NULL.")
   }
   #warning for ncores, motif.lib etc.
@@ -128,10 +128,10 @@ dtMotifMatch<-function(snp.tbl, motif.scores, snpids=NULL, motifs=NULL, motif.li
 #' @importFrom utils data read.table write.table
 #' @export
 plotMotifMatch<-function(snp.tbl, motif.scores, snpid, snp=NULL, motif, motif.lib, cex.main = 2, ...) {
-  if (class(snpid) != "character" | length(snpid)!=1) {
+  if (!is(snpid, "character") | length(snpid)!=1) {
     stop("snpid must be a character")
   }
-  if (class(motif) != "character" | length(motif)!=1) {
+  if (!is(motif, "character") | length(motif)!=1) {
     stop("motif must be a character")
   }
   if(sum(! motif %in% names(motif.lib)) > 0) {
