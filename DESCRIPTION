@@ -1,7 +1,7 @@
 Package: atSNP
 Type: Package
 Title: Affinity test for identifying regulatory SNPs
-Version: 0.99.1
+Version: 0.99.2
 Date: 2018-12-29
 Author: Chandler Zuo, Sunyoung Shin, Sunduz Keles
 Maintainer: Sunyoung Shin<sunyoung.shin@utdallas.edu>
