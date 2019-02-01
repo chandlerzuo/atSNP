@@ -41,31 +41,16 @@ if(FALSE) {
   # construct the test data set
   motif_library <- encode_motif
   system.time(snpInfo <- LoadSNPData("/p/keles/ENCODE-CHARGE/volume2/SNP/hg19_allinfo.bed", nrow = 20))
-  motif_library <- motif_library[c(1:2)]
+  motif_library <- motif_library[1]
   snp_tbl <- read.table("/p/keles/ENCODE-CHARGE/volume2/SNP/hg19_allinfo.bed", nrow = 20, header = TRUE)[, c("snpid", "a1", "a2", "chr", "snp")]
-  motif_scores <- ComputeMotifScore(motif_library, snpInfo, ncores = 2)
+  motif_scores <- ComputeMotifScore(motif_library, snpInfo, ncores = 1)
 
-  motif_pval <- ComputePValues(motif_library, snpInfo, motif_scores$motif.scores, ncores = 2)
+  motif_pval <- ComputePValues(motif_library, snpInfo, motif_scores$motif.scores, ncores = 1)
   
   i <- 2
 
   motif_pval[, pval_ratio := abs(log(pval_ref + 1e-10) - log(pval_snp + 1e-10))]
   
-  par(mfrow = c(2, 2))
-  plot(log(pval_diff) ~ abs(log_lik_ratio), data = motif_pval[motif == names(motif_library)[i], ])
-  plot(log(pval_rank) ~ pval_ratio, data = motif_pval[motif == names(motif_library)[i], ])
-  plot(log(pval_ref) ~ log_lik_ref, data = motif_pval[motif == names(motif_library)[i], ])
-  plot(log(pval_snp) ~ log_lik_snp, data = motif_pval[motif == names(motif_library)[i], ])
-
-  par(mfrow = c(1, 3))
-  plot(log(pval_diff) ~ log(pval_rank), data = motif_pval[motif == names(motif_library)[i], ])
-  plot(log(pval_rank) ~ log(pval_snp), data = motif_pval[motif == names(motif_library)[i], ])
-  plot(log(pval_rank) ~ log(pval_ref), data = motif_pval[motif == names(motif_library)[i], ])
-  
-  ggplot(aes(x = pval_ref, y = pval_snp, color = pval_rank), data = motif_pval[motif == names(motif_library)[i], ]) + geom_point()
-
-  ggplot(aes(x = pval_ref, y = pval_snp, color = pval_diff), data = motif_pval[motif == names(motif_library)[i], ]) + geom_point()
-
   system.time(save(motif_library, snpInfo, snp_tbl, motif_scores, file = "~/atsnp_git/atSNP/data/example.rda"))
   
   library(BSgenome.Hsapiens.UCSC.hg19)
@@ -99,7 +84,7 @@ if(FALSE) {
 ## process the data
 data(example)
 
-motif_scores <- ComputeMotifScore(motif_library, snpInfo, ncores = 2)
+motif_scores <- ComputeMotifScore(motif_library, snpInfo, ncores = 1)
 
 motif_scores <- MatchSubsequence(motif_scores$snp.tbl, motif_scores$motif.scores, ncores = 2, motif.lib = motif_library)
 
