@@ -184,13 +184,13 @@ test_that("Error: sample distributions are not expected.", {
   target_freq <- target_freq / apply(target_freq, 1, sum)
 
   results_i <- function(i) {
-    ## generate 1000 samples
-    sample1 <- sapply(seq(1000), function(x)
+    ## generate 100 samples
+    sample1 <- sapply(seq(100), function(x)
       .Call("test_importance_sample_diff",
             delta, snpInfo$prior, trans_mat, test_score, theta, package = "atSNP"))
     emp_freq1 <- get_freq(sample1)
     
-    sample2 <- sapply(rep(theta, 1000), drawonesample)
+    sample2 <- sapply(rep(theta, 100), drawonesample)
     emp_freq2 <- get_freq(sample2 - 1)
     
     ##    print(rbind(emp_freq1[10, ], emp_freq2[10, ], target_freq[10, ]))
@@ -220,7 +220,7 @@ test_that("Error: the chosen pvalues should have the smaller variance.", {
   }
   
   for(p in c(0.05, 0.1, 0.2, 0.5)) {
-    p_values <- .Call("test_p_value_diff", test_pwm, test_score, adj_mat, snpInfo$prior, snpInfo$transition, score_diff, quantile(score_diff, 1 - p), 1000, package = "atSNP")
+    p_values <- .Call("test_p_value_diff", test_pwm, test_score, adj_mat, snpInfo$prior, snpInfo$transition, score_diff, quantile(score_diff, 1 - p), 100, package = "atSNP")
     p_values_s <- .structure_diff(p_values)
     expect_equal(p_values_s[, 2], apply(p_values[, c(2, 4)], 1, min))
   }
@@ -228,47 +228,26 @@ test_that("Error: the chosen pvalues should have the smaller variance.", {
          
 ## Visual checks
 if(FALSE) {
-  
-  plot(log(y <- sapply(seq(200) / 100 - 1, function(x)
-            .Call("test_func_delta_diff", test_score, adj_mat, snpInfo$prior, snpInfo$transition, x, package = "atSNP"))))
 
 ## test the theta
 
-  p_values_9 <- .Call("test_p_value_diff", test_pwm, test_score, adj_mat, snpInfo$prior, snpInfo$transition, score_diff, quantile(score_diff, 0.9), 1000, package = "atSNP")
-  p_values_8 <- .Call("test_p_value_diff", test_pwm, test_score, adj_mat, snpInfo$prior, snpInfo$transition, score_diff, quantile(score_diff, 0.8), 1000, package = "atSNP")
-
-  plot(log(p_values_9[, 1])- log(p_values_9[, 3]), cex = 0.1)
-
-  plot(p_values_9[, 1], p_values_9[, 2])
-  
-  plot(p_values_9[, 2], p_values_9[, 4])
-  abline(0, 1)
-  
-  plot(p_values_8[, 2], p_values_8[, 4])
-  abline(0, 1)
-
-  plot(p_values_8[, 2], p_values_9[, 2])
-  abline(0, 1)
+  p_values_9 <- .Call("test_p_value_diff", test_pwm, test_score, adj_mat, snpInfo$prior, snpInfo$transition, score_diff, quantile(score_diff, 0.9), 100, package = "atSNP")
+  p_values_8 <- .Call("test_p_value_diff", test_pwm, test_score, adj_mat, snpInfo$prior, snpInfo$transition, score_diff, quantile(score_diff, 0.8), 100, package = "atSNP")
 
   p_values <- cbind(p_values_9[, 1], p_values_8[, 1], p_values_9[, 3], p_values_8[, 3])[cbind(seq(nrow(p_values_9)), apply(cbind(p_values_9[, 2], p_values_8[, 2], p_values_9[, 4], p_values_8[, 4]), 1, which.min))]
-  
-  par(mfrow = c(1, 3))
-  plot(log(p_values_9[, 1]) ~ score_diff, ylim = c(-5, 0))
-  plot(log(p_values_8[, 1]) ~ score_diff, ylim = c(-5, 0))
-  plot(log(p_values) ~ score_diff, ylim = c(-5, 0))
-  
-  p_values_9 <- .Call("test_p_value_diff", test_pwm, test_score, adj_mat, snpInfo$prior, trans_mat, score_diff, quantile(score_diff, 0.9), 1000, package = "atSNP")
-  p_values_8 <- .Call("test_p_value_diff", test_pwm, test_score, adj_mat, snpInfo$prior, trans_mat, score_diff, quantile(score_diff, 0.8), 1000, package = "atSNP")
+
+  p_values_9 <- .Call("test_p_value_diff", test_pwm, test_score, adj_mat, snpInfo$prior, trans_mat, score_diff, quantile(score_diff, 0.9), 100, package = "atSNP")
+  p_values_8 <- .Call("test_p_value_diff", test_pwm, test_score, adj_mat, snpInfo$prior, trans_mat, score_diff, quantile(score_diff, 0.8), 100, package = "atSNP")
   
   pval_test <- function(x) {
       delta <- .Call("test_find_percentile_diff", score_diff, x, package = "atSNP")
       theta <- .Call("test_find_theta_diff", test_score, adj_mat, snpInfo$prior, trans_mat, delta, package = "atSNP")
       const <- .Call("test_func_delta_diff", test_score, adj_mat, snpInfo$prior, trans_mat, theta, package = "atSNP")
       message("Constant value: ", const)
-      log_diff <- rep(0, 3000)
-      wei <- rep(0, 1000)
+      log_diff <- rep(0, 300)
+      wei <- rep(0, 100)
 ##      set.seed(0)
-      for(i in seq(1000)) {
+      for(i in seq(100)) {
           sample <- drawonesample(theta)
           sample_score <- .Call("test_compute_sample_score_diff", test_pwm, test_score, adj_mat, sample[seq(2 * motif_len - 1)] - 1, sample[2 * motif_len] - 1, theta, package = "atSNP")
 
@@ -281,30 +260,11 @@ if(FALSE) {
           pr3 <- maxjointprob(sample3[seq(2 * motif_len - 1)])
           pr <- maxjointprob(sample[seq(2 * motif_len - 1)])
           sample_score_r <- c(sample[2 * motif_len + 1], log(pr) - log(c(pr1, pr2, pr3)))
-          expect_equal(sample_score, sample_score_r)
+          return(expect_equal(sample_score, sample_score_r))
           ## if use sample_score[-1], the result is the same as .Call
           ## if use sample_score_r[-1], the result is the same as pval_test
-          log_diff[seq(3) + 3 * (i - 1)] <- sample_score[-1]
-          wei[i] <- const / sample_score[1]
       }
-      message("Mean weight: ", mean(wei))
-      message("Mean diff score: ", mean(log_diff))
-      pval <- sapply(score_diff, function(x) sum(rep(wei, each = 3)[abs(log_diff) >= x]) / length(log_diff))
-      return(pval)
   }
 
-  pval_8 <- pval_test(0.2)
-  
-  pval_9 <- pval_test(0.1)
-
-  par(mfrow = c(1, 2))
-  plot(log(pval_8), log(p_values_8[, 1]))
-  abline(0,1)  
-  plot(log(pval_9), log(p_values_9[, 1]))
-  abline(0,1)
 
 }
-
-#if(.Platform$OS.type != "unix") {
-#  stopCluster(cl)
-#}
