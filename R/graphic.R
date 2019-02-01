@@ -1,53 +1,82 @@
 #' @name dtMotifMatch
-#' @title Compute the augmented matching subsequence on SNP and reference alleles.
-#' @description Calculate the best matching augmented subsequences on both SNP and reference alleles for motifs. Obtain extra unmatching position on the best matching augmented subsequence of the reference and SNP alleles.
+#' @title Compute the augmented matching subsequence on SNP and reference allele
+#' s.
+#' @description Calculate the best matching augmented subsequences on both SNP 
+#' and reference alleles for motifs. Obtain extra unmatching position on the 
+#' best matching augmented subsequence of the reference and SNP alleles.
 #' @param motif.lib A list of named position weight matrices.
 #' @param snp.tbl A data.table with the following information:
 #' \tabular{cc}{
 #' snpid \tab SNP id.\cr
 #' ref_seq \tab Reference allele nucleobase sequence.\cr
 #' snp_seq \tab SNP allele nucleobase sequence.\cr
-#' ref_seq_rev \tab Reference allele nucleobase sequence on the reverse strand.\cr
+#' ref_seq_rev \tab Reference allele nucleobase sequence on the reverse 
+#' strand.\cr
 #' snp_seq_rev \tab SNP allele nucleobase sequence on the reverse strand.\cr}
 #' @param motif.scores A data.table with the following information:
 #' \tabular{cc}{
 #' motif \tab Name of the motif.\cr
 #' motif_len \tab Length of the motif.\cr
-#' ref_start, ref_end, ref_strand \tab Location of the best matching subsequence on the reference allele.\cr
-#' snp_start, snp_end, snp_strand \tab Location of the best matching subsequence on the SNP allele.\cr
+#' ref_start, ref_end, ref_strand \tab Location of the best matching subsequence
+#'  on the reference allele.\cr
+#' snp_start, snp_end, snp_strand \tab Location of the best matching subsequence
+#'  on the SNP allele.\cr
 #' log_lik_ref \tab Log-likelihood score for the reference allele.\cr
 #' log_lik_snp \tab Log-likelihood score for the SNP allele.\cr
 #' log_lik_ratio \tab The log-likelihood ratio.\cr
-#' log_enhance_odds \tab Difference in log-likelihood ratio between SNP allele and reference allele based on the best matching subsequence on the reference allele.\cr
-#' log_reduce_odds \tab Difference in log-likelihood ratio between reference allele and SNP allele based on the best matching subsequence on the SNP allele.\cr
+#' log_enhance_odds \tab Difference in log-likelihood ratio between SNP allele 
+#' and reference allele based on the best matching subsequence on the reference 
+#' allele.\cr
+#' log_reduce_odds \tab Difference in log-likelihood ratio between reference 
+#' allele and SNP allele based on the best matching subsequence on the SNP 
+#' allele.\cr
 #' }
-#' @param snpids A subset of snpids to compute the subsequences. Default: NULL, when all snps are computed.
-#' @param motifs A subset of motifs to compute the subsequences. Default: NULL, when all motifs are computed.
+#' @param snpids A subset of snpids to compute the subsequences. Default: NULL, 
+#' when all snps are computed.
+#' @param motifs A subset of motifs to compute the subsequences. Default: NULL, 
+#' when all motifs are computed.
 #' @param ncores The number of cores used for parallel computing. Default: 10
-#' @return A data.table containing all columns from the function, \code{\link{MatchSubsequence}}. In addition, the following columns are added:
+#' @return A data.table containing all columns from the function, 
+#' \code{\link{MatchSubsequence}}. In addition, the following columns are added:
 #' \tabular{ll}{
-#' snp_ref_start, snp_ref_end, snp_ref_length \tab Location and Length of the best matching augmented subsequence on both the reference and SNP allele.\cr
-#' ref_aug_match_seq_forward \tab Best matching augmented subsequence or its corresponding sequence to the forward strand on the reference allele.\cr 
-#' snp_aug_match_seq_forward \tab Best matching augmented subsequence or its corresponding sequence to the forward strand on the SNP allele.\cr 
-#' ref_aug_match_seq_reverse \tab Best matching augmented subsequence or its corresponding sequence to the reverse strand on the reference allele.\cr 
-#' snp_aug_match_seq_reverse \tab Best matching augmented subsequence or its corresponding sequence to the reverse strand on the SNP allele.\cr 
-#' ref_location \tab SNP location of the best matching augmented subsequence on the reference allele. Starting from zero. \cr
-#' snp_location \tab SNP location of the best matching augmented subsequence on the SNP allele. Starting from zero. \cr
-#' ref_extra_pwm_left \tab Left extra unmatching position on the best matching augmented subsequence of the reference allele. \cr
-#' ref_extra_pwm_right \tab Right extra unmatching position on the best matching augmented subsequence of the reference allele. \cr
-#' snp_extra_pwm_left \tab Left extra unmatching position on the best matching augmented subsequence of the SNP allele. \cr
-#' snp_extra_pwm_right \tab Right extra unmatching position on the best matching augmented subsequence of the SNP allele. \cr
+#' snp_ref_start, snp_ref_end, snp_ref_length \tab Location and Length of the 
+#' best matching augmented subsequence on both the reference and SNP allele.\cr
+#' ref_aug_match_seq_forward \tab Best matching augmented subsequence or its 
+#' corresponding sequence to the forward strand on the reference allele.\cr 
+#' snp_aug_match_seq_forward \tab Best matching augmented subsequence or its 
+#' corresponding sequence to the forward strand on the SNP allele.\cr 
+#' ref_aug_match_seq_reverse \tab Best matching augmented subsequence or its 
+#' corresponding sequence to the reverse strand on the reference allele.\cr 
+#' snp_aug_match_seq_reverse \tab Best matching augmented subsequence or its 
+#' corresponding sequence to the reverse strand on the SNP allele.\cr 
+#' ref_location \tab SNP location of the best matching augmented subsequence on 
+#' the reference allele. Starting from zero. \cr
+#' snp_location \tab SNP location of the best matching augmented subsequence on 
+#' the SNP allele. Starting from zero. \cr
+#' ref_extra_pwm_left \tab Left extra unmatching position on the best matching 
+#' augmented subsequence of the reference allele. \cr
+#' ref_extra_pwm_right \tab Right extra unmatching position on the best matching
+#'  augmented subsequence of the reference allele. \cr
+#' snp_extra_pwm_left \tab Left extra unmatching position on the best matching 
+#' augmented subsequence of the SNP allele. \cr
+#' snp_extra_pwm_right \tab Right extra unmatching position on the best matching
+#'  augmented subsequence of the SNP allele. \cr
 #' }
 #' @author Sunyoung Shin\email{sunyoung.shin@@utdallas.edu}
 #' @examples
 #' data(example)
-#' dtMotifMatch(motif_scores$snp.tbl, motif_scores$motif.scores, snpids=motif_scores$snp.tbl$snpid, motifs=motif_scores$motif.scores$motif[1], motif.lib = motif_library)
+#' dtMotifMatch(motif_scores$snp.tbl, motif_scores$motif.scores, 
+#' snpids=motif_scores$snp.tbl$snpid, motifs=motif_scores$motif.scores$motif[1],
+#'  motif.lib = motif_library)
 #' @import data.table
 #' @export
 dtMotifMatch<-function(snp.tbl, motif.scores, snpids=NULL, motifs=NULL, motif.lib, ncores=2) {
-  if (all(any(!is(snpids, "character"),  length(snpids)==0), is.null(snpids)==FALSE)) {
+  checkSNPids<-function(snpids) return(all(any(!is(snpids, "character"),  length(snpids)==0), is.null(snpids)==FALSE))
+  checkMotifs<-function(motifs) return(all(any(!is(motifs, "character"),  length(motifs)==0), is.null(motifs)==FALSE))
+  if(checkSNPids(snpids))
+  {
     stop("snpids must be a vector of class character or NULL.")
-  } else if (all(any(!is(motifs, "character"),  length(motifs)==0), is.null(motifs)==FALSE)) {
+  } else if (checkMotifs(motifs)) {
     stop("motifs must be a vector of class character or NULL.")
   }
   #warning for ncores, motif.lib etc.
@@ -88,26 +117,38 @@ dtMotifMatch<-function(snp.tbl, motif.scores, snpids=NULL, motifs=NULL, motif.li
 }
 
 #' @name plotMotifMatch
-#' @title Plot sequence logos of the position weight matrix of the motif and sequences of its corresponding best matching augmented subsequence on the reference and SNP allele.
-#' @description Plot the best matching augmented subsequences on the reference and SNP alleles. Plot sequence logos of the position weight matrix of the motif to the corresponding positions of the best matching subsequences on the references and SNP alleles.
+#' @title Plot sequence logos of the position weight matrix of the motif and 
+#' sequences of its corresponding best matching augmented subsequence on the 
+#' reference and SNP allele.
+#' @description Plot the best matching augmented subsequences on the reference 
+#' and SNP alleles. Plot sequence logos of the position weight matrix of the 
+#' motif to the corresponding positions of the best matching subsequences on the
+#'  references and SNP alleles.
 #' @param snp.tbl A data.table with the following information:
 #' \tabular{cc}{
 #' snpid \tab SNP id.\cr
 #' ref_seq \tab Reference allele nucleobase sequence.\cr
 #' snp_seq \tab SNP allele nucleobase sequence.\cr
-#' ref_seq_rev \tab Reference allele nucleobase sequence on the reverse strand.\cr
+#' ref_seq_rev \tab Reference allele nucleobase sequence on the reverse 
+#' strand.\cr
 #' snp_seq_rev \tab SNP allele nucleobase sequence on the reverse strand.\cr}
 #' @param motif.scores A data.table with the following information:
 #' \tabular{cc}{
 #' motif \tab Name of the motif.\cr
 #' motif_len \tab Length of the motif.\cr
-#' ref_start, ref_end, ref_strand \tab Location of the best matching subsequence on the reference allele.\cr
-#' snp_start, snp_end, snp_strand \tab Location of the best matching subsequence on the SNP allele.\cr
+#' ref_start, ref_end, ref_strand \tab Location of the best matching subsequence
+#'  on the reference allele.\cr
+#' snp_start, snp_end, snp_strand \tab Location of the best matching subsequence
+#'  on the SNP allele.\cr
 #' log_lik_ref \tab Log-likelihood score for the reference allele.\cr
 #' log_lik_snp \tab Log-likelihood score for the SNP allele.\cr
 #' log_lik_ratio \tab The log-likelihood ratio.\cr
-#' log_enhance_odds \tab Difference in log-likelihood ratio between SNP allele and reference allele based on the best matching subsequence on the reference allele.\cr
-#' log_reduce_odds \tab Difference in log-likelihood ratio between reference allele and SNP allele based on the best matching subsequence on the SNP allele.\cr
+#' log_enhance_odds \tab Difference in log-likelihood ratio between SNP allele 
+#' and reference allele based on the best matching subsequence on the reference 
+#' allele.\cr
+#' log_reduce_odds \tab Difference in log-likelihood ratio between reference 
+#' allele and SNP allele based on the best matching subsequence on the SNP 
+#' allele.\cr
 #' }
 #' @param snpid A snpid to plot the sequences on the reference and SNP alleles
 #' @param snp snp nucleotide of the snpid
@@ -115,11 +156,15 @@ dtMotifMatch<-function(snp.tbl, motif.scores, snpids=NULL, motifs=NULL, motif.li
 #' @param motif.lib A list of position weight matrices
 #' @param cex.main The size of the main title.
 #' @param ... Other parameters passed to plotMotifLogo.
-#' @return Sequence logo stacks: Reference subsequences, sequence logo of reference allele matching potision weight matrix, SNP subsequences, sequence logo of SNP allele matching potision weight matrix
+#' @return Sequence logo stacks: Reference subsequences, sequence logo of 
+#' reference allele matching potision weight matrix, SNP subsequences, sequence 
+#' logo of SNP allele matching potision weight matrix
 #' @author Sunyoung Shin\email{sunyoung.shin@@utdallas.edu}
 #' @examples
 #' data(example)
-#' plotMotifMatch(motif_scores$snp.tbl, motif_scores$motif.scores, snpid=motif_scores$snp.tbl$snpid[1], motif=motif_scores$motif.scores$motif[1], motif.lib = motif_library)
+#' plotMotifMatch(motif_scores$snp.tbl, motif_scores$motif.scores, 
+#' snpid=motif_scores$snp.tbl$snpid[1], 
+#' motif=motif_scores$motif.scores$motif[1], motif.lib = motif_library)
 #' @import data.table 
 #' @importFrom motifStack plotMotifLogo pcm2pfm 
 #' @importFrom grDevices dev.off pdf
@@ -135,13 +180,13 @@ plotMotifMatch<-function(snp.tbl, motif.scores, snpid, snp=NULL, motif, motif.li
     stop("motif must be a character")
   }
   if(sum(! motif %in% names(motif.lib)) > 0) {
-    stop("Error: The motif is not included in 'motif.lib'.")
+    stop("The motif is not included in 'motif.lib'.")
   }
 
   motif.match.dt <- dtMotifMatch(snp.tbl, motif.scores, snpids=snpid, motifs=motif, ncores = 1, motif.lib = motif.lib)  
 if(nrow(motif.match.dt)>1) {
       if(is.null(snp)) {
-      stop(paste("Error: Multiple nucleobases on the SNP genome. Add snp= ", paste(motif.match.dt$snpbase, collapse=" or "), sep=""))
+      stop(paste("Multiple nucleobases on the SNP genome. Add snp= ", paste(motif.match.dt$snpbase, collapse=" or "), sep=""))
   } else {
   motif.match.dt<-motif.match.dt[snpbase==snp]
   }

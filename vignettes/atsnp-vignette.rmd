@@ -35,28 +35,28 @@ This document provides an introduction to the affinity test for large sets of SN
 
 *atSNP* depends on the following \R{} packages:
 
-(a) `r Biocpkg("data.table")` is used for formatting results that are easy for users to query.
+(a) `r CRANpkg("data.table")` is used for formatting results that are easy for users to query.
 (b) `r Biocpkg("BiocParallel")` is used for parallel computation.
 (c) `r Biocpkg("GenomicRanges")` is used for operating genomic intervals.
 (d) `r Biocpkg("motifStack")` is relied upon to draw sequence logo plots.
-(e) `r Biocpkg("Rcpp")` interfaces the C++ codes that implements the importance sampling algorithm.
+(e) `r CRANpkg("Rcpp")` interfaces the C++ codes that implements the importance sampling algorithm.
 
-In addition, users need to install the annotation package `r Biocannopkg("BSgenome")` from <http://www.bioconductor.org/packages/3.0/data/annotation/> that corresponds to the species type and genome version. Our example SNP data set in the subsequent sections corresponds to the hg19 version of human genome. To repeat the sample codes in this vignette, the `r Biocannopkg("BSgenome.Hsapiens.UCSC.hg19")` package is required. If users wish to annotate the SNP location and allele information given their rs ids, they also need to install the corresponding `r Biocannopkg("SNPlocs")` package. The sample codes in this vignettes require the package `r Biocannopkg("SNPlocs.Hsapiens.dbSNP144.GRCh38")`. To install these packages from the \Bioconductor{} repository, use the following chunk of code.
+In addition, users need to install the annotation package `r Biocannopkg("BSgenome")` from <http://www.bioconductor.org/packages/3.0/data/annotation/> that corresponds to the species type and genome version. Our example SNP data set in the subsequent sections corresponds to the hg38 version of human genome. To repeat the sample codes in this vignette, the `r Biocannopkg("BSgenome.Hsapiens.UCSC.hg38")` package is required. If users wish to annotate the SNP location and allele information given their rs ids, they also need to install the corresponding `r Biocannopkg("SNPlocs")` package. The sample codes in this vignettes require the package `r Biocannopkg("SNPlocs.Hsapiens.dbSNP144.GRCh38")`. To install these packages from the \Bioconductor{} repository, use the following chunk of code.
 ```{r include=TRUE,echo=TRUE,eval=FALSE,results="markup"}
 
 if (!requireNamespace("BiocManager", quietly = TRUE))
     install.packages("BiocManager")
-BiocManager::install("BSgenome.Hsapiens.UCSC.hg19", version = "3.8")
-BiocManager::install("SNPlocs.Hsapiens.dbSNP144.GRCh38", version = "3.8") 
+BiocManager::install("BSgenome.Hsapiens.UCSC.hg38")
+BiocManager::install("SNPlocs.Hsapiens.dbSNP144.GRCh38") 
 ``` 
 
 ```{r include=FALSE, eval=TRUE, echo=FALSE, results="hide"}
-if (!require("BSgenome.Hsapiens.UCSC.hg19",character.only = TRUE)) {
-  BiocManager::install("BSgenome.Hsapiens.UCSC.hg19", update=FALSE, version = "3.8")
-  if(!require("BSgenome.Hsapiens.UCSC.hg19",character.only = TRUE)) stop("Package not found")
+if (!require("BSgenome.Hsapiens.UCSC.hg38",character.only = TRUE)) {
+  BiocManager::install("BSgenome.Hsapiens.UCSC.hg38", update=FALSE)
+  if(!require("BSgenome.Hsapiens.UCSC.hg38",character.only = TRUE)) stop("Package not found")
 }
 if (!require("SNPlocs.Hsapiens.dbSNP144.GRCh38",character.only = TRUE)) {
-  BiocManager::install("SNPlocs.Hsapiens.dbSNP144.GRCh38", update=FALSE, version = "3.8")
+  BiocManager::install("SNPlocs.Hsapiens.dbSNP144.GRCh38", update=FALSE)
   if(!require("SNPlocs.Hsapiens.dbSNP144.GRCh38",character.only = TRUE)) stop("Package not found")
 }
 tidy.opt = list(width.cutoff = 60)
@@ -168,7 +168,7 @@ In this case, the table that provides the SNP information must include five colu
 (c) snpid: the string for the SNP name;
 (d) a1, a2: nucleotides for the two alleles at the SNP position.
 
-This data set can be loaded using the `LoadSNPData` function. The 'genome.lib' argument specifies the annotation package name corresponding to the SNP data set, with the default as 'BSgenome.Hsapiens.UCSC.hg19'. Each side of the SNP is extended by a number of base pairs specified by the 'half.window.size' argument. `LoadSNPData` extracts the genome sequence within such windows around each SNP using the 'genome.lib' package. An example is the following:
+This data set can be loaded using the `LoadSNPData` function. The 'genome.lib' argument specifies the annotation package name corresponding to the SNP data set, with the default as 'BSgenome.Hsapiens.UCSC.hg38'. Each side of the SNP is extended by a number of base pairs specified by the 'half.window.size' argument. `LoadSNPData` extracts the genome sequence within such windows around each SNP using the 'genome.lib' package. An example is the following:
 
 The following codes generate a synthetic SNP data and loads it back in \R{}:
 
@@ -177,7 +177,7 @@ The following codes generate a synthetic SNP data and loads it back in \R{}:
 data(example)
 write.table(snp_tbl, file = "test_snp_file.txt",
             row.names = FALSE, quote = FALSE)
-snp_info <- LoadSNPData("test_snp_file.txt", genome.lib = "BSgenome.Hsapiens.UCSC.hg19", half.window.size = 30, default.par = TRUE, mutation = FALSE)
+snp_info <- LoadSNPData("test_snp_file.txt", genome.lib = "BSgenome.Hsapiens.UCSC.hg38", half.window.size = 30, default.par = TRUE, mutation = FALSE)
 ncol(snp_info$sequence) == nrow(snp_tbl)
 snp_info$rsid.rm
 
@@ -187,7 +187,7 @@ There are two important arguments in function `LoadSNPData`. First, the 'mutatio
 
 ```{r eval=TRUE, echo=TRUE, results="markup",tidy=FALSE}
 
-  mutation_info <- LoadSNPData("test_snp_file.txt", genome.lib = "BSgenome.Hsapiens.UCSC.hg19", half.window.size = 30, default.par = TRUE, mutation = TRUE)
+  mutation_info <- LoadSNPData("test_snp_file.txt", genome.lib = "BSgenome.Hsapiens.UCSC.hg38", half.window.size = 30, default.par = TRUE, mutation = TRUE)
   ncol(mutation_info$sequence) == nrow(snp_tbl)
   file.remove("test_snp_file.txt")
 
@@ -208,7 +208,7 @@ Second, the 'default.par' argument specifies how to estimate the first order Mar
 
 ```{r eval=TRUE, echo=TRUE, results="markup", tidy=FALSE}
 
-snp_info1 <- LoadSNPData(snpids = c("rs5050", "rs616488", "rs11249433", "rs182799", "rs12565013", "rs11208590"), genome.lib ="BSgenome.Hsapiens.UCSC.hg19", snp.lib = "SNPlocs.Hsapiens.dbSNP144.GRCh38", half.window.size = 30, default.par = TRUE, mutation = FALSE)
+snp_info1 <- LoadSNPData(snpids = c("rs5050", "rs616488", "rs11249433", "rs182799", "rs12565013", "rs11208590"), genome.lib ="BSgenome.Hsapiens.UCSC.hg38", snp.lib = "SNPlocs.Hsapiens.dbSNP144.GRCh38", half.window.size = 30, default.par = TRUE, mutation = FALSE)
 ```
 
 `LoadSNPData` may warn about the SNPs with inconsistent information and returns them in the output. The 'rsid.missing' output field captures SNPs that are not included in the `r Biocannopkg("SNPlocs")` package. The 'rsid.duplicate' output field captures SNPs with more than 2 alleles based on `r Biocannopkg("SNPlocs")` package. The 'rsid.rm' output field captures SNPs whose nucleotides in the reference genome do not match to either allele provided by the data source. SNPs in the 'rsid.missing' and 'rsid.rm' fields are discarded. For SNPs in 'rsid.duplicate', we extract all pairs of alleles as reference and SNP pairs. If 'mutation=TRUE', we include all of them in the output. If 'mutation=FALSE', these pairs are further filtered based on whether one allele matches to the reference genome nucleotide. The remaining alleles are contained in the output.
