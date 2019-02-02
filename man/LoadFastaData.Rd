@@ -13,14 +13,18 @@ LoadFastaData(ref.data, snp.data, snpids = NULL, default.par = FALSE)
 
 \item{snpids}{SNP IDs}
 
-\item{default.par}{A boolean for whether using the default Markov parameters. Default: FALSE.}
+\item{default.par}{A boolean for whether using the default Markov parameters.
+Default: FALSE.}
 }
 \value{
 A list object containing the following components:
 \tabular{ll}{
-sequence_matrix \tab A list of integer vectors representing the deroxyribose sequence around each SNP.\cr
-a1 \tab An integer vector for the deroxyribose at the SNP location on the reference genome.\cr
-a2 \tab An integer vector for the deroxyribose at the SNP location on the SNP genome.\cr
+sequence_matrix \tab A list of integer vectors representing the deroxyribose 
+sequence around each SNP.\cr
+a1 \tab An integer vector for the deroxyribose at the SNP location on the 
+reference genome.\cr
+a2 \tab An integer vector for the deroxyribose at the SNP location on the SNP
+ genome.\cr
 }
 The results are coded as: "A"-1, "C"-2, "G"-3, "T"-4.
 }

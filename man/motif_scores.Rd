@@ -8,8 +8,10 @@
 \description{
 This list object loaded by 'data(example)' contains two fields:
 \tabular{ll}{
-snp.tbl \tab A data.table containing the sequence of nucleobases around each SNP.\cr
-motif.scores \tab A data.table containing the likelihood scores computed for each SNP and each motif.\cr
+snp.tbl \tab A data.table containing the sequence of nucleobases around each 
+SNP.\cr
+motif.scores \tab A data.table containing the likelihood scores computed for 
+each SNP and each motif.\cr
 }
 }
 \author{
