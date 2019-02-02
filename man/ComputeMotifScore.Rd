@@ -57,5 +57,6 @@ data(example)
 ComputeMotifScore(motif_library, snpInfo, ncores = 1)
 }
 \author{
-Sunyoung Shin \email{sunyoung.shin@utdallas.edu}, Chandler Zuo\email{chandler.c.zuo@gmail.com}
+Sunyoung Shin \email{sunyoung.shin@utdallas.edu}, Chandler Zuo
+\email{chandler.c.zuo@gmail.com}
 }

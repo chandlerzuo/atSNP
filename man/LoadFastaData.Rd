@@ -32,8 +32,11 @@ The results are coded as: "A"-1, "C"-2, "G"-3, "T"-4.
 Load SNP data.
 }
 \examples{
-LoadFastaData("http://pages.stat.wisc.edu/~keles/atSNP-Data/sample_1.fasta", "http://pages.stat.wisc.edu/~keles/atSNP-Data/sample_2.fasta")
+\dontrun{LoadFastaData(
+"http://pages.stat.wisc.edu/~keles/atSNP-Data/sample_1.fasta",
+"http://pages.stat.wisc.edu/~keles/atSNP-Data/sample_2.fasta")}
 }
 \author{
-Sunyoung Shin \email{sunyoung.shin@utdallas.edu}, Chandler Zuo \email{chandler.c.zuo@gmail.com}
+Sunyoung Shin \email{sunyoung.shin@utdallas.edu}, Chandler Zuo 
+\email{chandler.c.zuo@gmail.com}
 }

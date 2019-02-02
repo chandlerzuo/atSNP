@@ -51,18 +51,19 @@ For motif files from JOHNSON lab (i.e.
 http://johnsonlab.ucsf.edu/mochi_files/JASPAR_motifs_H_sapiens.txt), 
 the suggested arguments are: tag = '/NAME', skiprows = 1, skipcols = 0, 
 transpose = FALSE, field = 2, sep = "\\t";
-For JASPAR pfm matrices (i.e. http://jaspar.genereg.net/html/DOWNLOAD/JASPAR_
-CORE/pfm/nonredundant/pfm_vertebrates.txt), the suggested arguments are: tag 
-= ">", skiprows = 1, skipcols = 0, transpose = TRUE, field = 1, sep = "\\t";
-For the TRANSFAC library provided by UCF bioinformatics groups (i.e. 
-http://gibbs.biomed.ucf.edu/PreDREM/download/nonredundantmotif.transfac), 
-the suggested arguments are: tag = "DE", skiprows = 1, skipcols = 1, 
+For JASPAR pfm matrices (i.e. http://jaspar.genereg.net/download/CORE/JASPAR
+2018_CORE_vertebrates_non-redundant_pfms_jaspar.txt), the suggested arguments
+are: tag = ">", skiprows = 1, skipcols = 0, transpose = TRUE, field = 1, 
+sep = "\\t"; For the TRANSFAC library provided by UCF bioinformatics groups 
+(i.e. http://gibbs.biomed.ucf.edu/PreDREM/download/nonredundantmotif.transfac
+), the suggested arguments are: tag = "DE", skiprows = 1, skipcols = 1, 
 transpose = FALSE, field = 2, sep = "\\t".
 }
 \examples{
-pwms <- LoadMotifLibrary("http://compbio.mit.edu/encode-motifs/motifs.txt", 
+pwms <- LoadMotifLibrary(
+"http://pages.stat.wisc.edu/~keles/atSNP-Data/pfm_vertebrates.txt", 
 tag = ">", transpose = FALSE, field = 1, sep = c("\\t", " ", ">"), 
-skipcols = 1, skiprows = 1, pseudocount = 0)
+skipcols = 1, skiprows = 1, pseudocount = 1)
 }
 \author{
 Sunyoung Shin \email{sunyoung.shin@utdallas.edu}, Chandler Zuo 

@@ -229,8 +229,7 @@ Users can also provide SNP data through a pair of fasta files, one for the seque
 Such a pair of files can be loaded by the function `LoadFastaData`:
 
 ```{r eval=TRUE, echo = TRUE, results="markup",tidy=FALSE}
-snp_info2 <- LoadFastaData("http://pages.stat.wisc.edu/~keles/atSNP-Data/sample_1.fasta",
-                           "http://pages.stat.wisc.edu/~keles/atSNP-Data/sample_2.fasta", default.par = TRUE)
+snp_info2 <- LoadFastaData("http://pages.stat.wisc.edu/~keles/atSNP-Data/sample_1.fasta", "http://pages.stat.wisc.edu/~keles/atSNP-Data/sample_2.fasta", default.par = TRUE)
 ``` 
 
 ## Affinity score tests
@@ -338,7 +337,7 @@ atSNP provides additional functions to extract the matched nucleotide subsequenc
 
 ```{r eval=TRUE,echo=TRUE,results="markup"}
   
-  match_result <- MatchSubsequence(snp.tbl = atsnp.scores$snp.tbl, motif.scores = atsnp.result, motif.lib = motif_library, snpids = c("rs10910078", "rs4486391"), motifs = names(motif_library)[1:2], ncores = 1)
+  match_result <- MatchSubsequence(snp.tbl = atsnp.scores$snp.tbl, motif.scores = atsnp.result, motif.lib = motif_library, snpids = c("rs53576", "rs7412"), motifs = names(motif_library)[1], ncores = 1)
   match_result[, list(snpid, motif, IUPAC, ref_match_seq, snp_match_seq)]
 
 ``` 

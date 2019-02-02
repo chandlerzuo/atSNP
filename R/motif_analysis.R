@@ -28,20 +28,21 @@
 #' http://johnsonlab.ucsf.edu/mochi_files/JASPAR_motifs_H_sapiens.txt), 
 #' the suggested arguments are: tag = '/NAME', skiprows = 1, skipcols = 0, 
 #' transpose = FALSE, field = 2, sep = "\\t";
-#' For JASPAR pfm matrices (i.e. http://jaspar.genereg.net/html/DOWNLOAD/JASPAR_
-#' CORE/pfm/nonredundant/pfm_vertebrates.txt), the suggested arguments are: tag 
-#' = ">", skiprows = 1, skipcols = 0, transpose = TRUE, field = 1, sep = "\\t";
-#' For the TRANSFAC library provided by UCF bioinformatics groups (i.e. 
-#' http://gibbs.biomed.ucf.edu/PreDREM/download/nonredundantmotif.transfac), 
-#' the suggested arguments are: tag = "DE", skiprows = 1, skipcols = 1, 
+#' For JASPAR pfm matrices (i.e. http://jaspar.genereg.net/download/CORE/JASPAR
+#' 2018_CORE_vertebrates_non-redundant_pfms_jaspar.txt), the suggested arguments
+#' are: tag = ">", skiprows = 1, skipcols = 0, transpose = TRUE, field = 1, 
+#' sep = "\\t"; For the TRANSFAC library provided by UCF bioinformatics groups 
+#' (i.e. http://gibbs.biomed.ucf.edu/PreDREM/download/nonredundantmotif.transfac
+#' ), the suggested arguments are: tag = "DE", skiprows = 1, skipcols = 1, 
 #' transpose = FALSE, field = 2, sep = "\\t".
 #' @return A list object of position weight matrices.
 #' @author Sunyoung Shin \email{sunyoung.shin@@utdallas.edu}, Chandler Zuo 
 #' \email{chandler.c.zuo@@gmail.com}
 #' @examples
-#' pwms <- LoadMotifLibrary("http://compbio.mit.edu/encode-motifs/motifs.txt", 
+#' pwms <- LoadMotifLibrary(
+#' "http://pages.stat.wisc.edu/~keles/atSNP-Data/pfm_vertebrates.txt", 
 #' tag = ">", transpose = FALSE, field = 1, sep = c("\t", " ", ">"), 
-#' skipcols = 1, skiprows = 1, pseudocount = 0)
+#' skipcols = 1, skiprows = 1, pseudocount = 1)
 #' @useDynLib atSNP
 #' @export
 LoadMotifLibrary <- function(filename, tag = "MOTIF", transpose = FALSE, field = 2, sep = c("\t", " "), skipcols = 0, skiprows = 2, pseudocount = 0) {
@@ -191,7 +192,7 @@ LoadMotifLibrary <- function(filename, tag = "MOTIF", transpose = FALSE, field =
 #' The results are coded as: "A"-1, "C"-2, "G"-3, "T"-4.
 #' @author Chandler Zuo \email{chandler.c.zuo@@gmail.com}
 #' @examples
-#' LoadSNPData(snpids = c("rs53576", "rs1815739", "rs7412", "rs6152", "rs333"), 
+#' LoadSNPData(snpids = c("rs53576", "rs7412"), 
 #' genome.lib ="BSgenome.Hsapiens.UCSC.hg38", snp.lib = 
 #' "SNPlocs.Hsapiens.dbSNP144.GRCh38", half.window.size = 30, default.par = TRUE
 #' , mutation = FALSE)
@@ -396,8 +397,11 @@ LoadSNPData <- function(filename = NULL, genome.lib = "BSgenome.Hsapiens.UCSC.hg
 #'  genome.\cr
 #' }
 #' The results are coded as: "A"-1, "C"-2, "G"-3, "T"-4.
-#' @author Sunyoung Shin \email{sunyoung.shin@@utdallas.edu}, Chandler Zuo \email{chandler.c.zuo@@gmail.com}
-#' @examples LoadFastaData("http://pages.stat.wisc.edu/~keles/atSNP-Data/sample_1.fasta", "http://pages.stat.wisc.edu/~keles/atSNP-Data/sample_2.fasta")
+#' @author Sunyoung Shin \email{sunyoung.shin@@utdallas.edu}, Chandler Zuo 
+#' \email{chandler.c.zuo@@gmail.com}
+#' @examples \dontrun{LoadFastaData(
+#' "http://pages.stat.wisc.edu/~keles/atSNP-Data/sample_1.fasta",
+#' "http://pages.stat.wisc.edu/~keles/atSNP-Data/sample_2.fasta")}
 #' @useDynLib atSNP
 #' @export
 LoadFastaData <- function(ref.data, snp.data, snpids=NULL, default.par = FALSE) {
@@ -526,7 +530,8 @@ LoadFastaData <- function(ref.data, snp.data, snpids=NULL, default.par = FALSE) 
 #' allele and SNP allele based on the best matching subsequence on the SNP 
 #' allele.\cr
 #' }
-#' @author Sunyoung Shin \email{sunyoung.shin@@utdallas.edu}, Chandler Zuo\email{chandler.c.zuo@@gmail.com}
+#' @author Sunyoung Shin \email{sunyoung.shin@@utdallas.edu}, Chandler Zuo
+#' \email{chandler.c.zuo@@gmail.com}
 #' @examples
 #' data(example)
 #' ComputeMotifScore(motif_library, snpInfo, ncores = 1)
@@ -1051,7 +1056,6 @@ ComputePValues <- function(motif.lib, snp.info, motif.scores, ncores = 1, figdir
     pval_rank[, 1] <- sort(pval_rank[,1])[rank(-rank_ratio)]
     pval_rank[pval_rank[, 1] > 1, 1] <- 1
     message("Finished testing motif No. ", motifid)
-    ##    save(list = ls(), file = paste("/p/keles/ENCODE-CHARGE/volume2/SNP/test/motif", motifid, ".Rda", sep= ""))
     if(!is.null(figdir)) {
       if(!file.exists(figdir)) {
         dir.create(fig.dir)
