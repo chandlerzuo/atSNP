@@ -3,10 +3,15 @@
 \docType{data}
 \name{jaspar_motifinfo}
 \alias{jaspar_motifinfo}
-\title{The information for the motif library downloaded from http://jaspar.genereg.net/html/DOWNLOAD/JASPAR_CORE/pfm/nonredundant/pfm_all.txt.}
+\title{The information for the motif library downloaded from 
+http://jaspar.genereg.net/html/DOWNLOAD/JASPAR_CORE/pfm/nonredundant/pfm_all
+.txt.}
 \format{A character vector.}
 \description{
-This is a character vector that be loaded by 'data(jaspar_library)'. The names of this vector are the same as the names for \code{\link{jaspar_motif}}. The entries of this vector are the corresponding motif information parsed from the raw file.
+This is a character vector that be loaded by 
+'data(jaspar_library)'. The names of this vector are the same as the names 
+for \code{\link{jaspar_motif}}. The entries of this vector are the 
+corresponding motif information parsed from the raw file.
 }
 \author{
 Chandler Zuo chandler.c.zuo@gmail.com

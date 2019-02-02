@@ -9,21 +9,30 @@ LoadMotifLibrary(filename, tag = "MOTIF", transpose = FALSE,
   pseudocount = 0)
 }
 \arguments{
-\item{filename}{A file containing MEME format: http://memed.nbcr.net/meme/doc/meme-format.html.}
+\item{filename}{A file containing MEME format: 
+http://memed.nbcr.net/meme/doc/meme-format.html.}
 
-\item{tag}{A string that marks the description line of the position weight matrix.}
+\item{tag}{A string that marks the description line of the position weight 
+matrix.}
 
-\item{transpose}{If TRUE (default), then the position weight matrix should have 4 columns. Otherwise, it should have 4 rows.}
+\item{transpose}{If TRUE (default), then the position weight matrix should 
+have 4 columns. Otherwise, it should have 4 rows.}
 
-\item{field}{The index of the field in the description line, seperated by space, that indicates the motif name.}
+\item{field}{The index of the field in the description line, seperated by 
+space, that indicates the motif name.}
 
-\item{sep}{A vector of chars for the string separators to parse each lines of the matrix. Default: c(" ", "\\t").}
+\item{sep}{A vector of chars for the string separators to parse each lines of
+the matrix. Default: c(" ", "\\t").}
 
-\item{skipcols}{Number of columns to be skipped in the position weight matrix.}
+\item{skipcols}{Number of columns to be skipped in the position weight 
+matrix.}
 
-\item{skiprows}{Number of description lines before each position weight matrix.}
+\item{skiprows}{Number of description lines before each position weight 
+matrix.}
 
-\item{pseudocount}{An integer for the pseudocount added to each of the original matrices. Default: 0. Recommended to be 1 if the original matrices are position frequency matrices.}
+\item{pseudocount}{An integer for the pseudocount added to each of the 
+original matrices. Default: 0. Recommended to be 1 if the original matrices 
+are position frequency matrices.}
 }
 \value{
 A list object of position weight matrices.
@@ -32,15 +41,30 @@ A list object of position weight matrices.
 Load the file for position weight matrices for motifs.
 }
 \details{
-This function reads the formatted file containing motif information and convert them into a list of position weight matrices. The list of arguments should provide enough flexibility of importing a varying number of formats. Som eexamples are the following:
-For MEME format, the suggested arguments are: tag = 'Motif', skiprows = 2, skipcols = 0, transpose = FALSE, field = 2, sep = ' ';
-For motif files from JOHNSON lab (i.e. http://johnsonlab.ucsf.edu/mochi_files/JASPAR_motifs_H_sapiens.txt), the suggested arguments are: tag = '/NAME', skiprows = 1, skipcols = 0, transpose = FALSE, field = 2, sep = "\\t";
-For JASPAR pfm matrices (i.e. http://jaspar.genereg.net/html/DOWNLOAD/JASPAR_CORE/pfm/nonredundant/pfm_vertebrates.txt), the suggested arguments are: tag = ">", skiprows = 1, skipcols = 0, transpose = TRUE, field = 1, sep = "\\t";
-For the TRANSFAC library provided by UCF bioinformatics groups (i.e. http://gibbs.biomed.ucf.edu/PreDREM/download/nonredundantmotif.transfac), the suggested arguments are: tag = "DE", skiprows = 1, skipcols = 1, transpose = FALSE, field = 2, sep = "\\t".
+This function reads the formatted file containing motif information 
+and convert them into a list of position weight matrices. The list of 
+arguments should provide enough flexibility of importing a varying number of 
+formats. Som eexamples are the following:
+For MEME format, the suggested arguments are: tag = 'Motif', skiprows = 2, 
+skipcols = 0, transpose = FALSE, field = 2, sep = ' ';
+For motif files from JOHNSON lab (i.e. 
+http://johnsonlab.ucsf.edu/mochi_files/JASPAR_motifs_H_sapiens.txt), 
+the suggested arguments are: tag = '/NAME', skiprows = 1, skipcols = 0, 
+transpose = FALSE, field = 2, sep = "\\t";
+For JASPAR pfm matrices (i.e. http://jaspar.genereg.net/html/DOWNLOAD/JASPAR_
+CORE/pfm/nonredundant/pfm_vertebrates.txt), the suggested arguments are: tag 
+= ">", skiprows = 1, skipcols = 0, transpose = TRUE, field = 1, sep = "\\t";
+For the TRANSFAC library provided by UCF bioinformatics groups (i.e. 
+http://gibbs.biomed.ucf.edu/PreDREM/download/nonredundantmotif.transfac), 
+the suggested arguments are: tag = "DE", skiprows = 1, skipcols = 1, 
+transpose = FALSE, field = 2, sep = "\\t".
 }
 \examples{
-pwms <- LoadMotifLibrary("http://compbio.mit.edu/encode-motifs/motifs.txt", tag = ">", transpose = FALSE, field = 1, sep = c("\\t", " ", ">"), skipcols = 1, skiprows = 1, pseudocount = 0)
+pwms <- LoadMotifLibrary("http://compbio.mit.edu/encode-motifs/motifs.txt", 
+tag = ">", transpose = FALSE, field = 1, sep = c("\\t", " ", ">"), 
+skipcols = 1, skiprows = 1, pseudocount = 0)
 }
 \author{
-Sunyoung Shin \email{sunyoung.shin@utdallas.edu}, Chandler Zuo \email{chandler.c.zuo@gmail.com}
+Sunyoung Shin \email{sunyoung.shin@utdallas.edu}, Chandler Zuo 
+\email{chandler.c.zuo@gmail.com}
 }

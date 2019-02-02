@@ -2,15 +2,17 @@
 % Please edit documentation in R/motif_analysis.R
 \name{LoadSNPData}
 \alias{LoadSNPData}
-\title{Load the SNP information and code the genome sequences around the SNP locations.}
+\title{Load the SNP information and code the genome sequences around the SNP 
+locations.}
 \usage{
 LoadSNPData(filename = NULL,
-  genome.lib = "BSgenome.Hsapiens.UCSC.hg19",
-  snp.lib = "SNPlocs.Hsapiens.dbSNP.20120608", snpids = NULL,
+  genome.lib = "BSgenome.Hsapiens.UCSC.hg38",
+  snp.lib = "SNPlocs.Hsapiens.dbSNP144.GRCh38", snpids = NULL,
   half.window.size = 30, default.par = FALSE, mutation = FALSE, ...)
 }
 \arguments{
-\item{filename}{A table containing the SNP information. Must contain at least five columns with exactly the following names:
+\item{filename}{A table containing the SNP information. Must contain at least
+ five columns with exactly the following names:
 \tabular{ll}{
 chr \tab chromosome.\cr
 snp \tab The nucleotide position of the SNP.\cr
@@ -18,33 +20,50 @@ snpid \tab The names of the SNPs.\cr
 a1 \tab The deoxyribose for one allele.\cr
 a2 \tab The deoxyribose for the other allele.\cr
 }
-If this file exists already, it is used to extract the SNP information. Otherwise, SNP information extracted using argument 'snpids' is outputted to this file.}
+If this file exists already, it is used to extract the SNP information. 
+Otherwise, SNP information extracted using argument 'snpids' is outputted to 
+this file.}
 
-\item{genome.lib}{A string of the library name for the genome version. Default: "BSgenome.Hsapiens.UCSC.hg19".}
+\item{genome.lib}{A string of the library name for the genome version. 
+Default: "BSgenome.Hsapiens.UCSC.hg38".}
 
-\item{snp.lib}{A string of the library name to obtain the SNP information based on rs ids. Default: "SNPlocs.Hsapiens.dbSNP.20120608".#' @param snp.lib A string of the library name to obtain the SNP information based on rs ids. Default: "SNPlocs.Hsapiens.dbSNP.20120608".#' @param snp.lib A string of the library name to obtain the SNP information based on rs ids. Default: "SNPlocs.Hsapiens.dbSNP.20120608".}
+\item{snp.lib}{A string of the library name to obtain the SNP information 
+based on rs ids. Default: "SNPlocs.Hsapiens.dbSNP144.GRCh38".}
 
-\item{snpids}{A vector of rs ids for the SNPs. This argument is overidden if the file with name \code{filename} exists.}
+\item{snpids}{A vector of rs ids for the SNPs. This argument is overidden 
+if the file with name \code{filename} exists.}
 
-\item{half.window.size}{An integer for the half window size around the SNP within which the motifs are matched. Default: 30.}
+\item{half.window.size}{An integer for the half window size around the SNP 
+within which the motifs are matched. Default: 30.}
 
-\item{default.par}{A boolean for whether using the default Markov parameters. Default: FALSE.}
+\item{default.par}{A boolean for whether using the default Markov parameters.
+Default: FALSE.}
 
-\item{mutation}{A boolean for whether this is mutation data. See details for more information. Default: FALSE.}
+\item{mutation}{A boolean for whether this is mutation data. See details for 
+more information. Default: FALSE.}
 
 \item{...}{Other parameters passed to \code{\link[utils]{read.table}}.}
 }
 \value{
 A list object containing the following components:
 \tabular{ll}{
-sequence_matrix \tab A list of integer vectors representing the deroxyribose sequence around each SNP.\cr
-a1 \tab An integer vector for the deroxyribose at the SNP location on the reference genome.\cr
-a2 \tab An integer vector for the deroxyribose at the SNP location on the SNP genome.\cr
+sequence_matrix \tab A list of integer vectors representing the deroxyribose 
+sequence around each SNP.\cr
+a1 \tab An integer vector for the deroxyribose at the SNP location on the 
+reference genome.\cr
+a2 \tab An integer vector for the deroxyribose at the SNP location on the 
+SNP genome.\cr
 snpid \tab A string vector for the SNP rsids.\cr
-rsid.missing \tab If the data source is a list of rsids, this field records rsids for SNPs that are discarded because they are not in the SNPlocs package.\cr
-rsid.duplicate \tab If the data source is a list of rsids, this field records rsids for SNPs that based on the SNPlocs package, this locus has more than 2 alleles. \cr
-rsid.na \tab This field records rsids for SNPs that are discarded because the nucleotide sequences contain none ACGT characters.\cr
-rsid.rm \tab If the data source is a table and \code{mutation=FALSE}, this field records rsids for SNPs that are discarded because the nucleotide on the reference genome matches neither 'a1' or 'a2' in the data source.\cr
+rsid.missing \tab If the data source is a list of rsids, this field records 
+rsids for SNPs that are discarded because they are not in the SNPlocs package.\cr
+rsid.duplicate \tab If the data source is a list of rsids, this field records
+ rsids for SNPs that based on the SNPlocs package, this locus has more than 
+ 2 alleles. \cr
+rsid.na \tab This field records rsids for SNPs that are discarded because the
+ nucleotide sequences contain none ACGT characters.\cr
+rsid.rm \tab If the data source is a table and \code{mutation=FALSE}, this 
+field records rsids for SNPs that are discarded because the nucleotide on the
+ reference genome matches neither 'a1' or 'a2' in the data source.\cr
 }
 The results are coded as: "A"-1, "C"-2, "G"-3, "T"-4.
 }
@@ -52,14 +71,54 @@ The results are coded as: "A"-1, "C"-2, "G"-3, "T"-4.
 Load the SNP data.
 }
 \details{
-This function extracts the nucleotide sequence within a window around each SNP and code them using 1-A, 2-C, 3-G, 4-T.\cr
-There are two ways of obtaining the nucleotide sequences. If \code{filename} is not NULL and the file exists, it should contain the positions and alleles for each SNP. Based on such information, the sequences around SNP positions are extracted using the Bioconductor annotation package specified by \code{genome.lib}. Users should make sure that this annotation package corresponds to the correct species and genome version of the actual data. Alternatively, users can also provide a vector of rs ids via the argument \code{snpids}. The SNP locations and allele information is then obtained via the Bioconductor annotation package specified by \code{snp.lib}, and passed on to the package specified by \code{genome.lib} to further obtain the nucleotide sequences.\cr
-If \code{mutation=FALSE} (default), this function assumes that the data is for SNP analysis, and the reference genome should be consistent with either the a1 or a2 nucleotide. When extracting the genome sequence around each SNP position, this function compares the nucleotide at the SNP location on the reference genome with both a1 and a2 to distinguish between the reference allele and the SNP allele. If the nucleotide extracted from the reference genome does not match either a1 or a2, the SNP is discarded. The discarded SNPs are in the 'rsid.rm' field in the output.\cr
-Alternatively, if \code{mutation=TRUE}, this function assumes that the data is for general single nucleotide mutation analysis. After extracting the genome sequence around each SNP position, it replaces the nucleotide at the SNP location by the a1 nucleotide as the 'reference' allele sequence, and by the a2 nucleotide as the 'snp' allele sequence. It does NOT discard the sequence even if neither a1 or a2 matches the reference genome. When this data set is used in other functions, such as \code{\link{ComputeMotifScore}}, \code{\link{ComputePValues}}, all the results (i.e. affinity scores and their p-values) for the reference allele are indeed for the a1 allele, and results for the SNP allele are indeed for the a2 allele.\cr
-If the input is a list of rsid's, the SNP information extracted from \code{snp.lib} may contain more than two alleles for a single location. For such cases, \code{\link{LoadSNPData}} first extracts all pairs of alleles associated with those locations. If 'mutation=TRUE', all those pairs are considered as pairs of reference and SNP alleles, and their information is contained in 'sequence_matrix', 'a1', 'a2' and 'snpid'. If 'mutation=FALSE', \code{\link{LoadSNPData}} further filters these pairs based on whether one allele matches to the reference genome nucleotide extracted from \code{genome.lib}. Only those pairs with one allele matching the reference genome nucleotide is considered as pairs of reference and SNP alleles, with their information contained in 'sequence_matrix', 'a1', 'a2' and 'snpid'.\cr
+This function extracts the nucleotide sequence within a window 
+around each SNP and code them using 1-A, 2-C, 3-G, 4-T.\cr
+There are two ways of obtaining the nucleotide sequences. If \code{filename} 
+is not NULL and the file exists, it should contain the positions and alleles 
+for each SNP. Based on such information, the sequences around SNP positions 
+are extracted using the Bioconductor annotation package specified by 
+\code{genome.lib}. Users should make sure that this annotation package 
+corresponds to the correct species and genome version of the actual data. 
+Alternatively, users can also provide a vector of rs ids via the argument 
+\code{snpids}. The SNP locations and allele information is then obtained via 
+the Bioconductor annotation package specified by \code{snp.lib}, and passed 
+on to the package specified by \code{genome.lib} to further obtain the 
+nucleotide sequences.\cr
+If \code{mutation=FALSE} (default), this function assumes that the data is 
+for SNP analysis, and the reference genome should be consistent with either 
+the a1 or a2 nucleotide. When extracting the genome sequence around each SNP 
+position, this function compares the nucleotide at the SNP location on the 
+reference genome with both a1 and a2 to distinguish between the reference 
+allele and the SNP allele. If the nucleotide extracted from the reference 
+genome does not match either a1 or a2, the SNP is discarded. The discarded 
+SNPs are in the 'rsid.rm' field in the output.\cr
+Alternatively, if \code{mutation=TRUE}, this function assumes that the data 
+is for general single nucleotide mutation analysis. After extracting the 
+genome sequence around each SNP position, it replaces the nucleotide at the 
+SNP location by the a1 nucleotide as the 'reference' allele sequence, and by 
+the a2 nucleotide as the 'snp' allele sequence. It does NOT discard the 
+sequence even if neither a1 or a2 matches the reference genome. When this 
+data set is used in other functions, such as \code{\link{ComputeMotifScore}},
+ \code{\link{ComputePValues}}, all the results (i.e. affinity scores and 
+ their p-values) for the reference allele are indeed for the a1 allele, and 
+ results for the SNP allele are indeed for the a2 allele.\cr
+If the input is a list of rsid's, the SNP information extracted from 
+\code{snp.lib} may contain more than two alleles for a single location. For 
+such cases, \code{\link{LoadSNPData}} first extracts all pairs of alleles 
+associated with those locations. If 'mutation=TRUE', all those pairs are 
+considered as pairs of reference and SNP alleles, and their information is 
+contained in 'sequence_matrix', 'a1', 'a2' and 'snpid'. If 'mutation=FALSE', 
+\code{\link{LoadSNPData}} further filters these pairs based on whether one 
+allele matches to the reference genome nucleotide extracted from 
+\code{genome.lib}. Only those pairs with one allele matching the reference 
+genome nucleotide is considered as pairs of reference and SNP alleles, with 
+their information contained in 'sequence_matrix', 'a1', 'a2' and 'snpid'.\cr
 }
 \examples{
-LoadSNPData(snpids = c("rs53576", "rs1815739", "rs7412", "rs6152", "rs333"), genome.lib ="BSgenome.Hsapiens.UCSC.hg19", snp.lib = "SNPlocs.Hsapiens.dbSNP144.GRCh38", half.window.size = 30, default.par = TRUE, mutation = FALSE)
+LoadSNPData(snpids = c("rs53576", "rs1815739", "rs7412", "rs6152", "rs333"), 
+genome.lib ="BSgenome.Hsapiens.UCSC.hg38", snp.lib = 
+"SNPlocs.Hsapiens.dbSNP144.GRCh38", half.window.size = 30, default.par = TRUE
+, mutation = FALSE)
 }
 \author{
 Chandler Zuo \email{chandler.c.zuo@gmail.com}

@@ -40,9 +40,9 @@ if(FALSE) {
   
   # construct the test data set
   motif_library <- encode_motif
-  system.time(snpInfo <- LoadSNPData("/p/keles/ENCODE-CHARGE/volume2/SNP/hg19_allinfo.bed", nrow = 20))
+  system.time(snpInfo <- LoadSNPData("/p/keles/ENCODE-CHARGE/volume2/SNP/hg19_allinfo.bed", nrow = 5))
   motif_library <- motif_library[1]
-  snp_tbl <- read.table("/p/keles/ENCODE-CHARGE/volume2/SNP/hg19_allinfo.bed", nrow = 20, header = TRUE)[, c("snpid", "a1", "a2", "chr", "snp")]
+  snp_tbl <- read.table("/p/keles/ENCODE-CHARGE/volume2/SNP/hg19_allinfo.bed", nrow = 5, header = TRUE)[, c("snpid", "a1", "a2", "chr", "snp")]
   motif_scores <- ComputeMotifScore(motif_library, snpInfo, ncores = 1)
 
   motif_pval <- ComputePValues(motif_library, snpInfo, motif_scores$motif.scores, ncores = 1)
@@ -53,7 +53,7 @@ if(FALSE) {
   
   system.time(save(motif_library, snpInfo, snp_tbl, motif_scores, file = "~/atsnp_git/atSNP/data/example.rda"))
   
-  library(BSgenome.Hsapiens.UCSC.hg19)
+  library(BSgenome.Hsapiens.UCSC.hg38)
   tbl1 <- read.table("~/atsnp_git/data/gwas_snp1.txt", stringsAsFactors = FALSE)
   names(tbl1) <- c("chr", "snp", "snpid")
   tbl1 <- tbl1[grep("rs", tbl1$snpid), ]

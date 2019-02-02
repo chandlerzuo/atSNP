@@ -7,9 +7,11 @@
 ComputeMotifScore(motif.lib, snp.info, ncores = 1)
 }
 \arguments{
-\item{motif.lib}{A list object with the output format of function \code{\link{LoadMotifLibrary}}.}
+\item{motif.lib}{A list object with the output format of function 
+\code{\link{LoadMotifLibrary}}.}
 
-\item{snp.info}{A list object with the output format of function \code{\link{LoadSNPData}}.}
+\item{snp.info}{A list object with the output format of function 
+\code{\link{LoadSNPData}}.}
 
 \item{ncores}{An integer for the number of parallel process. Default: 1.}
 }
@@ -19,26 +21,36 @@ A list of two data.table's. Field \code{snp.tbl} contains:
 snpid \tab SNP id.\cr
 ref_seq \tab Reference allele nucleotide sequence.\cr
 snp_seq \tab SNP allele nucleotide sequence.\cr
-ref_seq_rev \tab Reference allele nucleotide sequence on the reverse strand.\cr
+ref_seq_rev \tab Reference allele nucleotide sequence on the reverse 
+strand.\cr
 snp_seq_rev \tab SNP allele nucleotide sequence on the reverse strand.\cr}
 Field \code{motif.score} contains:
 \tabular{cc}{
 motif \tab Name of the motif.\cr
 motif_len \tab Length of the motif.\cr
-ref_start, ref_end, ref_strand \tab Location of the best matching subsequence on the reference allele.\cr
-snp_start, snp_end, snp_strand \tab Location of the best matching subsequence on the SNP allele.\cr
+ref_start, ref_end, ref_strand \tab Location of the best matching subsequence
+ on the reference allele.\cr
+snp_start, snp_end, snp_strand \tab Location of the best matching subsequence
+ on the SNP allele.\cr
 log_lik_ref \tab Log-likelihood score for the reference allele.\cr
 log_lik_snp \tab Log-likelihood score for the SNP allele.\cr
 log_lik_ratio \tab The log-likelihood ratio.\cr
-log_enhance_odds \tab Difference in log-likelihood ratio between SNP allele and reference allele based on the best matching subsequence on the reference allele.\cr
-log_reduce_odds \tab Difference in log-likelihood ratio between reference allele and SNP allele based on the best matching subsequence on the SNP allele.\cr
+log_enhance_odds \tab Difference in log-likelihood ratio between SNP allele 
+and reference allele based on the best matching subsequence on the reference 
+allele.\cr
+log_reduce_odds \tab Difference in log-likelihood ratio between reference 
+allele and SNP allele based on the best matching subsequence on the SNP 
+allele.\cr
 }
 }
 \description{
 Compute the log-likelihood scores for motifs.
 }
 \details{
-This function computes the binding affinity scores for both alleles at each SNP window. For each pair of SNP and motif, it finds the subsequence from both strand that maximizes the affinity binding score. It returns both the matching positions and the maximized affinity scores.
+This function computes the binding affinity scores for both alleles 
+at each SNP window. For each pair of SNP and motif, it finds the subsequence 
+from both strand that maximizes the affinity binding score. It returns both 
+the matching positions and the maximized affinity scores.
 }
 \examples{
 data(example)

@@ -6,7 +6,8 @@
 \title{A data frame for SNP information.}
 \format{A data.frame object.}
 \description{
-This data frame is loaded by 'data(example)'. It is a table including the following columns:
+This data frame is loaded by 'data(example)'. It is a table 
+including the following columns:
 \tabular{ll}{
 chr \tab The chromosome.\cr
 snp \tab The SNP location coordinate.\cr

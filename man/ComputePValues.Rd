@@ -8,11 +8,14 @@ ComputePValues(motif.lib, snp.info, motif.scores, ncores = 1,
   figdir = NULL)
 }
 \arguments{
-\item{motif.lib}{A list object with the output format of function \code{\link{LoadMotifLibrary}}.}
+\item{motif.lib}{A list object with the output format of function 
+\code{\link{LoadMotifLibrary}}.}
 
-\item{snp.info}{A list object with the output format of function \code{\link{LoadSNPData}}.}
+\item{snp.info}{A list object with the output format of function 
+\code{\link{LoadSNPData}}.}
 
-\item{motif.scores}{A data.table object containing at least the following columns:
+\item{motif.scores}{A data.table object containing at least the following 
+columns:
 \tabular{ll}{
 motif \tab The name of the motif.\cr
 log_lik_ref \tab The log-likelihood score for the reference allele.\cr
@@ -21,26 +24,34 @@ log_lik_snp \tab The log-likelihood score for the SNP allele.\cr
 
 \item{ncores}{An integer for the number of parallel process. Default: 1.}
 
-\item{figdir}{A string for the path to print p-value plots for monitoring results. Default: NULL (no figure).}
+\item{figdir}{A string for the path to print p-value plots for monitoring 
+results. Default: NULL (no figure).}
 }
 \value{
-A data.table extending \code{motif.scores} by the following additional columns:
+A data.table extending \code{motif.scores} by the following 
+additional columns:
 \tabular{ll}{
 pval_ref \tab P-values for scores on the reference allele.\cr
 pval_snp \tab P-values for scores on the SNP allele.\cr
-pval_cond_ref \tab Conditional p-values for scores on the reference allele.\cr
+pval_cond_ref \tab Conditional p-values for scores on the reference 
+allele.\cr
 pval_cond_snp \tab Conditional p-values for scores on the SNP allele.\cr
-pval_diff \tab P-values for the difference in scores between the reference and the SNP alleles.\cr
-pval_rank \tab P-values for the log rank ratio between the reference and the SNP alleles.\cr
+pval_diff \tab P-values for the difference in scores between the reference 
+and the SNP alleles.\cr
+pval_rank \tab P-values for the log rank ratio between the reference and the 
+SNP alleles.\cr
 }
 }
 \description{
-This function computes the p-values for allele-specific affinity scores and between-allele affinity score changes using the importance sampling technique.
+This function computes the p-values for allele-specific affinity
+ scores and between-allele affinity score changes using the importance 
+ sampling technique.
 }
 \examples{
 data(example)
 ComputePValues(motif_library, snpInfo, motif_scores$motif.scores, ncores = 1)
 }
 \author{
-Sunyoung Shin \email{sunyoung.shin@utdallas.edu}, Chandler Zuo\email{chandler.c.zuo@gmail.com}
+Sunyoung Shin \email{sunyoung.shin@utdallas.edu}, Chandler Zuo 
+\email{chandler.c.zuo@gmail.com}
 }
