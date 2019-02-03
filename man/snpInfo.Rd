@@ -6,9 +6,11 @@
 \title{A data set for SNP information.}
 \format{A list object.}
 \description{
-This list object loaded by 'data(example)' contains three fields:
+This list object loaded by 'data(example)' contains three fields
+:
 \tabular{ll}{
-sequence_matrix \tab A sequence matrix, coded by 1-A, 2-C, 3-G, 4-T, with each column corresponding to a subsequence of 61 bp around one SNP.\cr
+sequence_matrix \tab A sequence matrix, coded by 1-A, 2-C, 3-G, 4-T, with 
+each column corresponding to a subsequence of 61 bp around one SNP.\cr
 transition \tab The transition matrix used in Markov model.\cr
 prior \tab The stationary distribution used in the Markov model.\cr
 }

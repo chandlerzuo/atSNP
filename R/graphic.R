@@ -70,15 +70,15 @@
 #'  motif.lib = motif_library)
 #' @import data.table
 #' @export
-dtMotifMatch<-function(snp.tbl, motif.scores, snpids=NULL, motifs=NULL, motif.lib, ncores=2) {
-  checkSNPids<-function(snpids) return(all(any(!is(snpids, "character"),  length(snpids)==0), is.null(snpids)==FALSE))
-  checkMotifs<-function(motifs) return(all(any(!is(motifs, "character"),  length(motifs)==0), is.null(motifs)==FALSE))
-  if(checkSNPids(snpids))
+dtMotifMatch<-function(snp.tbl, motif.scores, snpids=NULL, motifs=NULL, 
+                       motif.lib, ncores=2)
   {
-    stop("snpids must be a vector of class character or NULL.")
-  } else if (checkMotifs(motifs)) {
-    stop("motifs must be a vector of class character or NULL.")
-  }
+  if(checkSNPids(snpids))
+    {
+      stop("snpids must be a vector of class character or NULL.")
+    } else if (checkMotifs(motifs)) {
+      stop("motifs must be a vector of class character or NULL.")
+    }
   #warning for ncores, motif.lib etc.
   ncores.v1 <- min(ncores, length(snpids) * length(motifs))
   ncores.v2<-ifelse(ncores.v1==0, ncores, ncores.v1)

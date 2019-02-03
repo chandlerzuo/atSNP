@@ -1,6 +1,7 @@
 #' @name motif_library
 #' @title A sample motif library.
-#' @description A list of the position weight matrices corresponding to motifs, loaded by 'data(example)'.
+#' @description A list of the position weight matrices corresponding to motifs, 
+#' loaded by 'data(example)'.
 #' @docType data
 #' @format A list object.
 #' @author Chandler Zuo chandler.c.zuo@@gmail.com
@@ -8,9 +9,11 @@ NULL
 
 #' @name snpInfo
 #' @title A data set for SNP information.
-#' @description This list object loaded by 'data(example)' contains three fields:
+#' @description This list object loaded by 'data(example)' contains three fields
+#' :
 #' \tabular{ll}{
-#' sequence_matrix \tab A sequence matrix, coded by 1-A, 2-C, 3-G, 4-T, with each column corresponding to a subsequence of 61 bp around one SNP.\cr
+#' sequence_matrix \tab A sequence matrix, coded by 1-A, 2-C, 3-G, 4-T, with 
+#' each column corresponding to a subsequence of 61 bp around one SNP.\cr
 #' transition \tab The transition matrix used in Markov model.\cr
 #' prior \tab The stationary distribution used in the Markov model.\cr
 #' }
