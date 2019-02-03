@@ -9,12 +9,12 @@ motif_scores <- ComputeMotifScore(motif_library, snpInfo, ncores = 1)
 
 motif_scores <- MatchSubsequence(motif_scores$snp.tbl, motif_scores$motif.scores, ncores = 1, motif.lib = motif_library)
 
-motif_scores[snpid == "rs2511200" & motif == "ALX3_jolma_DBD_M449", ]
+motif_scores[snpid == "rs7412" & motif == "SIX5_disc1", ]
 
 len_seq <- sapply(motif_scores$ref_seq, nchar)
 snp_pos <- as.integer(len_seq / 2) + 1
 
-i <- which(motif_scores$snpid == "rs2511200" & motif_scores$motif == "ALX3_jolma_DBD_M449")
+i <- which(motif_scores$snpid == "rs7412" & motif_scores$motif == "SIX5_disc1")
 
 test_that("Error: reference bases are not the same as the sequence matrix.", {
   expect_equal(sum(snpInfo$sequence_matrix[31, ] != snpInfo$ref_base), 0)
