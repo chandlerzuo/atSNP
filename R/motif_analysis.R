@@ -279,12 +279,7 @@ LoadSNPData <- function(filename = NULL, genome.lib = "BSgenome.Hsapiens.UCSC.hg
             a2[id.rev] <- rev.codes[a2[id.rev]]
           }
           tbl <- rbind(tbl,
-                       data.frame(snp = as.integer(snp.loc.n@ranges), 
-                                  chr = as.character(paste0("chr", gsub("ch", "", snp.loc.n@seqnames))), 			  
-                                  a1 = as.character(a1),
-                                  a2 = as.character(a2),
-                                  snpid = as.character(snp.ids.n),
-                                  index = snpid.index[ids])
+                       data.frame(snp = as.integer(snp.loc.n@ranges), chr = as.character(paste0("chr", gsub("ch", "", snp.loc.n@seqnames))), a1 = as.character(a1), a2 = as.character(a2), snpid = as.character(snp.ids.n), index = snpid.index[ids])
           )
         }
       }
@@ -399,9 +394,9 @@ LoadSNPData <- function(filename = NULL, genome.lib = "BSgenome.Hsapiens.UCSC.hg
 #' The results are coded as: "A"-1, "C"-2, "G"-3, "T"-4.
 #' @author Sunyoung Shin \email{sunyoung.shin@@utdallas.edu}, Chandler Zuo 
 #' \email{chandler.c.zuo@@gmail.com}
-#' @examples \dontrun{LoadFastaData(
+#' @examples LoadFastaData(
 #' "http://pages.stat.wisc.edu/~keles/atSNP-Data/sample_1.fasta",
-#' "http://pages.stat.wisc.edu/~keles/atSNP-Data/sample_2.fasta")}
+#' "http://pages.stat.wisc.edu/~keles/atSNP-Data/sample_2.fasta")
 #' @useDynLib atSNP
 #' @export
 LoadFastaData <- function(ref.data, snp.data, snpids=NULL, default.par = FALSE) {
@@ -487,8 +482,7 @@ LoadFastaData <- function(ref.data, snp.data, snpids=NULL, default.par = FALSE) 
               ref_base = ref.base,
               snp_base = snp.base,
               transition = transition,
-              prior = prior,
-	      snpids = snpids
+              prior = prior, snpids = snpids
               ))
 }
 
@@ -973,13 +967,13 @@ ComputePValues <- function(motif.lib, snp.info, motif.scores, ncores = 1, figdir
     adjusted <- FALSE
     ## Force the p-values to be increasing
     while(!adjusted) {
-      pval_a.sorted <- sort(pval_a[, 1:2])[rank(-c(scores))]
-      pval_cond.sorted <- sort(pval_cond[, 1:2])[rank(-c(scores))]
+      pval_a.sorted <- sort(pval_a[, seq(2)])[rank(-c(scores))]
+      pval_cond.sorted <- sort(pval_cond[, seq(2)])[rank(-c(scores))]
       flag1 <- flag2 <- TRUE
       if(prod(pval_a.sorted == pval_a[, seq(2)]) != 1 |
          prod(pval_cond.sorted == pval_cond[, seq(2)]) != 1) {
-        pval_a[, 1:2] <- pval_a.sorted
-        pval_cond[, 1:2] <- pval_cond.sorted
+        pval_a[, seq(2)] <- pval_a.sorted
+        pval_cond[, seq(2)] <- pval_cond.sorted
         flag1 <- FALSE
       }
       ## force the conditional p-value <= p-value

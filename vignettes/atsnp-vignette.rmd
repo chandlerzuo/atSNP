@@ -41,28 +41,7 @@ This document provides an introduction to the affinity test for large sets of SN
 (d) `r Biocpkg("motifStack")` is relied upon to draw sequence logo plots.
 (e) `r CRANpkg("Rcpp")` interfaces the C++ codes that implements the importance sampling algorithm.
 
-In addition, users need to install the annotation package `r Biocannopkg("BSgenome")` from <http://www.bioconductor.org/packages/3.0/data/annotation/> that corresponds to the species type and genome version. Our example SNP data set in the subsequent sections corresponds to the hg38 version of human genome. To repeat the sample codes in this vignette, the `r Biocannopkg("BSgenome.Hsapiens.UCSC.hg38")` package is required. If users wish to annotate the SNP location and allele information given their rs ids, they also need to install the corresponding `r Biocannopkg("SNPlocs")` package. The sample codes in this vignettes require the package `r Biocannopkg("SNPlocs.Hsapiens.dbSNP144.GRCh38")`. To install these packages from the \Bioconductor{} repository, use the following chunk of code.
-```{r include=TRUE,echo=TRUE,eval=FALSE,results="markup"}
-
-if (!requireNamespace("BiocManager", quietly = TRUE))
-    install.packages("BiocManager")
-BiocManager::install("BSgenome.Hsapiens.UCSC.hg38")
-BiocManager::install("SNPlocs.Hsapiens.dbSNP144.GRCh38") 
-``` 
-
-```{r include=FALSE, eval=TRUE, echo=FALSE, results="hide"}
-if (!require("BSgenome.Hsapiens.UCSC.hg38",character.only = TRUE)) {
-  BiocManager::install("BSgenome.Hsapiens.UCSC.hg38", update=FALSE)
-  if(!require("BSgenome.Hsapiens.UCSC.hg38",character.only = TRUE)) stop("Package not found")
-}
-if (!require("SNPlocs.Hsapiens.dbSNP144.GRCh38",character.only = TRUE)) {
-  BiocManager::install("SNPlocs.Hsapiens.dbSNP144.GRCh38", update=FALSE)
-  if(!require("SNPlocs.Hsapiens.dbSNP144.GRCh38",character.only = TRUE)) stop("Package not found")
-}
-tidy.opt = list(width.cutoff = 60)
-``` 
-
-Notice that the annotation packages are usually large and this installation step may take a substantial amount of time.
+In addition, users need to install the annotation package `r Biocannopkg("BSgenome")` from <http://www.bioconductor.org/packages/3.0/data/annotation/> that corresponds to the species type and genome version. Our example SNP data set in the subsequent sections corresponds to the hg38 version of human genome. To repeat the sample codes in this vignette, the `r Biocannopkg("BSgenome.Hsapiens.UCSC.hg38")` package is required. If users wish to annotate the SNP location and allele information given their rs ids, they also need to install the corresponding `r Biocannopkg("SNPlocs")` package. The sample codes in this vignettes require the package `r Biocannopkg("SNPlocs.Hsapiens.dbSNP144.GRCh38")`. Notice that the annotation packages are usually large and this installation step may take a substantial amount of time.
 
 # Example
 
@@ -173,7 +152,6 @@ This data set can be loaded using the `LoadSNPData` function. The 'genome.lib' a
 The following codes generate a synthetic SNP data and loads it back in \R{}:
 
 ```{r eval=TRUE, echo=TRUE, results="markup",tidy=FALSE}
-
 data(example)
 write.table(snp_tbl, file = "test_snp_file.txt",
             row.names = FALSE, quote = FALSE)
@@ -277,8 +255,7 @@ We recommend using `pval_ref`and `pval_snp` for assessing the significance of al
 ```{r eval=TRUE,echo=TRUE,results="markup"}
   
   atsnp.result <- ComputePValues(motif.lib = motif_library, snp.info = snpInfo,
-                                 motif.scores = atsnp.scores$motif.scores,
-				 ncores = 1)
+  motif.scores = atsnp.scores$motif.scores, ncores = 1)
   head(atsnp.result[, list(snpid, motif, pval_ref, pval_snp, pval_rank, pval_diff)])
 
 ``` 

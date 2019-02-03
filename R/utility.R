@@ -33,3 +33,12 @@ myStrSplit <- function(x, split) {
   }
   return(ret)
 }
+
+checkSNPids<-function(ids) {
+  return(all(any(!is(ids, "character"),  length(is)==0), is.null(is)==FALSE))
+  
+}
+checkMotifs<-function(m) {
+  return(all(any(!is(m, "character"),  length(m)==0), is.null(m)==FALSE))
+}
+
