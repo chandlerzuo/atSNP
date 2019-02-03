@@ -7,7 +7,6 @@ data(example)
 trans_mat <- matrix(rep(snpInfo$prior, each = 4), nrow = 4)
 id <- 1
 test_pwm <- motif_library[[id]]
-##test_pwm <- motif_library[["ALX3_jolma_DBD_M449"]]
 scores <- as.matrix(motif_scores$motif.scores[motif == names(motif_library)[id], list(log_lik_ref, log_lik_snp)])
 
 motif_len <- nrow(test_pwm)
@@ -15,7 +14,7 @@ motif_len <- nrow(test_pwm)
 ## these are functions for this test only
 drawonesample <- function(theta) {
   delta <- snpInfo$prior * t(test_pwm ^ theta)
-  delta <- delta / rep(apply(delta, 2, sum), each = 4)
+  delta <- delta / rep(colSums(delta), each = 4)
   sample <- sample(1:4, 2 * motif_len - 1, replace = TRUE, prob = snpInfo$prior)
   id <- sample(seq(motif_len), 1)
   sample[id : (id + motif_len - 1)] <- apply(delta, 2, function(x) sample(1:4, 1, prob = x))
@@ -56,14 +55,15 @@ get_freq <- function(sample) {
       emp_freq[i, j] <- sum(sample_motif[i, ] == j)
     }
   }
-  emp_freq <- emp_freq / apply(emp_freq, 1, sum)
+  emp_freq <- emp_freq / rowSums(emp_freq)
   return(emp_freq)
 }
 
 test_that("Error: quantile function computing are not equivalent.", {
-  for(p in c(1, 10, 50, 90, 99) / 100) {
+  for(p in c(0.01, 0.1, 0.5, 0.9, 0.99)) {
     delta <- .Call("test_find_percentile", c(scores), p, package = "atSNP")
     delta.r <- -sort(-c(scores))[as.integer(p * length(scores)) + 1]
+    delta==delta.r
     expect_equal(delta, delta.r)
   }
 })
@@ -106,7 +106,7 @@ test_that("Error: compute the normalizing constant.", {
   theta <- .Call("test_find_theta", test_pwm, snpInfo$prior, snpInfo$transition, delta, package = "atSNP")
   ##
   const <- .Call("test_func_delta", test_pwm, snpInfo$prior, trans_mat, theta, package = "atSNP")
-  const.r <- prod(apply(snpInfo$prior * t(test_pwm) ^ theta, 2, sum)) * motif_len
+  const.r <- prod(colSums(snpInfo$prior * t(test_pwm) ^ theta)) * motif_len
   expect_equal(abs(const - const.r) / const < 1e-5, TRUE)
 })
 
@@ -127,7 +127,7 @@ test_that("Error: sample distributions are not expected.", {
                            delta, snpInfo$prior, trans_mat, test_pwm, theta, package = "atSNP"))
     emp_freq1 <- get_freq(sample)
     target_freq <- test_pwm ^ theta * snpInfo$prior
-    target_freq <- target_freq / apply(target_freq, 1, sum)
+    target_freq <- target_freq / rowSums(target_freq)
     ## generate samples in R
     sample <- sapply(rep(theta, 100), drawonesample)
     emp_freq2 <- get_freq(sample[seq(2 * motif_len), ] - 1)
@@ -155,8 +155,8 @@ test_that("Error: the chosen pvalues should have the smaller variance.", {
            )
   }
   for(p in c(0.01, 0.05, 0.1)) {
-      theta <- .Call("test_find_theta", test_pwm, snpInfo$prior, trans_mat, quantile(c(scores), 1 - p), package = "atSNP")
-      p_values <- .Call("test_p_value", test_pwm, snpInfo$prior, snpInfo$transition, c(scores), theta, 100, package = "atSNP")
+    theta <- .Call("test_find_theta", test_pwm, snpInfo$prior, trans_mat, quantile(c(scores), 1 - p), package = "atSNP")
+    p_values <- .Call("test_p_value", test_pwm, snpInfo$prior, snpInfo$transition, c(scores), theta, 100, package = "atSNP")
     p_values_s <- .structure(p_values)
     expect_equal(p_values_s[, 2], apply(p_values[, c(2, 4)], 1, min))
   }
