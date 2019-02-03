@@ -115,10 +115,10 @@ genome nucleotide is considered as pairs of reference and SNP alleles, with
 their information contained in 'sequence_matrix', 'a1', 'a2' and 'snpid'.\cr
 }
 \examples{
-LoadSNPData(snpids = c("rs53576", "rs7412"), 
+\dontrun{LoadSNPData(snpids = c("rs53576", "rs7412"), 
 genome.lib ="BSgenome.Hsapiens.UCSC.hg38", snp.lib = 
 "SNPlocs.Hsapiens.dbSNP144.GRCh38", half.window.size = 30, default.par = TRUE
-, mutation = FALSE)
+, mutation = FALSE)}
 }
 \author{
 Chandler Zuo \email{chandler.c.zuo@gmail.com}

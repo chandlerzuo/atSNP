@@ -192,10 +192,10 @@ LoadMotifLibrary <- function(filename, tag = "MOTIF", transpose = FALSE, field =
 #' The results are coded as: "A"-1, "C"-2, "G"-3, "T"-4.
 #' @author Chandler Zuo \email{chandler.c.zuo@@gmail.com}
 #' @examples
-#' LoadSNPData(snpids = c("rs53576", "rs7412"), 
+#' \dontrun{LoadSNPData(snpids = c("rs53576", "rs7412"), 
 #' genome.lib ="BSgenome.Hsapiens.UCSC.hg38", snp.lib = 
 #' "SNPlocs.Hsapiens.dbSNP144.GRCh38", half.window.size = 30, default.par = TRUE
-#' , mutation = FALSE)
+#' , mutation = FALSE)}
 #' @import BSgenome
 #' @useDynLib atSNP
 #' @export
@@ -855,8 +855,8 @@ MatchSubsequence <- function(snp.tbl, motif.scores, motif.lib, snpids = NULL, mo
 #' @author Sunyoung Shin \email{sunyoung.shin@@utdallas.edu}, Chandler Zuo 
 #' \email{chandler.c.zuo@@gmail.com}
 #' @examples
-#' data(example)
-#' ComputePValues(motif_library, snpInfo, motif_scores$motif.scores, ncores = 1)
+#' \dontrun{data(example)}
+#' \dontrun{ComputePValues(motif_library, snpInfo, motif_scores$motif.scores, ncores = 1)}
 #' @import Rcpp
 #' @import data.table
 #' @importFrom BiocParallel bpmapply MulticoreParam SnowParam
