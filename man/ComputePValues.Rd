@@ -48,8 +48,8 @@ This function computes the p-values for allele-specific affinity
  sampling technique.
 }
 \examples{
-data(example)
-ComputePValues(motif_library, snpInfo, motif_scores$motif.scores, ncores = 1)
+\dontrun{data(example)}
+\dontrun{ComputePValues(motif_library, snpInfo, motif_scores$motif.scores, ncores = 1)}
 }
 \author{
 Sunyoung Shin \email{sunyoung.shin@utdallas.edu}, Chandler Zuo 

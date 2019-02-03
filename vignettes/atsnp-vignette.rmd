@@ -41,7 +41,7 @@ This document provides an introduction to the affinity test for large sets of SN
 (d) `r Biocpkg("motifStack")` is relied upon to draw sequence logo plots.
 (e) `r CRANpkg("Rcpp")` interfaces the C++ codes that implements the importance sampling algorithm.
 
-In addition, users need to install the annotation package `r Biocannopkg("BSgenome")` from <http://www.bioconductor.org/packages/3.0/data/annotation/> that corresponds to the species type and genome version. Our example SNP data set in the subsequent sections corresponds to the hg38 version of human genome. To repeat the sample codes in this vignette, the `r Biocannopkg("BSgenome.Hsapiens.UCSC.hg38")` package is required. If users wish to annotate the SNP location and allele information given their rs ids, they also need to install the corresponding `r Biocannopkg("SNPlocs")` package. The sample codes in this vignettes require the package `r Biocannopkg("SNPlocs.Hsapiens.dbSNP144.GRCh38")`. Notice that the annotation packages are usually large and this installation step may take a substantial amount of time.
+In addition, users need to install the annotation package `r Biocannopkg("BSgenome")` from <http://www.bioconductor.org/packages/3.0/data/annotation/> that corresponds to the species type and genome version. Our example SNP data set in the subsequent sections corresponds to the hg38 version of human genome. If users wish to annotate the SNP location and allele information given their rs ids, they also need to install the corresponding `r Biocannopkg("SNPlocs")` package.  Notice that the annotation packages are usually large and this installation step may take a substantial amount of time.
 
 # Example
 
@@ -79,7 +79,6 @@ head(encode_motifinfo)
 ``` 
 
 Here, the entry names of this vector are the same as the names of the motif library. `encode_motifinfo` allows easy looking up of the motif information for a specific PWM. For example, to look up the motif information for the first PWM in `encode_motifinfo`, use  the following chunk of code:
-
 ```{r eval=TRUE, echo=TRUE, results="markup",tidy=TRUE}
 encode_motifinfo[names(encode_motif[1])]
 ``` 
@@ -147,11 +146,11 @@ In this case, the table that provides the SNP information must include five colu
 (c) snpid: the string for the SNP name;
 (d) a1, a2: nucleotides for the two alleles at the SNP position.
 
-This data set can be loaded using the `LoadSNPData` function. The 'genome.lib' argument specifies the annotation package name corresponding to the SNP data set, with the default as 'BSgenome.Hsapiens.UCSC.hg38'. Each side of the SNP is extended by a number of base pairs specified by the 'half.window.size' argument. `LoadSNPData` extracts the genome sequence within such windows around each SNP using the 'genome.lib' package. An example is the following:
+This data set can be loaded using the `LoadSNPData` function. The 'genome.lib' argument specifies the annotation package name corresponding to the SNP data set, such as 'BSgenome.Hsapiens.UCSC.hg38'. Each side of the SNP is extended by a number of base pairs specified by the 'half.window.size' argument. `LoadSNPData` extracts the genome sequence within such windows around each SNP using the 'genome.lib' package. An example is the following:
 
 The following codes generate a synthetic SNP data and loads it back in \R{}:
 
-```{r eval=TRUE, echo=TRUE, results="markup",tidy=FALSE}
+```{r eval=FALSE, echo=TRUE, results="markup",tidy=FALSE}
 data(example)
 write.table(snp_tbl, file = "test_snp_file.txt",
             row.names = FALSE, quote = FALSE)
@@ -163,7 +162,7 @@ snp_info$rsid.rm
 
 There are two important arguments in function `LoadSNPData`. First, the 'mutation' argument specifies whether the data set is related to SNP or general single nucleotide mutation. By default, 'mutation=FALSE'. In this case, `LoadSNPData` get the nucleotides on the reference genome based on the genome coordinates specified by 'chr' and 'snp' and match them to 'a1' and 'a2' alleles from the `r Biocannopkg("BSgenome")` package. 'a1' and 'a2' nucleotides are assigned to the refrence or the SNP allele based on which one matches to the reference nucleotide. If neither allele matches to the reference nucleotide, the corresponding row in the SNP information file is discarded. These discarded SNPs are captured by the 'rsid.rm' field in the output. Alternatively, if 'mutation=TRUE', no row is discarded. `LoadSNPData` takes the reference sequences around the SNP locations, replaces the reference nucleotides at the SNP locations by 'a1' nucleotides to construct the 'reference' sequences, and by 'a2' nucleotides to construct the 'SNP' sequences. Notice that in this case, in the subsequent analysis, whenever we refer to the 'reference' or the 'SNP' allele, it actually means the 'a1' or the 'a2' allele.
 
-```{r eval=TRUE, echo=TRUE, results="markup",tidy=FALSE}
+```{r eval=FALSE, echo=TRUE, results="markup",tidy=FALSE}
 
   mutation_info <- LoadSNPData("test_snp_file.txt", genome.lib = "BSgenome.Hsapiens.UCSC.hg38", half.window.size = 30, default.par = TRUE, mutation = TRUE)
   ncol(mutation_info$sequence) == nrow(snp_tbl)
@@ -182,20 +181,14 @@ Second, the 'default.par' argument specifies how to estimate the first order Mar
 
 ### Load SNP data through dbSNP's rsids
 
-`LoadSNPData` also allows users to load a list of rsids for the SNPs. In this case, the function looks up the SNP location and the allele information using the annotation package specified by 'snp.lib'. The default value of 'snp.lib' is 'SNPlocs.Hsapiens.dbSNP144.GRCh38'.
+`LoadSNPData` also allows users to load a list of rsids for the SNPs. In this case, the function looks up the SNP location and the allele information using the annotation package specified by 'snp.lib', such as 'SNPlocs.Hsapiens.dbSNP144.GRCh38'.
 
-```{r eval=TRUE, echo=TRUE, results="markup", tidy=FALSE}
+```{r eval=FALSE, echo=TRUE, results="markup", tidy=FALSE}
 
 snp_info1 <- LoadSNPData(snpids = c("rs5050", "rs616488", "rs11249433", "rs182799", "rs12565013", "rs11208590"), genome.lib ="BSgenome.Hsapiens.UCSC.hg38", snp.lib = "SNPlocs.Hsapiens.dbSNP144.GRCh38", half.window.size = 30, default.par = TRUE, mutation = FALSE)
 ```
 
 `LoadSNPData` may warn about the SNPs with inconsistent information and returns them in the output. The 'rsid.missing' output field captures SNPs that are not included in the `r Biocannopkg("SNPlocs")` package. The 'rsid.duplicate' output field captures SNPs with more than 2 alleles based on `r Biocannopkg("SNPlocs")` package. The 'rsid.rm' output field captures SNPs whose nucleotides in the reference genome do not match to either allele provided by the data source. SNPs in the 'rsid.missing' and 'rsid.rm' fields are discarded. For SNPs in 'rsid.duplicate', we extract all pairs of alleles as reference and SNP pairs. If 'mutation=TRUE', we include all of them in the output. If 'mutation=FALSE', these pairs are further filtered based on whether one allele matches to the reference genome nucleotide. The remaining alleles are contained in the output.
-
-```{r eval=TRUE, echo=TRUE, results="markup", tidy=TRUE}
-snp_info1$rsid.missing
-snp_info1$rsid.duplicate
-snp_info1$rsid.rm
-``` 
 
 ### Load SNP data through a pair of fasta files
 
