@@ -222,20 +222,19 @@ We use a toy example data set included in the package to introduce the usage of 
 
 ### Compute affinity scores
 
-The binding affinity scores for all pairs of SNP and PWM can be computed by the `ComputeMotifScore` function. It returns a list of two fields: 'snp.tbl' is a *data.table* containing the nucleotide sequences for each SNP; 'motif.scores' is a *data.table* containing the binding affinity scores for each SNP-motif pair.
+The binding affinity scores for all pairs of SNP and PWM can be computed by the `ComputeMotifScore` function. It returns a list of two fields: 'snp.tbl' is a *data.frame* containing the nucleotide sequences for each SNP; 'motif.scores' is a *data.frame* containing the binding affinity scores for each SNP-motif pair.
 
 ```{r eval=TRUE, echo=TRUE, results="markup"}
   atsnp.scores <- ComputeMotifScore(motif_library, snpInfo, ncores = 1)
-  head(atsnp.scores$snp.tbl)
-  head(atsnp.scores$motif.scores[, list(snpid, motif, log_lik_ref,
-                                log_lik_snp, log_lik_ratio)])
+  atsnp.scores$snp.tbl
+  atsnp.scores$motif.scores
 ``` 
 
 The affinity scores for the reference and the SNP alleles are represented by the `log_lik_ref` and `log_lik_snp` columns in `motif.scores`. The affinity score change is included in the `log_lik_ratio` column. These three affinity scores are tested in the subsequent steps. `motif.scores` also includes other columns for the position of the best matching subsequence on each allele. For a complete description on all these columns, users can look up the help documentation.
 
 ### Compute p-values
 
-After we have computed the binding affinity scores, they can be tested using the `ComputePValues` function. The result is a *data.table* extending the affinity score table by six columns: 
+After we have computed the binding affinity scores, they can be tested using the `ComputePValues` function. The result is a *data.frame* extending the affinity score table by six columns: 
 
 (a) `pval_ref`: p-value for the reference allele affinity score.
 (b) `pval_snp`: p-value for the SNP allele affinity score.
@@ -243,79 +242,60 @@ After we have computed the binding affinity scores, they can be tested using the
 (d) `pval_diff`: p-value for the affinity score change between the two alleles.
 (e) `pval_rank`: p-value for the rank test between the two alleles.
 
+
 We recommend using `pval_ref`and `pval_snp` for assessing the significance of allele specific affinity; and using `pval_rank` for assessing the significance of the SNP effect on the affinity change.
 
 ```{r eval=TRUE,echo=TRUE,results="markup"}
+
+atsnp.result <- ComputePValues(motif.lib = motif_library, snp.info = snpInfo,
+                               motif.scores = atsnp.scores$motif.scores, ncores = 1)
+atsnp.result
+``` 
+
+First, we can sort this output table according to the `pval_rank` column:
   
-  atsnp.result <- ComputePValues(motif.lib = motif_library, snp.info = snpInfo,
-  motif.scores = atsnp.scores$motif.scores, ncores = 1)
-  head(atsnp.result[, list(snpid, motif, pval_ref, pval_snp, pval_rank, pval_diff)])
-
-``` 
-
-The *data.table* structure enables easy processing for prioritizing the SNP-PWM pairs based on the significance of affinity changes. We give a few examples here. First, we can sort this output table according to the `pval_rank` column:
-
-```{r eval=TRUE, echo = TRUE, results="markup"}
-head(atsnp.result[order(pval_rank), list(snpid, motif, pval_ref, pval_snp, pval_rank)])
-``` 
-
-Second, we can also select the SNP-PWM pairs subject to a threshold in 'pval\_rank':
-
-```{r eval=TRUE, echo = TRUE, results = "markup"}
-atsnp.result[pval_rank <= 0.1, list(snpid, motif, pval_ref, pval_snp, pval_rank)]
+  ```{r eval=TRUE, echo = TRUE, results="markup"}
+head(atsnp.result[order(atsnp.result$pval_rank), c("snpid", "motif", "pval_ref", "pval_snp", "pval_rank")])
 ``` 
 
 ### Multiple testing adjustment
 
 We can apply multiple testing adjustment to the p-values. *atSNP* does not implement any multiple testing adjustment internally. Users have the flexibility of choosing an adjustment method based on their specific application. For example, if we want to adjust `pval_rank` from all pairs of SNP-PWM pairs using the Benjamini-Hochberg's procedure, we may compute:
 
-```{r eval=FALSE, echo = TRUE, results="hide"}
-atsnp.result[, pval_rank_bh := p.adjust(pval_rank, method = "BH")]
-``` 
 ```{r eval=TRUE, echo = FALSE, results="hide"}
-atsnp.result[, pval_rank_bh := p.adjust(pval_rank, method = "BH")]
+pval_rank_bh = p.adjust(atsnp.result$pval_rank, method = "BH")
+atsnp.result = cbind(atsnp.result, pval_rank_bh)
 ``` 
 
 ```{r eval=TRUE, echo = FALSE, results="markup"}
-atsnp.result[, list(snpid, motif, pval_rank, pval_rank_bh)]
+atsnp.result[c("snpid", "motif", "pval_rank", "pval_rank_bh")]
 ``` 
 
 Alternatively, if we want to compute Storey's q-values, we may utilize the `r Biocpkg("qvalue")` package from \Bioconductor{}: 
-
-```{r eval=FALSE, echo =TRUE,results="markup"}
+  
+  ```{r eval=FALSE, echo =TRUE,results="markup"}
 library(qvalue)
-atsnp.result[, qval_rank := qvalue(pval_rank)$qvalues]
-``` 
-
-Rather than adjusting all the p-values, if we have a large list of SNPs, we can adjust the p-values for each motif separately. This can be done by adding a 'by=...' argument in the `data.table`:
-
-```{r eval=FALSE, echo =TRUE,results="markup"}
-atsnp.result[, pval_rank_bh := p.adjust(pval_rank, method = "BH"), by = motif]
-atsnp.result[, qval_rank := qvalue(pval_rank)$qvalues, by = motif]
-``` 
-
-Similarly, if we have a large motif library, we may also adjust the p-values for each SNP:
-
-```{r eval=FALSE, echo =TRUE,results="markup"}
-atsnp.result[, pval_rank_bh := p.adjust(pval_rank, method = "BH"), by = snpid]
-atsnp.result[, qval_rank := qvalue(pval_rank)$qvalues, by = snpid]
+qval_rank = qvalue(atsnp.result$pval_rank)$qvalues
+atsnp.result = cbind(atsnp.result, qval_rank)
 ``` 
 
 ## Additional analysis
 
 atSNP provides additional functions to extract the matched nucleotide subsequences that match to the motifs. The function `MatchSubsequence` adds the subsequence matches to the affinity score table by using the motif library and the SNP set. The subsequences matching to the motif in the two alleles are returned in the `ref_match_seq` and `snp_match_seq` columns. The 'IUPAC' column returns the IUPAC letters of the motifs. Notice that if you have a large number of SNPs and motifs, the returned table can be very large.
 
+
 ```{r eval=TRUE,echo=TRUE,results="markup"}
-  
-  match_result <- MatchSubsequence(snp.tbl = atsnp.scores$snp.tbl, motif.scores = atsnp.result, motif.lib = motif_library, snpids = c("rs53576", "rs7412"), motifs = names(motif_library)[1], ncores = 1)
-  match_result[, list(snpid, motif, IUPAC, ref_match_seq, snp_match_seq)]
+
+match_result <- MatchSubsequence(snp.tbl = atsnp.scores$snp.tbl, motif.scores = atsnp.result, motif.lib = motif_library, snpids = c("rs53576", "rs7412"), motifs = names(motif_library)[1], ncores = 1)
+match_result[c("snpid", "motif", "IUPAC", "ref_match_seq", "snp_match_seq")]
 
 ``` 
 
 To visualize how each motif is matched to each allele using the `plotMotifMatch` function:
-
+  
+  
 ```{r eval=TRUE, echo=TRUE, fig.align="center", fig.height=6, fig.width=6, warning=TRUE, dpi=600, include=TRUE, results="markup"}
-  plotMotifMatch(snp.tbl = atsnp.scores$snp.tbl,
+plotMotifMatch(snp.tbl = atsnp.scores$snp.tbl,
                motif.scores = atsnp.scores$motif.scores,
                snpid = atsnp.scores$snp.tbl$snpid[1],
                motif.lib = motif_library,

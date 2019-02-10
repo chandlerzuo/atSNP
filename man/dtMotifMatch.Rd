@@ -9,7 +9,7 @@ dtMotifMatch(snp.tbl, motif.scores, snpids = NULL, motifs = NULL,
   motif.lib, ncores = 2)
 }
 \arguments{
-\item{snp.tbl}{A data.table with the following information:
+\item{snp.tbl}{A data.frame with the following information:
 \tabular{cc}{
 snpid \tab SNP id.\cr
 ref_seq \tab Reference allele nucleobase sequence.\cr
@@ -18,7 +18,7 @@ ref_seq_rev \tab Reference allele nucleobase sequence on the reverse
 strand.\cr
 snp_seq_rev \tab SNP allele nucleobase sequence on the reverse strand.\cr}}
 
-\item{motif.scores}{A data.table with the following information:
+\item{motif.scores}{A data.frame with the following information:
 \tabular{cc}{
 motif \tab Name of the motif.\cr
 motif_len \tab Length of the motif.\cr
@@ -48,7 +48,7 @@ when all motifs are computed.}
 \item{ncores}{The number of cores used for parallel computing. Default: 10}
 }
 \value{
-A data.table containing all columns from the function, 
+A data.frame containing all columns from the function, 
 \code{\link{MatchSubsequence}}. In addition, the following columns are added:
 \tabular{ll}{
 snp_ref_start, snp_ref_end, snp_ref_length \tab Location and Length of the 
