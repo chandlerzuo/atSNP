@@ -10,7 +10,7 @@ plotMotifMatch(snp.tbl, motif.scores, snpid, snp = NULL, motif,
   motif.lib, cex.main = 2, ...)
 }
 \arguments{
-\item{snp.tbl}{A data.table with the following information:
+\item{snp.tbl}{A data.frame with the following information:
 \tabular{cc}{
 snpid \tab SNP id.\cr
 ref_seq \tab Reference allele nucleobase sequence.\cr
@@ -19,7 +19,7 @@ ref_seq_rev \tab Reference allele nucleobase sequence on the reverse
 strand.\cr
 snp_seq_rev \tab SNP allele nucleobase sequence on the reverse strand.\cr}}
 
-\item{motif.scores}{A data.table with the following information:
+\item{motif.scores}{A data.frame with the following information:
 \tabular{cc}{
 motif \tab Name of the motif.\cr
 motif_len \tab Length of the motif.\cr

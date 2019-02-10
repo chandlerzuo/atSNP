@@ -44,7 +44,7 @@ Load the file for position weight matrices for motifs.
 This function reads the formatted file containing motif information 
 and convert them into a list of position weight matrices. The list of 
 arguments should provide enough flexibility of importing a varying number of 
-formats. Som eexamples are the following:
+formats. Some examples are the following:
 For MEME format, the suggested arguments are: tag = 'Motif', skiprows = 2, 
 skipcols = 0, transpose = FALSE, field = 2, sep = ' ';
 For motif files from JOHNSON lab (i.e. 

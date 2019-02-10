@@ -9,7 +9,7 @@ motif_scores <- ComputeMotifScore(motif_library, snpInfo, ncores = 1)
 
 motif_scores <- MatchSubsequence(motif_scores$snp.tbl, motif_scores$motif.scores, ncores = 1, motif.lib = motif_library)
 
-motif_scores[snpid == "rs7412" & motif == "SIX5_disc1", ]
+motif_scores[which(motif_scores$snpid == "rs7412" & motif_scores$motif == "SIX5_disc1"), ]
 
 len_seq <- sapply(motif_scores$ref_seq, nchar)
 snp_pos <- as.integer(len_seq / 2) + 1

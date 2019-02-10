@@ -21,7 +21,7 @@
 #' @details This function reads the formatted file containing motif information 
 #' and convert them into a list of position weight matrices. The list of 
 #' arguments should provide enough flexibility of importing a varying number of 
-#' formats. Som eexamples are the following:
+#' formats. Some examples are the following:
 #' For MEME format, the suggested arguments are: tag = 'Motif', skiprows = 2, 
 #' skipcols = 0, transpose = FALSE, field = 2, sep = ' ';
 #' For motif files from JOHNSON lab (i.e. 
@@ -214,7 +214,7 @@ LoadSNPData <- function(filename = NULL, genome.lib = "BSgenome.Hsapiens.UCSC.hg
     if(!is.null(snpids)) {
       message("Warning: load SNP information from 'filename' only. The argument 'snpids' is overridden.")
     }
-    tbl <- as.data.frame(fread(filename))
+    tbl <- read.table(filename, header = TRUE, stringsAsFactors = FALSE, ...)
     tbl<-tbl[c("snpid", "chr", "snp", "a1", "a2")]
     ## check if the input file has the required information
     if(sum(!c("snp", "chr", "a1", "a2", "snpid") %in% names(tbl)) > 0) {
@@ -279,7 +279,12 @@ LoadSNPData <- function(filename = NULL, genome.lib = "BSgenome.Hsapiens.UCSC.hg
             a2[id.rev] <- rev.codes[a2[id.rev]]
           }
           tbl <- rbind(tbl,
-                       data.frame(snp = as.integer(snp.loc.n@ranges), chr = as.character(paste0("chr", gsub("ch", "", snp.loc.n@seqnames))), a1 = as.character(a1), a2 = as.character(a2), snpid = as.character(snp.ids.n), index = snpid.index[ids])
+                       data.frame(snp = as.numeric(snp.loc.n@ranges), 
+                                  chr = as.character(paste0("chr", gsub("ch", "", snp.loc.n@seqnames))), 			  
+                                  a1 = as.character(a1),
+                                  a2 = as.character(a2),
+                                  snpid = as.character(snp.ids.n),
+                                  index = snpid.index[ids])
           )
         }
       }
@@ -498,7 +503,7 @@ LoadFastaData <- function(ref.data, snp.data, snpids=NULL, default.par = FALSE) 
 #' at each SNP window. For each pair of SNP and motif, it finds the subsequence 
 #' from both strand that maximizes the affinity binding score. It returns both 
 #' the matching positions and the maximized affinity scores.
-#' @return A list of two data.table's. Field \code{snp.tbl} contains:
+#' @return A list of two data.frame's. Field \code{snp.tbl} contains:
 #' \tabular{cc}{
 #' snpid \tab SNP id.\cr
 #' ref_seq \tab Reference allele nucleotide sequence.\cr
@@ -558,13 +563,8 @@ ComputeMotifScore <- function(motif.lib, snp.info, ncores = 1) {
   nmotifs <- length(motif.lib)
   len_seq <- nrow(snp.info$sequence_matrix)
   snp.info$sequence_matrix[(len_seq+1)/2,]<-snp.info$ref_base
-  motif_tbl <- data.table(motif = motifs,
-                          motif_len = sapply(motif.lib, nrow))
-
   ncores <- min(c(ncores, length(snp.info$ref_base)))
 
-#  startParallel(ncores)
-  k <- as.integer(length(snp.info$ref_base) / ncores)
   motif_score_par_i<-function(i) {
     if(i < ncores) {
       ids <- seq(k) + k * (i - 1)
@@ -580,6 +580,7 @@ ComputeMotifScore <- function(motif.lib, snp.info, ncores = 1) {
     }
     
     nids<-length(ids)
+    motif_tbl <- data.table(motif = motifs, motif_len = sapply(motif.lib, nrow))
     motif_len.m<-matrix(motif_tbl$motif_len, nids, nmotifs, byrow=TRUE)
     rownames(motif_len.m)<-snpids[ids]
     
@@ -592,46 +593,54 @@ ComputeMotifScore <- function(motif.lib, snp.info, ncores = 1) {
     snp_start <- motif.scores$match_snp_base
     snp_start[!strand_snp] <- len_seq + motif.scores$match_snp_base[!strand_snp] - motif_len.m[!strand_snp]+2
     snp_end <- snp_start + motif_len.m - 1
-    
-    motif_score_tbl <- data.table(snpid = rep(snpids[ids], nmotifs),
-                                  motif = rep(motifs, each = length(ids)),
-                                  log_lik_ref = c(motif.scores$log_lik_ref),
-                                  log_lik_snp = c(motif.scores$log_lik_snp),
-                                  log_lik_ratio = c(motif.scores$log_lik_ratio),
-                                  log_enhance_odds = c(motif.scores$log_enhance_odds),
-                                  log_reduce_odds = c(motif.scores$log_reduce_odds),
-                                  ref_start = c(ref_start),
-                                  snp_start = c(snp_start),
-                                  ref_end=c(ref_end),
-                                  snp_end=c(snp_end),
-                                  ref_strand = c("-", "+")[1 + as.integer(strand_ref)],
-                                  snp_strand = c("-", "+")[1 + as.integer(strand_snp)],
-                                  snpbase= rep(snpbases[ids], nmotifs)
+    motif_score_tbl_dt <- data.table(snpid = rep(snpids[ids], nmotifs),
+                                     motif = rep(motifs, each = length(ids)),
+                                     log_lik_ref = c(motif.scores$log_lik_ref),
+                                     log_lik_snp = c(motif.scores$log_lik_snp),
+                                     log_lik_ratio = c(motif.scores$log_lik_ratio),
+                                     log_enhance_odds = c(motif.scores$log_enhance_odds),
+                                     log_reduce_odds = c(motif.scores$log_reduce_odds),
+                                     ref_start = c(ref_start),
+                                     snp_start = c(snp_start),
+                                     ref_end=c(ref_end),
+                                     snp_end=c(snp_end),
+                                     ref_strand = c("-", "+")[1 + as.integer(strand_ref)],
+                                     snp_strand = c("-", "+")[1 + as.integer(strand_snp)],
+                                     snpbase= rep(snpbases[ids], nmotifs)                                                             
     )
-    setkey(motif_score_tbl, motif, snpbase)
+    setkey(motif_score_tbl_dt, motif, snpbase)
     setkey(motif_tbl, motif)
-    motif_score_tbl <- motif_tbl[motif_score_tbl]
-    
+    motif_score_tbl <- as.data.frame(motif_tbl[motif_score_tbl_dt], stringAsFactors = FALSE)
     motif_score_tbl
     
   }
 
-  if(Sys.info()[["sysname"]] == "Windows"){
-    snow <- SnowParam(workers = ncores, type = "SOCK")
-    motif_score_par<-bpmapply(motif_score_par_i, seq(ncores), BPPARAM = snow,SIMPLIFY = FALSE)
-  }else{
-    motif_score_par<-bpmapply(motif_score_par_i, seq(ncores), BPPARAM = MulticoreParam(workers = ncores),
-                              SIMPLIFY = FALSE)
+#  startParallel(ncores)
+  k <- as.integer(length(snp.info$ref_base) / ncores)
+  if(ncores > 1) {
+    if(Sys.info()[["sysname"]] == "Windows"){
+      snow <- SnowParam(workers = ncores, type = "SOCK")
+      motif_score_par <- bpmapply(motif_score_par_i, seq(ncores), BPPARAM = snow,SIMPLIFY = FALSE)
+    } else {
+      motif_score_par <- bpmapply(motif_score_par_i, seq(ncores), BPPARAM = MulticoreParam(workers = ncores),
+                                SIMPLIFY = FALSE)
+    } 
   }
+    else {
+    motif_score_par <- list(motif_score_par_i(1))
+   }
 #  endParallel()
 
-  motif.scores <- motif_score_par[[1]]
+  motif.scores_dt <- motif_score_par[[1]]
   if(ncores > 1) {
     for(i in 2:ncores) {
-      motif.scores <- rbind(motif.scores, motif_score_par[[i]])
+      motif.scores_dt <- rbind(motif.scores, motif_score_par[[i]])
     }
   }
-  setkey(motif.scores, motif, snpid, snpbase)
+#  setkey(motif.scores_dt, motif, snpid, snpbase)
+  motif.scores<-as.data.frame(motif.scores_dt, stringAsFactors=FALSE)
+  motif.scores<-motif.scores[order(motif.scores$motif, motif.scores$snpid, motif.scores$snpbase), ]
+  # motif.scores[with(motif.scores, order(motif, snpid, snpbase)), ]
   ## sequences on the reference genome
   ref_seqs <- apply(snp.info$sequence_matrix, 2, function(x) paste(c("A", "C", "G", "T")[x], collapse = ""))
   ref_seqs_rev <- apply(snp.info$sequence_matrix, 2, function(x) paste(c("A", "C", "G", "T")[5 - rev(x)], collapse = ""))
@@ -649,22 +658,25 @@ ComputeMotifScore <- function(motif.lib, snp.info, ncores = 1) {
                           collapse = "")
                     )
 
-  snp_tbl <- data.table(snpid = snpids,
-                        ref_seq = ref_seqs,
-                        snp_seq = snp_seqs,
-                        ref_seq_rev = ref_seqs_rev,
-                        snp_seq_rev = snp_seqs_rev,
-                        snpbase=snpbases)
-  setkey(snp_tbl, snpid, snpbase)
+#  snp_tbl <- data.table(snpid = snpids,
+#                        ref_seq = ref_seqs,
+#                        snp_seq = snp_seqs,
+#                        ref_seq_rev = ref_seqs_rev,
+#                        snp_seq_rev = snp_seqs_rev,
+#                        snpbase=snpbases)
+#  setkey(snp_tbl, snpid, snpbase)
+  snp_tbl <- data.frame(snpid = snpids, ref_seq = ref_seqs, snp_seq = snp_seqs, ref_seq_rev = ref_seqs_rev, snp_seq_rev = snp_seqs_rev, snpbase = snpbases, stringsAsFactors=FALSE)
+  snp_tbl[with(snp_tbl, order(snpid, snpbase)),]
   return(list(snp.tbl = snp_tbl, motif.scores = motif.scores))
 }
+
 
 #' @name MatchSubsequence
 #' @title Compute the matching subsequence.
 #' @description This function combines the SNP set, the motif library and the 
 #' affinity score table and produce the matching subsequence found at each SNP 
 #' location for each motif.
-#' @param snp.tbl A data.table with the following information:
+#' @param snp.tbl A data.frame with the following information:
 #' \tabular{cc}{
 #' snpid \tab SNP id.\cr
 #' ref_seq \tab Reference allele nucleotide sequence.\cr
@@ -672,7 +684,7 @@ ComputeMotifScore <- function(motif.lib, snp.info, ncores = 1) {
 #' ref_seq_rev \tab Reference allele nucleotide sequence on the reverse 
 #' strand.\cr
 #' snp_seq_rev \tab SNP allele nucleotide sequence on the reverse strand.\cr}
-#' @param motif.scores A data.table with the following information:
+#' @param motif.scores A data.frame with the following information:
 #' \tabular{cc}{
 #' motif \tab Name of the motif.\cr
 #' motif_len \tab Length of the motif.\cr
@@ -696,7 +708,7 @@ ComputeMotifScore <- function(motif.lib, snp.info, ncores = 1) {
 #' @param motifs A subset of motifs to compute the subsequences. Default: NULL, 
 #' when all motifs are computed.
 #' @param ncores The number of cores used for parallel computing.
-#' @return A data.table containing all columns in both \code{snp.tbl} and 
+#' @return A data.frame containing all columns in both \code{snp.tbl} and 
 #' \code{motif.scores}. In addition, the following columns are added:
 #' \tabular{ll}{
 #' ref_match_seq \tab Best matching subsequence on the reference allele.\cr
@@ -737,7 +749,11 @@ MatchSubsequence <- function(snp.tbl, motif.scores, motif.lib, snpids = NULL, mo
   }
   snpids <- unique(snpids)
   motifs <- unique(motifs)
-  motif.scores <- motif.scores[snpid %in% snpids & motif %in% motifs, ]
+  motif.scores_dt<-as.data.table(motif.scores)
+  setkey(motif.scores_dt, motif, snpid, snpbase)
+  snp.tbl <- as.data.table(snp.tbl)
+  setkey(snp.tbl, snpid, snpbase)
+  motif.scores <- motif.scores_dt[snpid %in% snpids & motif %in% motifs, ]
   snp.tbl <- snp.tbl[snpid %in% snpids, ]
   snp.tbl[, len_seq := nchar(ref_seq)]
 
@@ -759,52 +775,38 @@ MatchSubsequence <- function(snp.tbl, motif.scores, motif.lib, snpids = NULL, mo
     } else {
       ids <- (k * (ncores - 1) + 1):length(snpids)
     }
-    motif.scores <- motif.scores[snpid %in% snpids[ids], ]
-    setkey(motif.scores, motif)
-    motif.scores <- motif.tbl[motif.scores]
-    setkey(motif.scores, snpid, snpbase)
+    motif.scores_i <- motif.scores[snpid %in% snpids[ids], ]
+    setkey(motif.scores_i, motif)
+    motif.scores_i <- motif.tbl[motif.scores_i]
+    setkey(motif.scores_i, snpid, snpbase)
     setkey(snp.tbl, snpid, snpbase)
-    motif.scores <- snp.tbl[motif.scores]
-    motif.scores[ref_strand == "+", ref_match_seq := substr(ref_seq, ref_start, ref_end)]
-    motif.scores[ref_strand == "-", ref_match_seq := substr(ref_seq_rev, len_seq - ref_end + 1, len_seq - ref_start + 1)]
-    motif.scores[snp_strand == "+", snp_match_seq := substr(snp_seq, snp_start, snp_end)]
-    motif.scores[snp_strand == "-", snp_match_seq := substr(snp_seq_rev, len_seq - snp_end + 1, len_seq - snp_start + 1)]
-    motif.scores[ref_strand == "+", snp_seq_ref_match := substr(snp_seq, ref_start, ref_end)]
-    motif.scores[ref_strand == "-", snp_seq_ref_match := substr(snp_seq_rev, len_seq - ref_end + 1, len_seq - ref_start + 1)]
-    motif.scores[snp_strand == "+", ref_seq_snp_match := substr(ref_seq, snp_start, snp_end)]
-    motif.scores[snp_strand == "-", ref_seq_snp_match := substr(ref_seq_rev, len_seq - snp_end + 1, len_seq - snp_start + 1)]
+    motif.scores_i <- snp.tbl[motif.scores_i]
+    motif.scores_i[ref_strand == "+", ref_match_seq := substr(ref_seq, ref_start, ref_end)]
+    motif.scores_i[ref_strand == "-", ref_match_seq := substr(ref_seq_rev, len_seq - ref_end + 1, len_seq - ref_start + 1)]
+    motif.scores_i[snp_strand == "+", snp_match_seq := substr(snp_seq, snp_start, snp_end)]
+    motif.scores_i[snp_strand == "-", snp_match_seq := substr(snp_seq_rev, len_seq - snp_end + 1, len_seq - snp_start + 1)]
+    motif.scores_i[ref_strand == "+", snp_seq_ref_match := substr(snp_seq, ref_start, ref_end)]
+    motif.scores_i[ref_strand == "-", snp_seq_ref_match := substr(snp_seq_rev, len_seq - ref_end + 1, len_seq - ref_start + 1)]
+    motif.scores_i[snp_strand == "+", ref_seq_snp_match := substr(ref_seq, snp_start, snp_end)]
+    motif.scores_i[snp_strand == "-", ref_seq_snp_match := substr(ref_seq_rev, len_seq - snp_end + 1, len_seq - snp_start + 1)]
     
-    motif.scores[, list(snpid,
-                        motif,
-                        ref_seq,
-                        snp_seq,
-                        motif_len,
-                        ref_start,
-                        ref_end,
-                        ref_strand,
-                        snp_start,
-                        snp_end,
-                        snp_strand,
-                        log_lik_ref,
-                        log_lik_snp,
-                        log_lik_ratio,
-                        log_enhance_odds,
-                        log_reduce_odds,
-                        IUPAC,
-                        ref_match_seq,
-                        snp_match_seq,
-                        ref_seq_snp_match,
-                        snp_seq_ref_match,
-                        snpbase)]
+    motif.scores_i[, list(snpid, motif, ref_seq, snp_seq, motif_len, ref_start, ref_end, ref_strand, snp_start,
+                        snp_end, snp_strand,log_lik_ref, log_lik_snp, log_lik_ratio, log_enhance_odds, log_reduce_odds,
+                        IUPAC, ref_match_seq, snp_match_seq, ref_seq_snp_match, snp_seq_ref_match, snpbase)]
   }
   
   k <- as.integer(length(snpids) / ncores)
-  if(Sys.info()[["sysname"]] == "Windows"){
-    snow <- SnowParam(workers = ncores, type = "SOCK")
-    motif_score_par<-bpmapply(motif_score_par_i, seq(ncores), BPPARAM = snow,SIMPLIFY = FALSE)
-  }else{
-    motif_score_par<-bpmapply(motif_score_par_i, seq(ncores), BPPARAM = MulticoreParam(workers = ncores),
-                              SIMPLIFY = FALSE)
+  if(ncores > 1) {
+    if(Sys.info()[["sysname"]] == "Windows"){
+      snow <- SnowParam(workers = ncores, type = "SOCK")
+      motif_score_par<-bpmapply(motif_score_par_i, seq(ncores), BPPARAM = snow,SIMPLIFY = FALSE)
+    }else{
+      motif_score_par<-bpmapply(motif_score_par_i, seq(ncores), BPPARAM = MulticoreParam(workers = ncores),
+                                SIMPLIFY = FALSE)
+    }
+  } else 
+  {
+    motif_score_par<-list(motif_score_par_i(1))
   }
   
 #  endParallel()
@@ -816,7 +818,7 @@ MatchSubsequence <- function(snp.tbl, motif.scores, motif.lib, snpids = NULL, mo
                                motif_score_par[[i]])
     }
   }
-
+ motif_score_tbl<-as.data.frame(motif_score_tbl, stringAsFacotrs=FALSE)
   return(motif_score_tbl)
 }
 
@@ -829,7 +831,7 @@ MatchSubsequence <- function(snp.tbl, motif.scores, motif.lib, snpids = NULL, mo
 #' \code{\link{LoadMotifLibrary}}.
 #' @param snp.info A list object with the output format of function 
 #' \code{\link{LoadSNPData}}.
-#' @param motif.scores A data.table object containing at least the following 
+#' @param motif.scores A data.frame object containing at least the following 
 #' columns:
 #' \tabular{ll}{
 #' motif \tab The name of the motif.\cr
@@ -839,7 +841,7 @@ MatchSubsequence <- function(snp.tbl, motif.scores, motif.lib, snpids = NULL, mo
 #' @param ncores An integer for the number of parallel process. Default: 1.
 #' @param figdir A string for the path to print p-value plots for monitoring 
 #' results. Default: NULL (no figure).
-#' @return A data.table extending \code{motif.scores} by the following 
+#' @return A data.frame extending \code{motif.scores} by the following 
 #' additional columns:
 #' \tabular{ll}{
 #' pval_ref \tab P-values for scores on the reference allele.\cr
@@ -855,8 +857,8 @@ MatchSubsequence <- function(snp.tbl, motif.scores, motif.lib, snpids = NULL, mo
 #' @author Sunyoung Shin \email{sunyoung.shin@@utdallas.edu}, Chandler Zuo 
 #' \email{chandler.c.zuo@@gmail.com}
 #' @examples
-#' \dontrun{data(example)}
-#' \dontrun{ComputePValues(motif_library, snpInfo, motif_scores$motif.scores, ncores = 1)}
+#' data(example)
+#' ComputePValues(motif_library, snpInfo, motif_scores$motif.scores, ncores = 1)
 #' @import Rcpp
 #' @import data.table
 #' @importFrom BiocParallel bpmapply MulticoreParam SnowParam
@@ -1096,15 +1098,19 @@ ComputePValues <- function(motif.lib, snp.info, motif.scores, ncores = 1, figdir
   
 #  endParallel()
 
+  motif.scores_dt<-as.data.table(motif.scores)
+  setkey(motif.scores_dt, motif, snpid, snpbase)
+  
   for(i in seq_along(results)) {
-    motif.scores[results[[i]]$rowids, pval_ref := results[[i]]$pval_a[, 1]]
-    motif.scores[results[[i]]$rowids, pval_snp := results[[i]]$pval_a[, 2]]
-    motif.scores[results[[i]]$rowids, pval_cond_ref := results[[i]]$pval_cond[, 1]]
-    motif.scores[results[[i]]$rowids, pval_cond_snp := results[[i]]$pval_cond[, 2]]
-    motif.scores[results[[i]]$rowids, pval_diff := results[[i]]$pval_diff[, 1]]
-    motif.scores[results[[i]]$rowids, pval_rank := results[[i]]$pval_rank[, 1]]
+    motif.scores_dt[results[[i]]$rowids, pval_ref := results[[i]]$pval_a[, 1]]
+    motif.scores_dt[results[[i]]$rowids, pval_snp := results[[i]]$pval_a[, 2]]
+    motif.scores_dt[results[[i]]$rowids, pval_cond_ref := results[[i]]$pval_cond[, 1]]
+    motif.scores_dt[results[[i]]$rowids, pval_cond_snp := results[[i]]$pval_cond[, 2]]
+    motif.scores_dt[results[[i]]$rowids, pval_diff := results[[i]]$pval_diff[, 1]]
+    motif.scores_dt[results[[i]]$rowids, pval_rank := results[[i]]$pval_rank[, 1]]
   }
-  return(motif.scores)
+  motif.scores.pval<-as.data.frame(motif.scores_dt, stringsAsFactors=FALSE)
+  return(motif.scores.pval)
 }
 
 #' @name GetIUPACSequence

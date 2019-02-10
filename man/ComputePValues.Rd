@@ -14,7 +14,7 @@ ComputePValues(motif.lib, snp.info, motif.scores, ncores = 1,
 \item{snp.info}{A list object with the output format of function 
 \code{\link{LoadSNPData}}.}
 
-\item{motif.scores}{A data.table object containing at least the following 
+\item{motif.scores}{A data.frame object containing at least the following 
 columns:
 \tabular{ll}{
 motif \tab The name of the motif.\cr
@@ -28,7 +28,7 @@ log_lik_snp \tab The log-likelihood score for the SNP allele.\cr
 results. Default: NULL (no figure).}
 }
 \value{
-A data.table extending \code{motif.scores} by the following 
+A data.frame extending \code{motif.scores} by the following 
 additional columns:
 \tabular{ll}{
 pval_ref \tab P-values for scores on the reference allele.\cr
@@ -48,8 +48,8 @@ This function computes the p-values for allele-specific affinity
  sampling technique.
 }
 \examples{
-\dontrun{data(example)}
-\dontrun{ComputePValues(motif_library, snpInfo, motif_scores$motif.scores, ncores = 1)}
+data(example)
+ComputePValues(motif_library, snpInfo, motif_scores$motif.scores, ncores = 1)
 }
 \author{
 Sunyoung Shin \email{sunyoung.shin@utdallas.edu}, Chandler Zuo 

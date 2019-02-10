@@ -16,7 +16,7 @@ ComputeMotifScore(motif.lib, snp.info, ncores = 1)
 \item{ncores}{An integer for the number of parallel process. Default: 1.}
 }
 \value{
-A list of two data.table's. Field \code{snp.tbl} contains:
+A list of two data.frame's. Field \code{snp.tbl} contains:
 \tabular{cc}{
 snpid \tab SNP id.\cr
 ref_seq \tab Reference allele nucleotide sequence.\cr

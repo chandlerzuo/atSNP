@@ -5,7 +5,7 @@
 #' and reference alleles for motifs. Obtain extra unmatching position on the 
 #' best matching augmented subsequence of the reference and SNP alleles.
 #' @param motif.lib A list of named position weight matrices.
-#' @param snp.tbl A data.table with the following information:
+#' @param snp.tbl A data.frame with the following information:
 #' \tabular{cc}{
 #' snpid \tab SNP id.\cr
 #' ref_seq \tab Reference allele nucleobase sequence.\cr
@@ -13,7 +13,7 @@
 #' ref_seq_rev \tab Reference allele nucleobase sequence on the reverse 
 #' strand.\cr
 #' snp_seq_rev \tab SNP allele nucleobase sequence on the reverse strand.\cr}
-#' @param motif.scores A data.table with the following information:
+#' @param motif.scores A data.frame with the following information:
 #' \tabular{cc}{
 #' motif \tab Name of the motif.\cr
 #' motif_len \tab Length of the motif.\cr
@@ -36,7 +36,7 @@
 #' @param motifs A subset of motifs to compute the subsequences. Default: NULL, 
 #' when all motifs are computed.
 #' @param ncores The number of cores used for parallel computing. Default: 10
-#' @return A data.table containing all columns from the function, 
+#' @return A data.frame containing all columns from the function, 
 #' \code{\link{MatchSubsequence}}. In addition, the following columns are added:
 #' \tabular{ll}{
 #' snp_ref_start, snp_ref_end, snp_ref_length \tab Location and Length of the 
@@ -80,11 +80,12 @@ dtMotifMatch<-function(snp.tbl, motif.scores, snpids=NULL, motifs=NULL,
       stop("motifs must be a vector of class character or NULL.")
     }
   #warning for ncores, motif.lib etc.
+  snp.tbl<-as.data.table(snp.tbl)
   ncores.v1 <- min(ncores, length(snpids) * length(motifs))
   ncores.v2<-ifelse(ncores.v1==0, ncores, ncores.v1)
   sequence.half.window.size <- (nchar(snp.tbl[1, ref_seq]) - 1) / 2
-  motif.match.dt <- MatchSubsequence(snp.tbl = snp.tbl, motif.scores = motif.scores, snpids = snpids, motifs = motifs, ncores = ncores.v2, motif.lib = motif.lib)
-
+  motif.match <- MatchSubsequence(snp.tbl = snp.tbl, motif.scores = motif.scores, snpids = snpids, motifs = motifs, ncores = ncores.v2, motif.lib = motif.lib)
+  motif.match.dt<-as.data.table(motif.match)
   ##Augmentation of SNP and reference sequences###
   motif.match.dt[, len_seq := nchar(ref_seq)]
   motif.match.dt[,snp_ref_start := apply(cbind(ref_start, snp_start), 1, min)]
@@ -124,7 +125,7 @@ dtMotifMatch<-function(snp.tbl, motif.scores, snpids=NULL, motifs=NULL,
 #' and SNP alleles. Plot sequence logos of the position weight matrix of the 
 #' motif to the corresponding positions of the best matching subsequences on the
 #'  references and SNP alleles.
-#' @param snp.tbl A data.table with the following information:
+#' @param snp.tbl A data.frame with the following information:
 #' \tabular{cc}{
 #' snpid \tab SNP id.\cr
 #' ref_seq \tab Reference allele nucleobase sequence.\cr
@@ -132,7 +133,7 @@ dtMotifMatch<-function(snp.tbl, motif.scores, snpids=NULL, motifs=NULL,
 #' ref_seq_rev \tab Reference allele nucleobase sequence on the reverse 
 #' strand.\cr
 #' snp_seq_rev \tab SNP allele nucleobase sequence on the reverse strand.\cr}
-#' @param motif.scores A data.table with the following information:
+#' @param motif.scores A data.frame with the following information:
 #' \tabular{cc}{
 #' motif \tab Name of the motif.\cr
 #' motif_len \tab Length of the motif.\cr
