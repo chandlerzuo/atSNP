@@ -41,4 +41,3 @@ checkSNPids<-function(ids) {
 checkMotifs<-function(m) {
   return(all(any(!is(m, "character"),  length(m)==0), is.null(m)==FALSE))
 }
-

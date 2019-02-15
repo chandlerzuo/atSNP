@@ -5,7 +5,7 @@
 \title{Compute p-values for affinity scores.}
 \usage{
 ComputePValues(motif.lib, snp.info, motif.scores, ncores = 1,
-  figdir = NULL)
+  testing.mc = FALSE, figdir = NULL)
 }
 \arguments{
 \item{motif.lib}{A list object with the output format of function 
@@ -23,6 +23,9 @@ log_lik_snp \tab The log-likelihood score for the SNP allele.\cr
 }}
 
 \item{ncores}{An integer for the number of parallel process. Default: 1.}
+
+\item{testing.mc}{Monte Carlo sample size of 200 is considered. Do not
+change the default unless conducting a quick test. Default: FALSE}
 
 \item{figdir}{A string for the path to print p-value plots for monitoring 
 results. Default: NULL (no figure).}
@@ -49,7 +52,7 @@ This function computes the p-values for allele-specific affinity
 }
 \examples{
 data(example)
-ComputePValues(motif_library, snpInfo, motif_scores$motif.scores, ncores = 2)
+ComputePValues(motif_library, snpInfo, motif_scores$motif.scores, ncores = 2, testing.mc=TRUE)
 }
 \author{
 Sunyoung Shin \email{sunyoung.shin@utdallas.edu}, Chandler Zuo 
