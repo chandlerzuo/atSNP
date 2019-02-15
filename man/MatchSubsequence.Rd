@@ -66,7 +66,7 @@ location for each motif.
 \examples{
 data(example)
 MatchSubsequence(motif_scores$snp.tbl, motif_scores$motif.scores, 
-motif_library)
+motif_library, ncores=2)
 }
 \author{
 Sunyoung Shin \email{sunyoung.shin@utdallas.edu}, Chandler Zuo 

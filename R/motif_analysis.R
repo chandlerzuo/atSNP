@@ -533,7 +533,7 @@ LoadFastaData <- function(ref.data, snp.data, snpids=NULL, default.par = FALSE) 
 #' \email{chandler.c.zuo@@gmail.com}
 #' @examples
 #' data(example)
-#' ComputeMotifScore(motif_library, snpInfo, ncores = 1)
+#' ComputeMotifScore(motif_library, snpInfo, ncores = 2)
 #' @useDynLib atSNP
 #' @import data.table
 #' @importFrom BiocParallel bpmapply MulticoreParam SnowParam
@@ -634,7 +634,7 @@ ComputeMotifScore <- function(motif.lib, snp.info, ncores = 1) {
   motif.scores_dt <- motif_score_par[[1]]
   if(ncores > 1) {
     for(i in 2:ncores) {
-      motif.scores_dt <- rbind(motif.scores, motif_score_par[[i]])
+      motif.scores_dt <- rbind(motif.scores_dt, motif_score_par[[i]])
     }
   }
 #  setkey(motif.scores_dt, motif, snpid, snpbase)
@@ -723,7 +723,7 @@ ComputeMotifScore <- function(motif.lib, snp.info, ncores = 1) {
 #' @examples
 #' data(example)
 #' MatchSubsequence(motif_scores$snp.tbl, motif_scores$motif.scores, 
-#' motif_library)
+#' motif_library, ncores=2)
 #' @useDynLib atSNP
 #' @import data.table
 #' @importFrom BiocParallel bpmapply MulticoreParam SnowParam
@@ -858,7 +858,7 @@ MatchSubsequence <- function(snp.tbl, motif.scores, motif.lib, snpids = NULL, mo
 #' \email{chandler.c.zuo@@gmail.com}
 #' @examples
 #' data(example)
-#' ComputePValues(motif_library, snpInfo, motif_scores$motif.scores, ncores = 1)
+#' ComputePValues(motif_library, snpInfo, motif_scores$motif.scores, ncores = 2)
 #' @import Rcpp
 #' @import data.table
 #' @importFrom BiocParallel bpmapply MulticoreParam SnowParam
