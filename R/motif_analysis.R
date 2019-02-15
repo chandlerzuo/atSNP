@@ -559,13 +559,14 @@ ComputeMotifScore <- function(motif.lib, snp.info, ncores = 1) {
   motifs <- names(motif.lib)
   snpids <- snp.info$snpids
   snpbases<-ifelse(snp.info$snp_base==1, "A", ifelse(snp.info$snp_base==2, "C", ifelse(snp.info$snp_base==3, "G", "T")))	
-  nsnps <- ncol(snp.info$sequence_matrix)
+# nsnps <- ncol(snp.info$sequence_matrix)
   nmotifs <- length(motif.lib)
   len_seq <- nrow(snp.info$sequence_matrix)
   snp.info$sequence_matrix[(len_seq+1)/2,]<-snp.info$ref_base
   ncores <- min(c(ncores, length(snp.info$ref_base)))
 
-  motif_score_par_i<-function(i) {
+  motif_score_par<-function(i) {
+    #, ncores, motifs, nmotifs, snpids,  snpbases, len_seq, motif.lib, snp.info, motif.scores) {
     if(i < ncores) {
       ids <- seq(k) + k * (i - 1)
     } else {
@@ -614,27 +615,27 @@ ComputeMotifScore <- function(motif.lib, snp.info, ncores = 1) {
     motif_score_tbl
     
   }
-
+  
 #  startParallel(ncores)
   k <- as.integer(length(snp.info$ref_base) / ncores)
   if(ncores > 1) {
     if(Sys.info()[["sysname"]] == "Windows"){
       snow <- SnowParam(workers = ncores, type = "SOCK")
-      motif_score_par <- bpmapply(motif_score_par_i, seq(ncores), BPPARAM = snow,SIMPLIFY = FALSE)
+      motif_score_par_list <- bpmapply(motif_score_par, seq(ncores), BPPARAM = snow,SIMPLIFY = FALSE)
     } else {
-      motif_score_par <- bpmapply(motif_score_par_i, seq(ncores), BPPARAM = MulticoreParam(workers = ncores),
+      motif_score_par_list <- bpmapply(motif_score_par, seq(ncores), BPPARAM = MulticoreParam(workers = ncores),
                                 SIMPLIFY = FALSE)
     } 
   }
     else {
-    motif_score_par <- list(motif_score_par_i(1))
+    motif_score_par_list <- list(motif_score_par(1))
    }
 #  endParallel()
 
-  motif.scores_dt <- motif_score_par[[1]]
+  motif.scores_dt <- motif_score_par_list[[1]]
   if(ncores > 1) {
     for(i in 2:ncores) {
-      motif.scores_dt <- rbind(motif.scores_dt, motif_score_par[[i]])
+      motif.scores_dt <- rbind(motif.scores_dt, motif_score_par_list[[i]])
     }
   }
 #  setkey(motif.scores_dt, motif, snpid, snpbase)
@@ -768,54 +769,54 @@ MatchSubsequence <- function(snp.tbl, motif.scores, motif.lib, snpids = NULL, mo
   ncores <- min(c(ncores, length(snpids)))
 
 #  startParallel(ncores)
-  
-  motif_score_par_i<-function(i) {
-    if(i < ncores) {
-      ids <- seq(k) + k * (i - 1)
-    } else {
-      ids <- (k * (ncores - 1) + 1):length(snpids)
-    }
-    motif.scores_i <- motif.scores[snpid %in% snpids[ids], ]
-    setkey(motif.scores_i, motif)
-    motif.scores_i <- motif.tbl[motif.scores_i]
-    setkey(motif.scores_i, snpid, snpbase)
-    setkey(snp.tbl, snpid, snpbase)
-    motif.scores_i <- snp.tbl[motif.scores_i]
-    motif.scores_i[ref_strand == "+", ref_match_seq := substr(ref_seq, ref_start, ref_end)]
-    motif.scores_i[ref_strand == "-", ref_match_seq := substr(ref_seq_rev, len_seq - ref_end + 1, len_seq - ref_start + 1)]
-    motif.scores_i[snp_strand == "+", snp_match_seq := substr(snp_seq, snp_start, snp_end)]
-    motif.scores_i[snp_strand == "-", snp_match_seq := substr(snp_seq_rev, len_seq - snp_end + 1, len_seq - snp_start + 1)]
-    motif.scores_i[ref_strand == "+", snp_seq_ref_match := substr(snp_seq, ref_start, ref_end)]
-    motif.scores_i[ref_strand == "-", snp_seq_ref_match := substr(snp_seq_rev, len_seq - ref_end + 1, len_seq - ref_start + 1)]
-    motif.scores_i[snp_strand == "+", ref_seq_snp_match := substr(ref_seq, snp_start, snp_end)]
-    motif.scores_i[snp_strand == "-", ref_seq_snp_match := substr(ref_seq_rev, len_seq - snp_end + 1, len_seq - snp_start + 1)]
+    k <- as.integer(length(snpids) / ncores)
     
-    motif.scores_i[, list(snpid, motif, ref_seq, snp_seq, motif_len, ref_start, ref_end, ref_strand, snp_start,
-                        snp_end, snp_strand,log_lik_ref, log_lik_snp, log_lik_ratio, log_enhance_odds, log_reduce_odds,
-                        IUPAC, ref_match_seq, snp_match_seq, ref_seq_snp_match, snp_seq_ref_match, snpbase)]
-  }
-  
-  k <- as.integer(length(snpids) / ncores)
+    match_subseq_par<-function(i) {
+      if(i < ncores) {
+        ids <- seq(k) + k * (i - 1)
+      } else {
+        ids <- (k * (ncores - 1) + 1):length(snpids)
+      }
+      motif.scores_i <- motif.scores[snpid %in% snpids[ids], ]
+      setkey(motif.scores_i, motif)
+      motif.scores_i <- motif.tbl[motif.scores_i]
+      setkey(motif.scores_i, snpid, snpbase)
+      setkey(snp.tbl, snpid, snpbase)
+      motif.scores_i <- snp.tbl[motif.scores_i]
+      motif.scores_i[ref_strand == "+", ref_match_seq := substr(ref_seq, ref_start, ref_end)]
+      motif.scores_i[ref_strand == "-", ref_match_seq := substr(ref_seq_rev, len_seq - ref_end + 1, len_seq - ref_start + 1)]
+      motif.scores_i[snp_strand == "+", snp_match_seq := substr(snp_seq, snp_start, snp_end)]
+      motif.scores_i[snp_strand == "-", snp_match_seq := substr(snp_seq_rev, len_seq - snp_end + 1, len_seq - snp_start + 1)]
+      motif.scores_i[ref_strand == "+", snp_seq_ref_match := substr(snp_seq, ref_start, ref_end)]
+      motif.scores_i[ref_strand == "-", snp_seq_ref_match := substr(snp_seq_rev, len_seq - ref_end + 1, len_seq - ref_start + 1)]
+      motif.scores_i[snp_strand == "+", ref_seq_snp_match := substr(ref_seq, snp_start, snp_end)]
+      motif.scores_i[snp_strand == "-", ref_seq_snp_match := substr(ref_seq_rev, len_seq - snp_end + 1, len_seq - snp_start + 1)]
+      
+      motif.scores_i[, list(snpid, motif, ref_seq, snp_seq, motif_len, ref_start, ref_end, ref_strand, snp_start,
+                            snp_end, snp_strand,log_lik_ref, log_lik_snp, log_lik_ratio, log_enhance_odds, log_reduce_odds,
+                            IUPAC, ref_match_seq, snp_match_seq, ref_seq_snp_match, snp_seq_ref_match, snpbase)]
+    }
+    
   if(ncores > 1) {
     if(Sys.info()[["sysname"]] == "Windows"){
       snow <- SnowParam(workers = ncores, type = "SOCK")
-      motif_score_par<-bpmapply(motif_score_par_i, seq(ncores), BPPARAM = snow,SIMPLIFY = FALSE)
+      motif_score_par_list<-bpmapply(match_subseq_par, seq(ncores), BPPARAM = snow,SIMPLIFY = FALSE)
     }else{
-      motif_score_par<-bpmapply(motif_score_par_i, seq(ncores), BPPARAM = MulticoreParam(workers = ncores),
+      motif_score_par_list<-bpmapply(match_subseq_par, seq(ncores), BPPARAM = MulticoreParam(workers = ncores),
                                 SIMPLIFY = FALSE)
     }
   } else 
   {
-    motif_score_par<-list(motif_score_par_i(1))
+    motif_score_par_list<-list(match_subseq_par(1))
   }
   
 #  endParallel()
 
-  motif_score_tbl <- motif_score_par[[1]]
+  motif_score_tbl <- motif_score_par_list[[1]]
   if(ncores > 1) {
     for(i in 2:ncores) {
       motif_score_tbl <- rbind(motif_score_tbl,
-                               motif_score_par[[i]])
+                               motif_score_par_list[[i]])
     }
   }
  motif_score_tbl<-as.data.frame(motif_score_tbl, stringAsFacotrs=FALSE)
@@ -839,6 +840,8 @@ MatchSubsequence <- function(snp.tbl, motif.scores, motif.lib, snpids = NULL, mo
 #' log_lik_snp \tab The log-likelihood score for the SNP allele.\cr
 #' }
 #' @param ncores An integer for the number of parallel process. Default: 1.
+#' @param  testing.mc Monte Carlo sample size of 200 is considered. Do not
+#'  change the default unless conducting a quick test. Default: FALSE
 #' @param figdir A string for the path to print p-value plots for monitoring 
 #' results. Default: NULL (no figure).
 #' @return A data.frame extending \code{motif.scores} by the following 
@@ -858,36 +861,25 @@ MatchSubsequence <- function(snp.tbl, motif.scores, motif.lib, snpids = NULL, mo
 #' \email{chandler.c.zuo@@gmail.com}
 #' @examples
 #' data(example)
-#' ComputePValues(motif_library, snpInfo, motif_scores$motif.scores, ncores = 2)
+#' ComputePValues(motif_library, snpInfo, motif_scores$motif.scores, ncores = 2, testing.mc=TRUE)
 #' @import Rcpp
 #' @import data.table
 #' @importFrom BiocParallel bpmapply MulticoreParam SnowParam
 #' @useDynLib atSNP
 #' @export
-ComputePValues <- function(motif.lib, snp.info, motif.scores, ncores = 1, figdir = NULL) {
+ComputePValues <- function(motif.lib, snp.info, motif.scores, ncores = 1, testing.mc=FALSE, figdir = NULL) {
   ncores <- min(c(ncores, length(motif.lib)))
 
 #  startParallel(ncores)
   
   results <- as.list(seq_along(motif.lib))
   nsets <- as.integer(length(motif.lib) / ncores)
-  if(FALSE) {
-    for(i in seq(nsets)) {
-      message(i)
-      if(i < nsets) {
-        ids <- seq(ncores) + (i - 1) * ncores
-      } else {
-        ids <- ((nsets - 1) * ncores + 1) : length(motif.lib)
-      }
-    }
-  }
-  
-  
-  results_motif<-function(motifid) {
-    rowids <- which(motif.scores$motif == names(motif.lib)[motifid])
-    scores <- cbind(motif.scores$log_lik_ref[rowids],
-                    motif.scores$log_lik_snp[rowids])
-    pwm <- motif.lib[[motifid]]
+
+  results_motif_par<-function(i, markov.prior=snp.info$prior, markov.transition=snp.info$transition, scores=motif.scores) {
+    rowids <- which(scores$motif == names(motif.lib)[i])
+    scores <- cbind(scores$log_lik_ref[rowids],
+                    scores$log_lik_snp[rowids])
+    pwm <- motif.lib[[i]]
     pwm[pwm < 1e-10] <- 1e-10
     wei.mat <- pwm
     for(i in seq(nrow(wei.mat))) {
@@ -895,7 +887,7 @@ ComputePValues <- function(motif.lib, snp.info, motif.scores, ncores = 1, figdir
         wei.mat[i, j] <- exp(mean(log(pwm[i, j] / pwm[i, -j])))
       }
     }
-
+    
     if(nrow(scores) > 5000) {
       p <- 5 / nrow(scores)
     } else {
@@ -937,22 +929,27 @@ ComputePValues <- function(motif.lib, snp.info, motif.scores, ncores = 1, figdir
         next
       }
       if(l < length(allp) + 1) {
-        theta <- .Call("test_find_theta", pwm, snp.info$prior, snp.info$transition, score.p[l], package = "atSNP")
+        theta <- .Call("test_find_theta", pwm, markov.prior, markov.transition, score.p[l], package = "atSNP")
       } else {
         theta <- 0
       }
       ## set the importance sample size
-      n_sample <- 2000
-      if(l <= length(allp)) {
-        n_sample <- as.integer((1 - allp[l]) / allp[l] * 100)
-      }
-      if(n_sample > 1e5) {
-        n_sample <- 1e5
-      }
-      if(n_sample < 5000) {
+      if(testing.mc==FALSE) {
         n_sample <- 2000
+        if(l <= length(allp)) {
+          n_sample <- as.integer((1 - allp[l]) / allp[l] * 100)
+        }
+        if(n_sample > 1e5) {
+          n_sample <- 1e5
+        }
+        if(n_sample < 5000) {
+          n_sample <- 2000
+        }
+        pval_a.new <- .Call("test_p_value", pwm, markov.prior, markov.transition, scores[compute.id], theta, n_sample, package = "atSNP")
+      } else {
+        pval_a.new <- .Call("test_p_value", pwm, markov.prior, markov.transition, scores[compute.id], theta, 100, package = "atSNP")
       }
-      pval_a.new <- .Call("test_p_value", pwm, snp.info$prior, snp.info$transition, scores[compute.id], theta, n_sample, package = "atSNP")
+      
       pval_cond.new <- .structure(pval_a.new[, 4 + seq(4)])
       pval_a.new <- .structure(pval_a.new[, seq(4)])
       
@@ -1017,26 +1014,34 @@ ComputePValues <- function(motif.lib, snp.info, motif.scores, ncores = 1, figdir
         next
       }
       ## set the importance sample size
-      n_sample <- 2000
-      p <- mean(score_diff >= score.p[l])
-      if(p == 0) {
-        p <- 1e-4
-      }
-      if(l <= length(allp)) {
-        n_sample <- as.integer((1 - p) / p * 100)
-      }
-      if(n_sample > 1e5) {
-        n_sample <- 1e5
-      }
-      if(n_sample < 2000) {
+      if(testing.mc==FALSE) {
         n_sample <- 2000
-      }
+        p <- mean(score_diff >= score.p[l])
+        if(p == 0) {
+          p <- 1e-4
+        }
+        if(l <= length(allp)) {
+          n_sample <- as.integer((1 - p) / p * 100)
+        }
+        if(n_sample > 1e5) {
+          n_sample <- 1e5
+        }
+        if(n_sample < 2000) {
+          n_sample <- 2000
+        }
       
-      pval_diff.new <- .Call("test_p_value_change", pwm,
-                             wei.mat, pwm + 0.25, snp.info$prior,
-                             snp.info$transition, score_diff[compute.id],
-                             rank_ratio[compute.id],
-                             score.p[l], n_sample, package = "atSNP")
+        pval_diff.new <- .Call("test_p_value_change", pwm,
+                               wei.mat, pwm + 0.25,  markov.prior,
+                               markov.transition, score_diff[compute.id],
+                               rank_ratio[compute.id],
+                               score.p[l], n_sample, package = "atSNP")
+      } else {
+        pval_diff.new <- .Call("test_p_value_change", pwm,
+                               wei.mat, pwm + 0.25,  markov.prior,
+                               markov.transition, score_diff[compute.id],
+                               rank_ratio[compute.id],
+                               score.p[l], 100, package = "atSNP")         
+        }
       pval_rank.new <- .structure(pval_diff.new$rank)
       pval_diff.new <- .structure(pval_diff.new$score)
       update.id <- which(pval_diff.new[, 2] < pval_diff[compute.id, 2])
@@ -1051,7 +1056,7 @@ ComputePValues <- function(motif.lib, snp.info, motif.scores, ncores = 1, figdir
     pval_diff[pval_diff[, 1] > 1, 1] <- 1
     pval_rank[, 1] <- sort(pval_rank[,1])[rank(-rank_ratio)]
     pval_rank[pval_rank[, 1] > 1, 1] <- 1
-    message("Finished testing motif No. ", motifid)
+    message("Finished testing motif No. ", i)
     if(!is.null(figdir)) {
       if(!file.exists(figdir)) {
         dir.create(fig.dir)
@@ -1071,12 +1076,12 @@ ComputePValues <- function(motif.lib, snp.info, motif.scores, ncores = 1, figdir
       plotdat.diff <- unique(plotdat.diff)
       localenv <- environment()
       options(warn = -1)
-      pdf(file.path(figdir, paste("motif", motifid, ".pdf", sep = "")), width = 10, height = 10)
+      pdf(file.path(figdir, paste("motif", i, ".pdf", sep = "")), width = 10, height = 10)
       id <- which(rank(plotdat$p.value[plotdat$Allele == "ref"]) <= 500)
-      print(ggplot(aes(x = score, y = p.value), data = plotdat[plotdat$Allele == "ref", ], environment = localenv) + geom_point() + scale_y_log10(breaks = 10 ^ seq(-8, 0)) + geom_errorbar(aes(ymax = p.value + sqrt(var), ymin = p.value - sqrt(var))) + ggtitle(paste(names(motif.lib)[motifid], "ref")))
+      print(ggplot(aes(x = score, y = p.value), data = plotdat[plotdat$Allele == "ref", ], environment = localenv) + geom_point() + scale_y_log10(breaks = 10 ^ seq(-8, 0)) + geom_errorbar(aes(ymax = p.value + sqrt(var), ymin = p.value - sqrt(var))) + ggtitle(paste(names(motif.lib)[i], "ref")))
       id <- which(rank(plotdat$p.value[plotdat$Allele == "snp"]) <= 500)
-      print(ggplot(aes(x = score, y = p.value), data = plotdat[plotdat$Allele == "snp", ], environment = localenv) + geom_point() + scale_y_log10(breaks = 10 ^ seq(-8, 0)) + geom_errorbar(aes(ymax = p.value + sqrt(var), ymin = p.value - sqrt(var))) + ggtitle(paste(names(motif.lib)[motifid], "SNP")))
-      print(ggplot(aes(x = score, y = p.value), data = plotdat.diff, environment = localenv) + geom_point() + scale_y_log10(breaks = 10 ^ seq(-8, 0)) + geom_errorbar(aes(ymax = p.value + sqrt(var), ymin = p.value - sqrt(var))) + ggtitle(paste(names(motif.lib)[motifid], " Change")))
+      print(ggplot(aes(x = score, y = p.value), data = plotdat[plotdat$Allele == "snp", ], environment = localenv) + geom_point() + scale_y_log10(breaks = 10 ^ seq(-8, 0)) + geom_errorbar(aes(ymax = p.value + sqrt(var), ymin = p.value - sqrt(var))) + ggtitle(paste(names(motif.lib)[i], "SNP")))
+      print(ggplot(aes(x = score, y = p.value), data = plotdat.diff, environment = localenv) + geom_point() + scale_y_log10(breaks = 10 ^ seq(-8, 0)) + geom_errorbar(aes(ymax = p.value + sqrt(var), ymin = p.value - sqrt(var))) + ggtitle(paste(names(motif.lib)[i], " Change")))
       dev.off()
     }
     
@@ -1089,9 +1094,9 @@ ComputePValues <- function(motif.lib, snp.info, motif.scores, ncores = 1, figdir
   
   if(Sys.info()[["sysname"]] == "Windows"){
     snow <- SnowParam(workers = ncores, type = "SOCK")
-    results<-bpmapply(results_motif, seq_along(motif.lib), BPPARAM = snow,SIMPLIFY = FALSE)
+    results<-bpmapply(results_motif_par, seq_along(motif.lib), BPPARAM = snow,SIMPLIFY = FALSE)
   }else{
-    results<-bpmapply(results_motif, seq_along(motif.lib), BPPARAM = MulticoreParam(workers = ncores),
+    results<-bpmapply(results_motif_par, seq_along(motif.lib), BPPARAM = MulticoreParam(workers = ncores),
                       SIMPLIFY = FALSE)
   }
   
