@@ -49,7 +49,7 @@ This function computes the p-values for allele-specific affinity
 }
 \examples{
 data(example)
-ComputePValues(motif_library, snpInfo, motif_scores$motif.scores, ncores = 1)
+ComputePValues(motif_library, snpInfo, motif_scores$motif.scores, ncores = 2)
 }
 \author{
 Sunyoung Shin \email{sunyoung.shin@utdallas.edu}, Chandler Zuo 

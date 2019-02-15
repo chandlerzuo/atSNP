@@ -54,7 +54,7 @@ the matching positions and the maximized affinity scores.
 }
 \examples{
 data(example)
-ComputeMotifScore(motif_library, snpInfo, ncores = 1)
+ComputeMotifScore(motif_library, snpInfo, ncores = 2)
 }
 \author{
 Sunyoung Shin \email{sunyoung.shin@utdallas.edu}, Chandler Zuo
