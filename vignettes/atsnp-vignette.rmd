@@ -248,7 +248,7 @@ We recommend using `pval_ref`and `pval_snp` for assessing the significance of al
 ```{r eval=TRUE,echo=TRUE,results="markup"}
 
 atsnp.result <- ComputePValues(motif.lib = motif_library, snp.info = snpInfo,
-                               motif.scores = atsnp.scores$motif.scores, ncores = 1)
+                               motif.scores = atsnp.scores$motif.scores, ncores = 1, testing.mc=TRUE)
 atsnp.result
 ``` 
 
