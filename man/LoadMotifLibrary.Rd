@@ -4,13 +4,14 @@
 \alias{LoadMotifLibrary}
 \title{Load position weight matrices.}
 \usage{
-LoadMotifLibrary(filename, tag = "MOTIF", transpose = FALSE,
-  field = 2, sep = c("\\t", " "), skipcols = 0, skiprows = 2,
-  pseudocount = 0)
+LoadMotifLibrary(filename = NULL, urlname = NULL, tag = "MOTIF",
+  transpose = FALSE, field = 2, sep = c("\\t", " "), skipcols = 0,
+  skiprows = 2, pseudocount = 0)
 }
 \arguments{
-\item{filename}{A file containing MEME format: 
-http://memed.nbcr.net/meme/doc/meme-format.html.}
+\item{filename}{a MEME format file name.}
+
+\item{urlname}{URL containing a MEME format file.}
 
 \item{tag}{A string that marks the description line of the position weight 
 matrix.}
@@ -61,7 +62,7 @@ transpose = FALSE, field = 2, sep = "\\t".
 }
 \examples{
 pwms <- LoadMotifLibrary(
-"http://pages.stat.wisc.edu/~keles/atSNP-Data/pfm_vertebrates.txt", 
+urlname="http://pages.stat.wisc.edu/~keles/atSNP-Data/pfm_vertebrates.txt", 
 tag = ">", transpose = FALSE, field = 1, sep = c("\\t", " ", ">"), 
 skipcols = 1, skiprows = 1, pseudocount = 1)
 }

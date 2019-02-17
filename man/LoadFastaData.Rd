@@ -4,12 +4,18 @@
 \alias{LoadFastaData}
 \title{Load the SNP data from fasta files.}
 \usage{
-LoadFastaData(ref.data, snp.data, snpids = NULL, default.par = FALSE)
+LoadFastaData(ref.filename = NULL, snp.filename = NULL,
+  ref.urlname = NULL, snp.urlname = NULL, snpids = NULL,
+  default.par = FALSE)
 }
 \arguments{
-\item{ref.data}{Fastq file name for the reference allele sequences.}
+\item{ref.filename}{a fastq file name for the reference allele sequences.}
 
-\item{snp.data}{Fastq file name for the SNP allele sequences.}
+\item{snp.filename}{a fastq file name for the SNP allele sequences.}
+
+\item{ref.urlname}{URL of a fastq file for the reference allele sequences.}
+
+\item{snp.urlname}{URL of a fastq file for the SNP allele sequences.}
 
 \item{snpids}{SNP IDs}
 
@@ -33,8 +39,8 @@ Load SNP data.
 }
 \examples{
 LoadFastaData(
-"http://pages.stat.wisc.edu/~keles/atSNP-Data/sample_1.fasta",
-"http://pages.stat.wisc.edu/~keles/atSNP-Data/sample_2.fasta")
+ref.urlname="http://pages.stat.wisc.edu/~keles/atSNP-Data/sample_1.fasta",
+snp.urlname="http://pages.stat.wisc.edu/~keles/atSNP-Data/sample_2.fasta")
 }
 \author{
 Sunyoung Shin \email{sunyoung.shin@utdallas.edu}, Chandler Zuo 
