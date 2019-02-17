@@ -293,8 +293,8 @@ results_motif_par<-function(i, par.prior=snp.info$prior, par.transition=snp.info
 #' @name LoadMotifLibrary
 #' @title Load position weight matrices.
 #' @description Load the file for position weight matrices for motifs.
-#' @param filename A file containing MEME format: 
-#' http://memed.nbcr.net/meme/doc/meme-format.html.
+#' @param filename a MEME format file name.
+#' @param urlname URL containing a MEME format file.
 #' @param tag A string that marks the description line of the position weight 
 #' matrix.
 #' @param skiprows Number of description lines before each position weight 
@@ -332,14 +332,31 @@ results_motif_par<-function(i, par.prior=snp.info$prior, par.transition=snp.info
 #' \email{chandler.c.zuo@@gmail.com}
 #' @examples
 #' pwms <- LoadMotifLibrary(
-#' "http://pages.stat.wisc.edu/~keles/atSNP-Data/pfm_vertebrates.txt", 
+#' urlname="http://pages.stat.wisc.edu/~keles/atSNP-Data/pfm_vertebrates.txt", 
 #' tag = ">", transpose = FALSE, field = 1, sep = c("\t", " ", ">"), 
 #' skipcols = 1, skiprows = 1, pseudocount = 1)
 #' @useDynLib atSNP
+#' @import BiocFileCache
+#' @import rappdirs
 #' @export
-LoadMotifLibrary <- function(filename, tag = "MOTIF", transpose = FALSE, field = 2, sep = c("\t", " "), skipcols = 0, skiprows = 2, pseudocount = 0) {
-  lines <- readLines(filename)
-  motifLineNums <- grep(tag, lines)
+LoadMotifLibrary <- function(filename = NULL, urlname = NULL, tag = "MOTIF", transpose = FALSE, field = 2, sep = c("\t", " "), skipcols = 0, skiprows = 2, pseudocount = 0) {
+  if ( is.null(filename) & is.null(urlname) )  {
+    stop("one argument among 'filename' and 'urlname' should be provided.")
+  } else {
+    if(!is.null(filename) & !is.null(urlname))
+      stop("only one argument among 'filename' and 'urlname' should be provided.")
+  }
+  if(is.null(filename)) {
+    bfc <- BiocFileCache(cache = user_cache_dir(appname = "BiocFileCache"), ask = FALSE)
+    rid <- bfcrid(bfcquery(bfc, query=basename(urlname), exact=TRUE, field="rname"))
+    if (!length(rid))
+      rid <- names(bfcadd(bfc, rname=basename(urlname), urlname))
+    lines<-readLines(bfcrpath(rids=rid))
+  } else {
+    lines<-readLines(filename)
+  }
+
+    motifLineNums <- grep(tag, lines)
   if(length(myStrSplit(lines[motifLineNums[1]], sep)[[1]]) >= field) {
     motifnames <-
       sapply(myStrSplit(lines[motifLineNums], sep), function(x) x[field])
@@ -674,8 +691,10 @@ LoadSNPData <- function(filename = NULL, genome.lib = "BSgenome.Hsapiens.UCSC.hg
 #' @name LoadFastaData
 #' @title Load the SNP data from fasta files.
 #' @description Load SNP data.
-#' @param ref.data Fastq file name for the reference allele sequences.
-#' @param snp.data Fastq file name for the SNP allele sequences.
+#' @param ref.filename a fastq file name for the reference allele sequences.
+#' @param snp.filename a fastq file name for the SNP allele sequences.
+#'@param ref.urlname URL of a fastq file for the reference allele sequences.
+#' @param snp.urlname URL of a fastq file for the SNP allele sequences.
 #' @param snpids SNP IDs			  
 #' @param default.par A boolean for whether using the default Markov parameters.
 #'  Default: FALSE.
@@ -692,13 +711,47 @@ LoadSNPData <- function(filename = NULL, genome.lib = "BSgenome.Hsapiens.UCSC.hg
 #' @author Sunyoung Shin \email{sunyoung.shin@@utdallas.edu}, Chandler Zuo 
 #' \email{chandler.c.zuo@@gmail.com}
 #' @examples LoadFastaData(
-#' "http://pages.stat.wisc.edu/~keles/atSNP-Data/sample_1.fasta",
-#' "http://pages.stat.wisc.edu/~keles/atSNP-Data/sample_2.fasta")
+#' ref.urlname="http://pages.stat.wisc.edu/~keles/atSNP-Data/sample_1.fasta",
+#' snp.urlname="http://pages.stat.wisc.edu/~keles/atSNP-Data/sample_2.fasta")
 #' @useDynLib atSNP
+#' @import BiocFileCache
+#' @import rappdirs
 #' @export
-LoadFastaData <- function(ref.data, snp.data, snpids=NULL, default.par = FALSE) {
-  refdat <- read.table(ref.data)
-  snpdat <- read.table(snp.data)
+LoadFastaData <- function(ref.filename = NULL, snp.filename = NULL, 
+                          ref.urlname = NULL, snp.urlname = NULL,
+                          snpids = NULL, default.par = FALSE) {
+  if ( is.null(ref.filename) & is.null(ref.urlname) )  {
+    stop("one argument among 'ref.filename' and 'ref.urlname' should be provided.")
+  } else {
+    if(!is.null(ref.filename) & !is.null(ref.urlname))
+      stop("only one argument among 'ref.filename' and 'ref.urlname' should be provided.")
+  }
+  if(is.null(ref.filename)) {
+    bfc <- BiocFileCache(cache = user_cache_dir(appname = "BiocFileCache"), ask = FALSE)
+    ref.rid <- bfcrid(bfcquery(bfc, query=basename(ref.urlname), exact=TRUE, field="rname"))
+    if (!length(ref.rid))
+      ref.rid <- names(bfcadd(bfc, rname=basename(ref.urlname), ref.urlname))
+    refdat <- read.table(bfcrpath(rids=ref.rid))
+  } else {
+    refdat <- read.table(ref.filename)
+  }
+  
+  if ( is.null(snp.filename) & is.null(snp.urlname) )  {
+    stop("one argument among 'snp.filename' and 'snp.urlname' should be provided.")
+  } else {
+    if(!is.null(snp.filename) & !is.null(snp.urlname))
+      stop("only one argument among 'snp.filename' and 'snp.urlname' should be provided.")
+  }
+  if(is.null(snp.filename)) {
+    bfc <- BiocFileCache(cache = user_cache_dir(appname = "BiocFileCache"), ask = FALSE)
+    snp.rid <- bfcrid(bfcquery(bfc, query=basename(snp.urlname), exact=TRUE, field="rname"))
+    if (!length(snp.rid))
+      snp.rid <- names(bfcadd(bfc, rname=basename(snp.urlname), snp.urlname))
+    snpdat <- read.table(bfcrpath(rids=snp.rid))
+  } else {
+    snpdat <- read.table(snp.filename)
+  }
+
   if(nrow(refdat) != nrow(snpdat)) {
     stop("'ref.data' and 'snp.data' should have the same number of rows.")
   }
