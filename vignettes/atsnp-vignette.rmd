@@ -99,39 +99,33 @@ Users can also provide a list of PWMs as the motif library via the `LoadMotifLib
 ```{r eval=FALSE, echo=TRUE, results="hide"}
 ## Source: http://meme.nbcr.net/meme/doc/examples/sample-dna-motif.meme-io
 pwms <- LoadMotifLibrary(
- "http://pages.stat.wisc.edu/~keles/atSNP-Data/sample-dna-motif.meme-io.txt")
+ urlname="http://pages.stat.wisc.edu/~keles/atSNP-Data/sample-dna-motif.meme-io.txt")
 
 ## Source: http://compbio.mit.edu/encode-motifs/motifs.txt
 pwms <- LoadMotifLibrary(
- "http://pages.stat.wisc.edu/~keles/atSNP-Data/motifs.txt",
+ urlname="http://pages.stat.wisc.edu/~keles/atSNP-Data/motifs.txt",
  tag = ">", transpose = FALSE, field = 1, 
  sep = c("\t", " ", ">"), skipcols = 1, 
  skiprows = 1, pseudocount = 0)
 
 ## Source: http://johnsonlab.ucsf.edu/mochi_files/JASPAR_motifs_H_sapiens.txt
 pwms <- LoadMotifLibrary(
- "http://pages.stat.wisc.edu/~keles/atSNP-Data/JASPAR_motifs_H_sapiens.txt",
+ urlname="http://pages.stat.wisc.edu/~keles/atSNP-Data/JASPAR_motifs_H_sapiens.txt",
  tag = "/NAME",skiprows = 1, skipcols = 0, transpose = FALSE,
  field = 2)
 
 ## Source: http://jaspar.genereg.net/html/DOWNLOAD/ARCHIVE/JASPAR2010/all_data/matrix_only/matrix.txt
 pwms <- LoadMotifLibrary(
- "http://pages.stat.wisc.edu/~keles/atSNP-Data/matrix.txt", 
+ urlname="http://pages.stat.wisc.edu/~keles/atSNP-Data/matrix.txt", 
  tag = ">", skiprows = 1, skipcols = 1, transpose = TRUE, 
  field = 1, sep = c("\t", " ", "\\[", "\\]", ">"),
  pseudocount = 1)
 
 ## Source: http://jaspar.genereg.net/html/DOWNLOAD/JASPAR_CORE/pfm/nonredundant/pfm_vertebrates.txt
 pwms <- LoadMotifLibrary(
- "http://pages.stat.wisc.edu/~keles/atSNP-Data/pfm_vertebrates.txt",
+ urlname="http://pages.stat.wisc.edu/~keles/atSNP-Data/pfm_vertebrates.txt",
  tag = ">", skiprows = 1, skipcols = 0, transpose = TRUE, field = 1, 
  sep = c(">", "\t", " "), pseudocount = 1)
-
-## pwms <- LoadMotifLibrary(
-##  "http://gibbs.biomed.ucf.edu/PreDREM/download/nonredundantmotif.transfac", 
-##  tag = "DE", skiprows = 1, skipcols = 1, 
-##  transpose = FALSE, field = 2, sep = "\t")
-
 ``` 
 
 ## Load the SNP Data
@@ -200,7 +194,7 @@ Users can also provide SNP data through a pair of fasta files, one for the seque
 Such a pair of files can be loaded by the function `LoadFastaData`:
 
 ```{r eval=TRUE, echo = TRUE, results="markup",tidy=FALSE}
-snp_info2 <- LoadFastaData("http://pages.stat.wisc.edu/~keles/atSNP-Data/sample_1.fasta", "http://pages.stat.wisc.edu/~keles/atSNP-Data/sample_2.fasta", default.par = TRUE)
+snp_info2 <- LoadFastaData(ref.urlname="http://pages.stat.wisc.edu/~keles/atSNP-Data/sample_1.fasta", snp.urlname="http://pages.stat.wisc.edu/~keles/atSNP-Data/sample_2.fasta", default.par = TRUE)
 ``` 
 
 ## Affinity score tests
