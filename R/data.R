@@ -4,7 +4,8 @@
 #' loaded by 'data(example)'.
 #' @docType data
 #' @format A list object.
-#' @author Chandler Zuo chandler.c.zuo@@gmail.com
+#' @author Sunyoung Shin \email{sunyoung.shin@@utdallas.edu}, Chandler Zuo 
+#' \email{chandler.c.zuo@@gmail.com}
 NULL
 
 #' @name snpInfo
@@ -19,7 +20,8 @@ NULL
 #' }
 #' @docType data
 #' @format A list object.
-#' @author Chandler Zuo chandler.c.zuo@@gmail.com
+#' @author Sunyoung Shin \email{sunyoung.shin@@utdallas.edu}, Chandler Zuo 
+#' \email{chandler.c.zuo@@gmail.com}
 NULL
 
 #' @name snp_tbl
@@ -34,21 +36,35 @@ NULL
 #' }
 #' @docType data
 #' @format A data.frame object.
-#' @author Chandler Zuo chandler.c.zuo@@gmail.com
+#' @author Sunyoung Shin \email{sunyoung.shin@@utdallas.edu}, Chandler Zuo 
+#' \email{chandler.c.zuo@@gmail.com}
 NULL
 
 #' @name motif_scores
 #' @title Scores for the sample snp data computed based on the motif data.
 #' @description This list object loaded by 'data(example)' contains two fields:
 #' \tabular{ll}{
-#' snp.tbl \tab A data.table containing the sequence of nucleobases around each 
+#' snp.tbl \tab A data.frame containing the sequence of nucleobases around each 
 #' SNP.\cr
-#' motif.scores \tab A data.table containing the likelihood scores computed for 
+#' motif.scores \tab A data.frame containing the likelihood scores computed for 
 #' each SNP and each motif.\cr
 #'}
 #' @docType data
-#' @format A data.table object.
-#' @author Chandler Zuo chandler.c.zuo@@gmail.com
+#' @format A data.frame object.
+#' @author Sunyoung Shin \email{sunyoung.shin@@utdallas.edu}, Chandler Zuo 
+#' \email{chandler.c.zuo@@gmail.com}
+NULL
+
+#' @name motif_match
+#' @title Composit logo plotting input containing motif scores, the matching 
+#' subsequences and the augmented matching subsequences on SNP and reference 
+#' allele 
+#' @description This data.frame object loaded by 'data(example)' contains 
+#' information about MYC_disc1 match to rs53576. 
+#' @docType data
+#' @format A data.frame object.
+#' @author Sunyoung Shin \email{sunyoung.shin@@utdallas.edu}, Chandler Zuo 
+#' \email{chandler.c.zuo@@gmail.com}
 NULL
 
 #' @name encode_motif
@@ -57,7 +73,8 @@ NULL
 #' @description This motif library can be loaded by 'data(encode_library)'.
 #' @docType data
 #' @format A list object.
-#' @author Chandler Zuo chandler.c.zuo@@gmail.com
+#' @author Sunyoung Shin \email{sunyoung.shin@@utdallas.edu}, Chandler Zuo 
+#' \email{chandler.c.zuo@@gmail.com}
 NULL
 
 #' @name encode_motifinfo
@@ -69,7 +86,8 @@ NULL
 #' corresponding motif information parsed from the raw file.
 #' @docType data
 #' @format A character vector.
-#' @author Chandler Zuo chandler.c.zuo@@gmail.com
+#' @author Sunyoung Shin \email{sunyoung.shin@@utdallas.edu}, Chandler Zuo 
+#' \email{chandler.c.zuo@@gmail.com}
 NULL
 
 #' @name jaspar_motif
@@ -79,7 +97,8 @@ NULL
 #' @description This motif library can be loaded by 'data(jaspar_library)'.
 #' @docType data
 #' @format A list object.
-#' @author Chandler Zuo chandler.c.zuo@@gmail.com
+#' @author Sunyoung Shin \email{sunyoung.shin@@utdallas.edu}, Chandler Zuo 
+#' \email{chandler.c.zuo@@gmail.com}
 NULL
 
 #' @name jaspar_motifinfo
@@ -92,7 +111,8 @@ NULL
 #' corresponding motif information parsed from the raw file.
 #' @docType data
 #' @format A character vector.
-#' @author Chandler Zuo chandler.c.zuo@@gmail.com
+#' @author Sunyoung Shin \email{sunyoung.shin@@utdallas.edu}, Chandler Zuo 
+#' \email{chandler.c.zuo@@gmail.com}
 NULL
 
 #' @name prior
@@ -102,7 +122,8 @@ NULL
 #' the NHGRI catalog. Loaded by 'data(default_par)'.
 #' @docType data
 #' @format A numeric vector.
-#' @author Chandler Zuo chandler.c.zuo@@gmail.com
+#' @author Sunyoung Shin \email{sunyoung.shin@@utdallas.edu}, Chandler Zuo 
+#' \email{chandler.c.zuo@@gmail.com}
 NULL
 
 #' @name transition
@@ -112,5 +133,6 @@ NULL
 #' the NHGRI catalog. Loaded by 'data(default_par)'.
 #' @docType data
 #' @format A 4 by 4 numeric matrix.
-#' @author Chandler Zuo chandler.c.zuo@@gmail.com
+#' @author Sunyoung Shin \email{sunyoung.shin@@utdallas.edu}, Chandler Zuo 
+#' \email{chandler.c.zuo@@gmail.com}
 NULL

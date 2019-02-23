@@ -16,5 +16,6 @@ a1,a2 \tab The nucleotide on the reference and SNP allele.\cr
 }
 }
 \author{
-Chandler Zuo chandler.c.zuo@gmail.com
+Sunyoung Shin \email{sunyoung.shin@utdallas.edu}, Chandler Zuo 
+\email{chandler.c.zuo@gmail.com}
 }

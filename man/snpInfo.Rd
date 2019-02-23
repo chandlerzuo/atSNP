@@ -16,5 +16,6 @@ prior \tab The stationary distribution used in the Markov model.\cr
 }
 }
 \author{
-Chandler Zuo chandler.c.zuo@gmail.com
+Sunyoung Shin \email{sunyoung.shin@utdallas.edu}, Chandler Zuo 
+\email{chandler.c.zuo@gmail.com}
 }

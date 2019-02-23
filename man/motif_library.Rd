@@ -10,5 +10,6 @@ A list of the position weight matrices corresponding to motifs,
 loaded by 'data(example)'.
 }
 \author{
-Chandler Zuo chandler.c.zuo@gmail.com
+Sunyoung Shin \email{sunyoung.shin@utdallas.edu}, Chandler Zuo 
+\email{chandler.c.zuo@gmail.com}
 }

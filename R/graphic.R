@@ -66,8 +66,7 @@
 #' @examples
 #' data(example)
 #' dtMotifMatch(motif_scores$snp.tbl, motif_scores$motif.scores, 
-#' snpids=motif_scores$snp.tbl$snpid, motifs=motif_scores$motif.scores$motif[1],
-#'  motif.lib = motif_library)
+#' motif.lib = motif_library)
 #' @import data.table
 #' @export
 dtMotifMatch<-function(snp.tbl, motif.scores, snpids=NULL, motifs=NULL, 
@@ -79,6 +78,14 @@ dtMotifMatch<-function(snp.tbl, motif.scores, snpids=NULL, motifs=NULL,
     } else if (checkMotifs(motifs)) {
       stop("motifs must be a vector of class character or NULL.")
     }
+  
+  if(length(setdiff(snpids, motif.scores$snpid))!=0)
+  {
+    stop("snpids are not found in motif.scores.")
+  } else if (length(setdiff(motifs, motif.scores$motif))!=0) {
+    stop("motifs are not found in motif.scores.")
+  }
+  
   #warning for ncores, motif.lib etc.
   snp.tbl<-as.data.table(snp.tbl)
   ncores.v1 <- min(ncores, length(snpids) * length(motifs))
@@ -125,35 +132,7 @@ dtMotifMatch<-function(snp.tbl, motif.scores, snpids=NULL, motifs=NULL,
 #' and SNP alleles. Plot sequence logos of the position weight matrix of the 
 #' motif to the corresponding positions of the best matching subsequences on the
 #'  references and SNP alleles.
-#' @param snp.tbl A data.frame with the following information:
-#' \tabular{cc}{
-#' snpid \tab SNP id.\cr
-#' ref_seq \tab Reference allele nucleobase sequence.\cr
-#' snp_seq \tab SNP allele nucleobase sequence.\cr
-#' ref_seq_rev \tab Reference allele nucleobase sequence on the reverse 
-#' strand.\cr
-#' snp_seq_rev \tab SNP allele nucleobase sequence on the reverse strand.\cr}
-#' @param motif.scores A data.frame with the following information:
-#' \tabular{cc}{
-#' motif \tab Name of the motif.\cr
-#' motif_len \tab Length of the motif.\cr
-#' ref_start, ref_end, ref_strand \tab Location of the best matching subsequence
-#'  on the reference allele.\cr
-#' snp_start, snp_end, snp_strand \tab Location of the best matching subsequence
-#'  on the SNP allele.\cr
-#' log_lik_ref \tab Log-likelihood score for the reference allele.\cr
-#' log_lik_snp \tab Log-likelihood score for the SNP allele.\cr
-#' log_lik_ratio \tab The log-likelihood ratio.\cr
-#' log_enhance_odds \tab Difference in log-likelihood ratio between SNP allele 
-#' and reference allele based on the best matching subsequence on the reference 
-#' allele.\cr
-#' log_reduce_odds \tab Difference in log-likelihood ratio between reference 
-#' allele and SNP allele based on the best matching subsequence on the SNP 
-#' allele.\cr
-#' }
-#' @param snpid A snpid to plot the sequences on the reference and SNP alleles
-#' @param snp snp nucleotide of the snpid
-#' @param motif A motif to match the sequences with its position weight matrix
+#' @param motif.match a single row ofdtMotifMatch output in data.frame format
 #' @param motif.lib A list of position weight matrices
 #' @param cex.main The size of the main title.
 #' @param ... Other parameters passed to plotMotifLogo.
@@ -163,43 +142,36 @@ dtMotifMatch<-function(snp.tbl, motif.scores, snpids=NULL, motifs=NULL,
 #' @author Sunyoung Shin\email{sunyoung.shin@@utdallas.edu}
 #' @examples
 #' data(example)
-#' plotMotifMatch(motif_scores$snp.tbl, motif_scores$motif.scores, 
-#' snpid=motif_scores$snp.tbl$snpid[1], 
-#' motif=motif_scores$motif.scores$motif[1], motif.lib = motif_library)
-#' @import data.table 
+#' plotMotifMatch(motif_match, motif.lib = motif_library)
 #' @importFrom motifStack plotMotifLogo pcm2pfm 
 #' @importFrom grDevices dev.off pdf
 #' @importFrom graphics arrows mtext par segments title
 #' @importFrom stats quantile var
 #' @importFrom utils data read.table write.table
 #' @export
-plotMotifMatch<-function(snp.tbl, motif.scores, snpid, snp=NULL, motif, motif.lib, cex.main = 2, ...) {
-  if (!is(snpid, "character") | length(snpid)!=1) {
+plotMotifMatch<-function(motif.match, motif.lib, cex.main = 2, ...) {
+  if (!is(motif.match$snpid, "character") | length(motif.match$snpid)!=1) {
     stop("snpid must be a character")
   }
-  if (!is(motif, "character") | length(motif)!=1) {
+  if (!is(motif.match$motif, "character") | length(motif.match$motif)!=1) {
     stop("motif must be a character")
   }
-  if(sum(! motif %in% names(motif.lib)) > 0) {
+  if(sum(! motif.match$motif %in% names(motif.lib)) > 0) {
     stop("The motif is not included in 'motif.lib'.")
   }
 
-  motif.match.dt <- dtMotifMatch(snp.tbl, motif.scores, snpids=snpid, motifs=motif, ncores = 1, motif.lib = motif.lib)  
-if(nrow(motif.match.dt)>1) {
-      if(is.null(snp)) {
-      stop(paste("Multiple nucleobases on the SNP genome. Add snp= ", paste(motif.match.dt$snpbase, collapse=" or "), sep=""))
-  } else {
-  motif.match.dt<-motif.match.dt[snpbase==snp]
-  }
+  if(nrow(motif.match)>1) {
+      stop(paste("Pick a single row of dtMotifMatch output."))
   }
   
+  motif.pwm <- t(get(motif.match$motif, motif.lib))
   ##Convert ACGT to 1234
   codes <- seq(4)
   names(codes) <- c("A", "C", "G", "T")
-  ref_aug_match_seq_forward_code <- codes[strsplit(motif.match.dt[,ref_aug_match_seq_forward], "")[[1]]]
-  ref_aug_match_seq_reverse_code <- codes[strsplit(motif.match.dt[,ref_aug_match_seq_reverse], "")[[1]]]
-  snp_aug_match_seq_forward_code <- codes[strsplit(motif.match.dt[,snp_aug_match_seq_forward], "")[[1]]]
-  snp_aug_match_seq_reverse_code <- codes[strsplit(motif.match.dt[,snp_aug_match_seq_reverse], "")[[1]]]
+  ref_aug_match_seq_forward_code <- codes[strsplit(motif.match$ref_aug_match_seq_forward, "")[[1]]]
+  ref_aug_match_seq_reverse_code <- codes[strsplit(motif.match$ref_aug_match_seq_reverse, "")[[1]]]
+  snp_aug_match_seq_forward_code <- codes[strsplit(motif.match$snp_aug_match_seq_forward, "")[[1]]]
+  snp_aug_match_seq_reverse_code <- codes[strsplit(motif.match$snp_aug_match_seq_reverse, "")[[1]]]
   
   ##Convert 1234 to (1000)(0100)(0010)(0001)
   codes.vec <- diag(4)
@@ -210,12 +182,12 @@ if(nrow(motif.match.dt)>1) {
   snp_aug_match_pwm_reverse<- mapply(function(i) codes.vec[,i], as.list(snp_aug_match_seq_reverse_code))
   
   ##(3,2) to Augmented PWM: ___PWM__
-  ref_aug_pwm <- cbind(matrix(0, 4, motif.match.dt[, ref_extra_pwm_left]), t(get(motif.match.dt[, motif], motif.lib)), matrix(0, 4, motif.match.dt[, ref_extra_pwm_right]))
+  ref_aug_pwm <- cbind(matrix(0, 4, motif.match$ref_extra_pwm_left), motif.pwm, matrix(0, 4, motif.match$ref_extra_pwm_right))
   rownames(ref_aug_pwm) <- c("A", "C", "G", "T")
-  snp_aug_pwm <- cbind(matrix(0, 4, motif.match.dt[, snp_extra_pwm_left]), t(get(motif.match.dt[, motif], motif.lib)), matrix(0, 4, motif.match.dt[, snp_extra_pwm_right]))
+  snp_aug_pwm <- cbind(matrix(0, 4, motif.match$snp_extra_pwm_left), motif.pwm, matrix(0, 4, motif.match$snp_extra_pwm_right))
   rownames(snp_aug_pwm) <- c("A", "C", "G", "T")
 
-  snp_loc <- motif.match.dt$ref_location
+  snp_loc <- motif.match$ref_location
   revert.columns <- function(mat) {
     mat[, rev(seq(ncol(mat)))]
   }
@@ -223,12 +195,12 @@ if(nrow(motif.match.dt)>1) {
   ref_aug_match_pwm<-ref_aug_match_pwm_forward
   snp_aug_match_pwm<-snp_aug_match_pwm_forward
 
-  if(motif.match.dt$ref_strand == "-") {
+  if(motif.match$ref_strand == "-") {
     ref_aug_pwm <- revert.columns(ref_aug_pwm)
     snp_loc <- ncol(ref_aug_match_pwm_forward) - 1 - snp_loc
     ref_aug_match_pwm<-ref_aug_match_pwm_reverse
   }
-  if(motif.match.dt$snp_strand == "-") {
+  if(motif.match$snp_strand == "-") {
     snp_aug_pwm <- revert.columns(snp_aug_pwm)
     snp_aug_match_pwm<-snp_aug_match_pwm_reverse
   }
@@ -236,7 +208,7 @@ if(nrow(motif.match.dt)>1) {
   par(mfrow=c(4,1), oma=c(1,1,4,1))
   par(mar=c(1.5, 3, 4, 2))
   plotMotifLogo(pcm2pfm(ref_aug_pwm), "Best match to the reference genome", yaxis=FALSE, xaxis=FALSE, xlab="", ylab="PWM", ...)
-if(motif.match.dt$ref_strand=='+') {
+if(motif.match$ref_strand=='+') {
 arrows((min(which(colSums(ref_aug_pwm)!=0))-1)/ncol(ref_aug_pwm), -0.17, max(which(colSums(ref_aug_pwm)!=0))/ncol(ref_aug_pwm), -0.17, length = 0.1, angle = 15, code = 2, col = "blue", lwd = 1.5, xpd=NA)
   mtext("5'", 1, adj=(min(which(colSums(ref_aug_pwm)!=0))-1)/ncol(ref_aug_pwm), padj=1, col="blue", cex=1) 
   mtext("3'", 1, adj=max(which(colSums(ref_aug_pwm)!=0))/ncol(ref_aug_pwm), padj=1, col="blue", cex=1)
@@ -246,12 +218,12 @@ arrows(max(which(colSums(ref_aug_pwm)!=0))/ncol(ref_aug_pwm), -0.17, (min(which(
   mtext("3'", 1, adj=(min(which(colSums(ref_aug_pwm)!=0))-1)/ncol(ref_aug_pwm), padj=1, col="blue", cex=1) 
 }
   par(mar = c(4, 3, 1.5, 2))
-plotMotifLogo(pcm2pfm(ref_aug_match_pwm), font="mono,Courier", yaxis=FALSE, xlab="", ylab=paste("(", motif.match.dt$ref_strand, ")", sep=""), ...)
-segments(snp_loc/motif.match.dt[,snp_ref_length], 0, snp_loc/motif.match.dt[,snp_ref_length], 1, col="blue", lty=3, lwd=2)
-segments(snp_loc/motif.match.dt[,snp_ref_length], 1, (snp_loc+1)/motif.match.dt[,snp_ref_length], 1, col="blue", lty=3, lwd=2)
-segments((snp_loc+1)/motif.match.dt[,snp_ref_length], 0, (snp_loc+1)/motif.match.dt[,snp_ref_length], 1, col="blue", lty=3, lwd=2)
-segments(snp_loc/motif.match.dt[,snp_ref_length], 0, (snp_loc+1)/motif.match.dt[,snp_ref_length], 0, col="blue", lty=3, lwd=2)
-  if(motif.match.dt$ref_strand=="+")   {
+plotMotifLogo(pcm2pfm(ref_aug_match_pwm), font="mono,Courier", yaxis=FALSE, xlab="", ylab=paste("(", motif.match$ref_strand, ")", sep=""), ...)
+segments(snp_loc/motif.match$snp_ref_length, 0, snp_loc/motif.match$snp_ref_length, 1, col="blue", lty=3, lwd=2)
+segments(snp_loc/motif.match$snp_ref_length, 1, (snp_loc+1)/motif.match$snp_ref_length, 1, col="blue", lty=3, lwd=2)
+segments((snp_loc+1)/motif.match$snp_ref_length, 0, (snp_loc+1)/motif.match$snp_ref_length, 1, col="blue", lty=3, lwd=2)
+segments(snp_loc/motif.match$snp_ref_length, 0, (snp_loc+1)/motif.match$snp_ref_length, 0, col="blue", lty=3, lwd=2)
+  if(motif.match$ref_strand=="+")   {
   mtext("5'", 1,  adj=0, padj=1, col="blue", cex=1) 
   mtext("3'", 1,  adj=1, padj=1, col="blue", cex=1)
 } else {
@@ -259,12 +231,12 @@ segments(snp_loc/motif.match.dt[,snp_ref_length], 0, (snp_loc+1)/motif.match.dt[
   mtext("5'", 1, adj=1, padj=1, col="blue", cex=1) 
   }
 par(mar=c(1.5, 3, 4, 2))      
-plotMotifLogo(pcm2pfm(snp_aug_match_pwm), "Best match to the SNP genome", font="mono,Courier", yaxis=FALSE, xlab="", ylab=paste("(", motif.match.dt$snp_strand, ")", sep=""), ...)
-segments(snp_loc/motif.match.dt[,snp_ref_length], 0, snp_loc/motif.match.dt[,snp_ref_length], 1, col="blue", lty=3, lwd=2)
-segments(snp_loc/motif.match.dt[,snp_ref_length], 1, (snp_loc+1)/motif.match.dt[,snp_ref_length], 1, col="blue", lty=3, lwd=2)
-segments((snp_loc+1)/motif.match.dt[,snp_ref_length], 0, (snp_loc+1)/motif.match.dt[,snp_ref_length], 1, col="blue", lty=3, lwd=2)
-segments(snp_loc/motif.match.dt[,snp_ref_length], 0, (snp_loc+1)/motif.match.dt[,snp_ref_length], 0, col="blue", lty=3, lwd=2)
-  if(motif.match.dt$snp_strand=="+")   {
+plotMotifLogo(pcm2pfm(snp_aug_match_pwm), "Best match to the SNP genome", font="mono,Courier", yaxis=FALSE, xlab="", ylab=paste("(", motif.match$snp_strand, ")", sep=""), ...)
+segments(snp_loc/motif.match$snp_ref_length, 0, snp_loc/motif.match$snp_ref_length, 1, col="blue", lty=3, lwd=2)
+segments(snp_loc/motif.match$snp_ref_length, 1, (snp_loc+1)/motif.match$snp_ref_length, 1, col="blue", lty=3, lwd=2)
+segments((snp_loc+1)/motif.match$snp_ref_length, 0, (snp_loc+1)/motif.match$snp_ref_length, 1, col="blue", lty=3, lwd=2)
+segments(snp_loc/motif.match$snp_ref_length, 0, (snp_loc+1)/motif.match$snp_ref_length, 0, col="blue", lty=3, lwd=2)
+  if(motif.match$snp_strand=="+")   {
   mtext("5'", 1,  adj=0, padj=1, col="blue", cex=1) 
   mtext("3'", 1,  adj=1, padj=1, col="blue", cex=1)
 } else {
@@ -273,7 +245,7 @@ segments(snp_loc/motif.match.dt[,snp_ref_length], 0, (snp_loc+1)/motif.match.dt[
   }
 par(mar=c(4, 3, 1.5, 2))
 plotMotifLogo(pcm2pfm(snp_aug_pwm), yaxis=FALSE, xaxis=FALSE, xlab="", ylab="PWM", ...)
-if(motif.match.dt$snp_strand=='+') {
+if(motif.match$snp_strand=='+') {
 arrows((min(which(colSums(snp_aug_pwm)!=0))-1)/ncol(snp_aug_pwm), -0.17, max(which(colSums(snp_aug_pwm)!=0))/ncol(snp_aug_pwm), -0.17, length = 0.1, angle = 15, code = 2, col = "blue", lwd = 1.5, xpd=NA)
   mtext("5'", 1, adj=(min(which(colSums(snp_aug_pwm)!=0))-1)/ncol(snp_aug_pwm), padj=1, col="blue", cex=1) 
   mtext("3'", 1, adj=max(which(colSums(snp_aug_pwm)!=0))/ncol(snp_aug_pwm), padj=1, col="blue", cex=1)
@@ -282,7 +254,7 @@ arrows(max(which(colSums(snp_aug_pwm)!=0))/ncol(snp_aug_pwm), -0.17, (min(which(
   mtext("5'", 1, adj=max(which(colSums(snp_aug_pwm)!=0))/ncol(snp_aug_pwm), padj=1, col="blue", cex=1) 
   mtext("3'", 1, adj=(min(which(colSums(snp_aug_pwm)!=0))-1)/ncol(snp_aug_pwm), padj=1, col="blue", cex=1)
 }
-title(main=paste(motif.match.dt[,motif], " Motif Scan for ", motif.match.dt[,snpid], sep=""), outer=TRUE, cex.main=cex.main)
+title(main=paste(motif.match$motif, " Motif Scan for ", motif.match$snpid, sep=""), outer=TRUE, cex.main=cex.main)
 }
 
 .find_reverse <- function(sequence) {

@@ -280,8 +280,8 @@ atSNP provides additional functions to extract the matched nucleotide subsequenc
 
 ```{r eval=TRUE,echo=TRUE,results="markup"}
 
-match_result <- MatchSubsequence(snp.tbl = atsnp.scores$snp.tbl, motif.scores = atsnp.result, motif.lib = motif_library, snpids = c("rs53576", "rs7412"), motifs = names(motif_library)[1], ncores = 1)
-match_result[c("snpid", "motif", "IUPAC", "ref_match_seq", "snp_match_seq")]
+match.subseq_result <- MatchSubsequence(snp.tbl = atsnp.scores$snp.tbl, motif.scores = atsnp.result, motif.lib = motif_library, snpids = c("rs53576", "rs7412"), motifs = names(motif_library)[1], ncores = 1)
+match.subseq_result[c("snpid", "motif", "IUPAC", "ref_match_seq", "snp_match_seq")]
 
 ``` 
 
@@ -289,12 +289,8 @@ To visualize how each motif is matched to each allele using the `plotMotifMatch`
   
   
 ```{r eval=TRUE, echo=TRUE, fig.align="center", fig.height=6, fig.width=6, warning=TRUE, dpi=600, include=TRUE, results="markup"}
-plotMotifMatch(snp.tbl = atsnp.scores$snp.tbl,
-               motif.scores = atsnp.scores$motif.scores,
-               snpid = atsnp.scores$snp.tbl$snpid[1],
-               motif.lib = motif_library,
-               motif = atsnp.scores$motif.scores$motif[1])
-
+match.seq<-dtMotifMatch(atsnp.scores$snp.tbl, atsnp.scores$motif.scores, snpids="rs53576", motifs="SIX5_disc1", motif.lib = motif_library)
+plotMotifMatch(match.seq,  motif.lib = motif_library)
 ```
 
 # Session Information

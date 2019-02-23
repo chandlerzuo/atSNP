@@ -11,5 +11,6 @@ This parameter is fitted using 61bp windowns around the SNPs in
 the NHGRI catalog. Loaded by 'data(default_par)'.
 }
 \author{
-Chandler Zuo chandler.c.zuo@gmail.com
+Sunyoung Shin \email{sunyoung.shin@utdallas.edu}, Chandler Zuo 
+\email{chandler.c.zuo@gmail.com}
 }

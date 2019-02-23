@@ -6,43 +6,10 @@
 sequences of its corresponding best matching augmented subsequence on the 
 reference and SNP allele.}
 \usage{
-plotMotifMatch(snp.tbl, motif.scores, snpid, snp = NULL, motif,
-  motif.lib, cex.main = 2, ...)
+plotMotifMatch(motif.match, motif.lib, cex.main = 2, ...)
 }
 \arguments{
-\item{snp.tbl}{A data.frame with the following information:
-\tabular{cc}{
-snpid \tab SNP id.\cr
-ref_seq \tab Reference allele nucleobase sequence.\cr
-snp_seq \tab SNP allele nucleobase sequence.\cr
-ref_seq_rev \tab Reference allele nucleobase sequence on the reverse 
-strand.\cr
-snp_seq_rev \tab SNP allele nucleobase sequence on the reverse strand.\cr}}
-
-\item{motif.scores}{A data.frame with the following information:
-\tabular{cc}{
-motif \tab Name of the motif.\cr
-motif_len \tab Length of the motif.\cr
-ref_start, ref_end, ref_strand \tab Location of the best matching subsequence
- on the reference allele.\cr
-snp_start, snp_end, snp_strand \tab Location of the best matching subsequence
- on the SNP allele.\cr
-log_lik_ref \tab Log-likelihood score for the reference allele.\cr
-log_lik_snp \tab Log-likelihood score for the SNP allele.\cr
-log_lik_ratio \tab The log-likelihood ratio.\cr
-log_enhance_odds \tab Difference in log-likelihood ratio between SNP allele 
-and reference allele based on the best matching subsequence on the reference 
-allele.\cr
-log_reduce_odds \tab Difference in log-likelihood ratio between reference 
-allele and SNP allele based on the best matching subsequence on the SNP 
-allele.\cr
-}}
-
-\item{snpid}{A snpid to plot the sequences on the reference and SNP alleles}
-
-\item{snp}{snp nucleotide of the snpid}
-
-\item{motif}{A motif to match the sequences with its position weight matrix}
+\item{motif.match}{a single row ofdtMotifMatch output in data.frame format}
 
 \item{motif.lib}{A list of position weight matrices}
 
@@ -63,9 +30,7 @@ motif to the corresponding positions of the best matching subsequences on the
 }
 \examples{
 data(example)
-plotMotifMatch(motif_scores$snp.tbl, motif_scores$motif.scores, 
-snpid=motif_scores$snp.tbl$snpid[1], 
-motif=motif_scores$motif.scores$motif[1], motif.lib = motif_library)
+plotMotifMatch(motif_match, motif.lib = motif_library)
 }
 \author{
 Sunyoung Shin\email{sunyoung.shin@utdallas.edu}

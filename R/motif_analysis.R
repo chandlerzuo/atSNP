@@ -855,7 +855,8 @@ ComputePValues <- function(motif.lib, snp.info, motif.scores, ncores = 1, testin
   
   results <- as.list(seq_along(motif.lib))
   nsets <- as.integer(length(motif.lib) / ncores)
-
+  motif.scores <- as.data.table(motif.scores)
+  
   if(Sys.info()[["sysname"]] == "Windows"){
     snow <- SnowParam(workers = ncores, type = "SOCK")
     results<-bpmapply(function(x) results_motif_par(i=x, par.prior=snp.info$prior, par.transition=snp.info$transition, par.motif.lib=motif.lib, par.motif.scores=motif.scores, par.testing.mc=testing.mc, par.figdir=figdir), seq_along(motif.lib), BPPARAM = snow,SIMPLIFY = FALSE)

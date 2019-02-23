@@ -83,8 +83,7 @@ best matching augmented subsequence of the reference and SNP alleles.
 \examples{
 data(example)
 dtMotifMatch(motif_scores$snp.tbl, motif_scores$motif.scores, 
-snpids=motif_scores$snp.tbl$snpid, motifs=motif_scores$motif.scores$motif[1],
- motif.lib = motif_library)
+motif.lib = motif_library)
 }
 \author{
 Sunyoung Shin\email{sunyoung.shin@utdallas.edu}

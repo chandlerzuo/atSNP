@@ -14,5 +14,6 @@ for \code{\link{jaspar_motif}}. The entries of this vector are the
 corresponding motif information parsed from the raw file.
 }
 \author{
-Chandler Zuo chandler.c.zuo@gmail.com
+Sunyoung Shin \email{sunyoung.shin@utdallas.edu}, Chandler Zuo 
+\email{chandler.c.zuo@gmail.com}
 }
