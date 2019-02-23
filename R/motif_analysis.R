@@ -220,6 +220,7 @@ LoadSNPData <- function(filename = NULL, genome.lib = "BSgenome.Hsapiens.UCSC.hg
                         snp.lib = "SNPlocs.Hsapiens.dbSNP144.GRCh38",
                         snpids = NULL, half.window.size = 30, default.par = FALSE,
                         mutation = FALSE, ...) {
+  IUPAC_CODE_MAP = NULL
   useFile <- FALSE
   rsid.rm <- rsid.missing <- rsid.duplicate <- rsid.na <- NULL
   if(!is.null(filename)) {
@@ -351,7 +352,7 @@ LoadSNPData <- function(filename = NULL, genome.lib = "BSgenome.Hsapiens.UCSC.hg
     transition <- transition / rowSums(transition)
     names(prior) <- colnames(transition) <- rownames(transition) <- c("A", "C", "G", "T")
   } else {
-    data(default_par)
+    data(default_par, envir = environment())
   }
   if(!mutation) {
     ## real SNP data
@@ -531,7 +532,7 @@ LoadFastaData <- function(ref.filename = NULL, snp.filename = NULL,
     transition <- transition / rowSums(transition)
     names(prior) <- colnames(transition) <- rownames(transition) <- c("A", "C", "G", "T")
   } else {
-    data(default_par)
+    data(default_par, envir = environment())
   }
   colnames(sequences)<-snpids
 
@@ -734,6 +735,12 @@ ComputeMotifScore <- function(motif.lib, snp.info, ncores = 1) {
 #' @importFrom BiocParallel bpmapply MulticoreParam SnowParam
 #' @export
 MatchSubsequence <- function(snp.tbl, motif.scores, motif.lib, snpids = NULL, motifs = NULL, ncores = 1) {
+  motif = NULL
+  snpid = NULL
+  snpbase = NULL
+  len_seq = NULL
+  ref_seq = NULL
+  motif = NULL
   if(is.null(snpids)) {
     snpids <- unique(snp.tbl$snpid)
   }
@@ -850,18 +857,29 @@ MatchSubsequence <- function(snp.tbl, motif.scores, motif.lib, snpids = NULL, mo
 #' @export
 ComputePValues <- function(motif.lib, snp.info, motif.scores, ncores = 1, testing.mc=FALSE, figdir = NULL) {
   ncores <- min(c(ncores, length(motif.lib)))
-
+  motif = NULL
+  snpid = NULL
+  snpbase = NULL
+  pval_ref = NULL
+  pval_snp = NULL
+  pval_cond_ref = NULL
+  pval_cond_snp = NULL
+  pval_diff = NULL
+  pval_rank = NULL
+  
 #  startParallel(ncores)
   
   results <- as.list(seq_along(motif.lib))
   nsets <- as.integer(length(motif.lib) / ncores)
   motif.scores <- as.data.table(motif.scores)
+  prior <- snp.info$prior
+  transition <- snp.info$transition
   
   if(Sys.info()[["sysname"]] == "Windows"){
     snow <- SnowParam(workers = ncores, type = "SOCK")
-    results<-bpmapply(function(x) results_motif_par(i=x, par.prior=snp.info$prior, par.transition=snp.info$transition, par.motif.lib=motif.lib, par.motif.scores=motif.scores, par.testing.mc=testing.mc, par.figdir=figdir), seq_along(motif.lib), BPPARAM = snow,SIMPLIFY = FALSE)
+    results<-bpmapply(function(x) results_motif_par(i=x, par.prior=prior, par.transition=transition, par.motif.lib=motif.lib, par.motif.scores=motif.scores, par.testing.mc=testing.mc, par.figdir=figdir), seq_along(motif.lib), BPPARAM = snow,SIMPLIFY = FALSE)
   }else{
-    results<-bpmapply(function(x) results_motif_par(i=x, par.prior=snp.info$prior, par.transition=snp.info$transition, par.motif.lib=motif.lib, par.motif.scores=motif.scores, par.testing.mc=testing.mc, par.figdir=figdir), seq_along(motif.lib), BPPARAM = MulticoreParam(workers = ncores),
+    results<-bpmapply(function(x) results_motif_par(i=x, par.prior=prior, par.transition=transition, par.motif.lib=motif.lib, par.motif.scores=motif.scores, par.testing.mc=testing.mc, par.figdir=figdir), seq_along(motif.lib), BPPARAM = MulticoreParam(workers = ncores),
                       SIMPLIFY = FALSE)
   }
 #  endParallel()

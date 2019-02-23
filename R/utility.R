@@ -42,7 +42,9 @@ checkMotifs<-function(m) {
   return(all(any(!is(m, "character"),  length(m)==0), is.null(m)==FALSE))
 }
 
-motif_score_par<-function(i, par.k=k, par.ncores=ncores, par.motifs=motifs, par.nmotifs=nmotifs, par.snpids=snpids,  par.snpbases=snpbases, par.len_seq=len_seq, par.motif.lib=motif.lib, par.snp.info=snp.info) {
+motif_score_par<-function(i, par.k, par.ncores, par.motifs, par.nmotifs, par.snpids,  par.snpbases, par.len_seq, par.motif.lib, par.snp.info) {
+  motif = NULL
+  snpbase = NULL
   if(i < par.ncores) {
     ids <- seq(par.k) + par.k * (i - 1)
   } else {
@@ -92,7 +94,32 @@ motif_score_par<-function(i, par.k=k, par.ncores=ncores, par.motifs=motifs, par.
   
 }
 
-match_subseq_par<-function(i, par.k=k, par.ncores=ncores, par.snp.tbl=snp.tbl, par.snpids=snpids, par.motif.scores=motif.scores, par.motif=motif, par.motif.tbl=motif.tbl) {
+match_subseq_par<-function(i, par.k, par.ncores, par.snp.tbl, par.snpids, par.motif.scores, par.motif, par.motif.tbl) {
+  motif = NULL
+  snpid = NULL
+  snpbase = NULL
+  ref_strand = NULL
+  ref_match_seq = NULL
+  ref_seq = NULL
+  ref_start = NULL
+  ref_end = NULL
+  ref_seq_rev = NULL
+  len_seq = NULL
+  snp_strand = NULL
+  snp_match_seq = NULL
+  snp_seq = NULL
+  snp_start = NULL
+  snp_end = NULL
+  snp_seq_rev = NULL
+  snp_seq_ref_match = NULL
+  ref_seq_snp_match = NULL
+  motif_len = NULL
+  log_lik_ref = NULL
+  log_lik_snp = NULL
+  log_lik_ratio = NULL
+  log_enhance_odds = NULL
+  log_reduce_odds = NULL
+  IUPAC = NULL
   if(i < par.ncores) {
     ids <- seq(par.k) + par.k * (i - 1)
   } else {
@@ -117,7 +144,15 @@ match_subseq_par<-function(i, par.k=k, par.ncores=ncores, par.snp.tbl=snp.tbl, p
                                IUPAC, ref_match_seq, snp_match_seq, ref_seq_snp_match, snp_seq_ref_match, snpbase)])
 }
 
-results_motif_par<-function(i, par.prior=snp.info$prior, par.transition=snp.info$transition, par.motif.lib=motif.lib, par.motif.scores=motif.scores, par.testing.mc=testing.mc, par.figdir=figdir) {
+results_motif_par<-function(i, par.prior, par.transition, par.motif.lib, par.motif.scores, par.testing.mc, par.figdir) {
+  ggplot = NULL
+  aes = NULL
+  p.value = NULL
+  geom_point = NULL
+  scale_y_log10 = NULL
+  geom_errorbar = NULL
+  ggtitle = NULL
+  
   rowids <- which(par.motif.scores$motif == names(par.motif.lib)[i])
   scores <- cbind(par.motif.scores$log_lik_ref[rowids],
                   par.motif.scores$log_lik_snp[rowids])
@@ -301,7 +336,7 @@ results_motif_par<-function(i, par.prior=snp.info$prior, par.transition=snp.info
   message("Finished testing motif No. ", i)
   if(!is.null(par.figdir)) {
     if(!file.exists(par.figdir)) {
-      dir.create(par.par.figdir)
+      dir.create(par.figdir)
     }
     plotdat <- data.frame(
       score = c(scores),
