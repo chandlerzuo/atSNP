@@ -10,5 +10,6 @@ http://compbio.mit.edu/encode-motifs/motifs.txt.}
 This motif library can be loaded by 'data(encode_library)'.
 }
 \author{
-Chandler Zuo chandler.c.zuo@gmail.com
+Sunyoung Shin \email{sunyoung.shin@utdallas.edu}, Chandler Zuo 
+\email{chandler.c.zuo@gmail.com}
 }

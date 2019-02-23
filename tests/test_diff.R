@@ -4,9 +4,8 @@ library(testthat)
 data(example)
 
 trans_mat <- matrix(rep(snpInfo$prior, each = 4), nrow = 4)
-id <- 1
-test_pwm <- motif_library[[id]]
-scores <- as.matrix(motif_scores$motif.scores[motif == names(motif_library)[id], list(log_lik_ref, log_lik_snp)])
+test_pwm <- motif_library$SIX5_disc1
+scores <- as.matrix(motif_scores$motif.scores[3:4, 4:5])
 score_diff <- abs(scores[,2]-scores[,1])
 
 test_score <- test_pwm
