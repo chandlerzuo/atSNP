@@ -220,7 +220,6 @@ LoadSNPData <- function(filename = NULL, genome.lib = "BSgenome.Hsapiens.UCSC.hg
                         snp.lib = "SNPlocs.Hsapiens.dbSNP144.GRCh38",
                         snpids = NULL, half.window.size = 30, default.par = FALSE,
                         mutation = FALSE, ...) {
-  IUPAC_CODE_MAP = NULL
   useFile <- FALSE
   rsid.rm <- rsid.missing <- rsid.duplicate <- rsid.na <- NULL
   if(!is.null(filename)) {
@@ -613,13 +612,11 @@ ComputeMotifScore <- function(motif.lib, snp.info, ncores = 1) {
   motifs <- names(motif.lib)
   snpids <- snp.info$snpids
   snpbases<-ifelse(snp.info$snp_base==1, "A", ifelse(snp.info$snp_base==2, "C", ifelse(snp.info$snp_base==3, "G", "T")))	
-# nsnps <- ncol(snp.info$sequence_matrix)
   nmotifs <- length(motif.lib)
   len_seq <- nrow(snp.info$sequence_matrix)
   snp.info$sequence_matrix[(len_seq+1)/2,]<-snp.info$ref_base
   ncores <- min(c(ncores, length(snp.info$ref_base)))
 
-#  startParallel(ncores)
   k <- as.integer(length(snp.info$ref_base) / ncores)
   if(ncores > 1) {
     if(Sys.info()[["sysname"]] == "Windows"){
@@ -635,7 +632,6 @@ ComputeMotifScore <- function(motif.lib, snp.info, ncores = 1) {
                                                  par.snpids=snpids,  par.snpbases=snpbases, par.len_seq=len_seq, 
                                                  par.motif.lib=motif.lib, par.snp.info=snp.info))
    }
-#  endParallel()
 
   motif.scores_dt <- motif_score_par_list[[1]]
   if(ncores > 1) {
@@ -735,12 +731,6 @@ ComputeMotifScore <- function(motif.lib, snp.info, ncores = 1) {
 #' @importFrom BiocParallel bpmapply MulticoreParam SnowParam
 #' @export
 MatchSubsequence <- function(snp.tbl, motif.scores, motif.lib, snpids = NULL, motifs = NULL, ncores = 1) {
-  motif = NULL
-  snpid = NULL
-  snpbase = NULL
-  len_seq = NULL
-  ref_seq = NULL
-  motif = NULL
   if(is.null(snpids)) {
     snpids <- unique(snp.tbl$snpid)
   }
@@ -780,7 +770,6 @@ MatchSubsequence <- function(snp.tbl, motif.scores, motif.lib, snpids = NULL, mo
   
   ncores <- min(c(ncores, length(snpids)))
 
-#  startParallel(ncores)
     k <- as.integer(length(snpids) / ncores)
 
       if(ncores > 1) {
@@ -798,8 +787,6 @@ MatchSubsequence <- function(snp.tbl, motif.scores, motif.lib, snpids = NULL, mo
                                                 par.motif=motif, par.motif.tbl=motif.tbl))
   }
   
-#  endParallel()
-
   motif_score_tbl <- motif_score_par_list[[1]]
   if(ncores > 1) {
     for(i in 2:ncores) {
@@ -857,18 +844,6 @@ MatchSubsequence <- function(snp.tbl, motif.scores, motif.lib, snpids = NULL, mo
 #' @export
 ComputePValues <- function(motif.lib, snp.info, motif.scores, ncores = 1, testing.mc=FALSE, figdir = NULL) {
   ncores <- min(c(ncores, length(motif.lib)))
-  motif = NULL
-  snpid = NULL
-  snpbase = NULL
-  pval_ref = NULL
-  pval_snp = NULL
-  pval_cond_ref = NULL
-  pval_cond_snp = NULL
-  pval_diff = NULL
-  pval_rank = NULL
-  
-#  startParallel(ncores)
-  
   results <- as.list(seq_along(motif.lib))
   nsets <- as.integer(length(motif.lib) / ncores)
   motif.scores <- as.data.table(motif.scores)
@@ -882,7 +857,6 @@ ComputePValues <- function(motif.lib, snp.info, motif.scores, ncores = 1, testin
     results<-bpmapply(function(x) results_motif_par(i=x, par.prior=prior, par.transition=transition, par.motif.lib=motif.lib, par.motif.scores=motif.scores, par.testing.mc=testing.mc, par.figdir=figdir), seq_along(motif.lib), BPPARAM = MulticoreParam(workers = ncores),
                       SIMPLIFY = FALSE)
   }
-#  endParallel()
 
   motif.scores_dt<-as.data.table(motif.scores)
   setkey(motif.scores_dt, motif, snpid, snpbase)

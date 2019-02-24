@@ -43,8 +43,6 @@ checkMotifs<-function(m) {
 }
 
 motif_score_par<-function(i, par.k, par.ncores, par.motifs, par.nmotifs, par.snpids,  par.snpbases, par.len_seq, par.motif.lib, par.snp.info) {
-  motif = NULL
-  snpbase = NULL
   if(i < par.ncores) {
     ids <- seq(par.k) + par.k * (i - 1)
   } else {
@@ -95,31 +93,6 @@ motif_score_par<-function(i, par.k, par.ncores, par.motifs, par.nmotifs, par.snp
 }
 
 match_subseq_par<-function(i, par.k, par.ncores, par.snp.tbl, par.snpids, par.motif.scores, par.motif, par.motif.tbl) {
-  motif = NULL
-  snpid = NULL
-  snpbase = NULL
-  ref_strand = NULL
-  ref_match_seq = NULL
-  ref_seq = NULL
-  ref_start = NULL
-  ref_end = NULL
-  ref_seq_rev = NULL
-  len_seq = NULL
-  snp_strand = NULL
-  snp_match_seq = NULL
-  snp_seq = NULL
-  snp_start = NULL
-  snp_end = NULL
-  snp_seq_rev = NULL
-  snp_seq_ref_match = NULL
-  ref_seq_snp_match = NULL
-  motif_len = NULL
-  log_lik_ref = NULL
-  log_lik_snp = NULL
-  log_lik_ratio = NULL
-  log_enhance_odds = NULL
-  log_reduce_odds = NULL
-  IUPAC = NULL
   if(i < par.ncores) {
     ids <- seq(par.k) + par.k * (i - 1)
   } else {
@@ -145,14 +118,6 @@ match_subseq_par<-function(i, par.k, par.ncores, par.snp.tbl, par.snpids, par.mo
 }
 
 results_motif_par<-function(i, par.prior, par.transition, par.motif.lib, par.motif.scores, par.testing.mc, par.figdir) {
-  ggplot = NULL
-  aes = NULL
-  p.value = NULL
-  geom_point = NULL
-  scale_y_log10 = NULL
-  geom_errorbar = NULL
-  ggtitle = NULL
-  
   rowids <- which(par.motif.scores$motif == names(par.motif.lib)[i])
   scores <- cbind(par.motif.scores$log_lik_ref[rowids],
                   par.motif.scores$log_lik_snp[rowids])
