@@ -71,29 +71,6 @@
 #' @export
 dtMotifMatch<-function(snp.tbl, motif.scores, snpids=NULL, motifs=NULL, 
                        motif.lib, ncores=2) {
-  snp_seq = NULL
-  ref_seq = NULL
-  len_seq = NULL
-  snp_ref_start = NULL
-  ref_start = NULL
-  snp_start = NULL
-  snp_ref_end = NULL
-  ref_end = NULL
-  snp_end = NULL
-  snp_ref_length = NULL
-  ref_aug_match_seq_forward = NULL
-  ref_aug_match_seq_reverse = NULL
-  snp_aug_match_seq_forward = NULL
-  snp_aug_match_seq_reverse = NULL
-  ref_strand = NULL
-  ref_location = NULL
-  snp_strand = NULL
-  snp_location = NULL
-  ref_extra_pwm_left = NULL
-  ref_extra_pwm_right = NULL
-  snp_extra_pwm_left = NULL
-  snp_extra_pwm_right = NULL
-  snpid = NULL
   if(checkSNPids(snpids))
     {
       stop("snpids must be a vector of class character or NULL.")
