@@ -204,7 +204,7 @@ plotMotifMatch<-function(motif.match, motif.lib, cex.main = 2, ...) {
     snp_aug_match_pwm<-snp_aug_match_pwm_reverse
   }
   
-  {
+{ 
   par(mfrow=c(4,1), oma=c(1,1,4,1))
   par(mar=c(1.5, 3, 4, 2))
   plotMotifLogo(pcm2pfm(ref_aug_pwm), "Best match to the reference genome", yaxis=FALSE, xaxis=FALSE, xlab="", ylab="PWM", ...)
@@ -257,7 +257,6 @@ arrows(max(which(colSums(snp_aug_pwm)!=0))/ncol(snp_aug_pwm), -0.17, (min(which(
 title(main=paste(motif.match$motif, " Motif Scan for ", motif.match$snpid, sep=""), outer=TRUE, cex.main=cex.main)
 }
 }
-
 .find_reverse <- function(sequence) {
   if(length(sequence) > 0) {
     codes <- seq(4)

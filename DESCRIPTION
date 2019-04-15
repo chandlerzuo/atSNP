@@ -2,8 +2,8 @@ Package: atSNP
 Type: Package
 Title: Affinity test for identifying regulatory SNPs
 Version: 0.99.22
-Date: 2019-02-25
-Authors@R: c(person(given = "Chandler", family = "Kuo", role = "aut"),
+Date: 2019-04-15
+Authors@R: c(person(given = "Chandler", family = "Zuo", role = "aut"),
         person(given = "Sunyoung",family = "Shin",role = c("aut", "cre"), email = "sunyoung.shin@utdallas.edu"),
         person(given = "Sunduz", family = "Keles", role = "aut"))
 Description: atSNP performs affinity tests of motif matches with the SNP or the reference genomes and SNP-led changes in motif matches.
