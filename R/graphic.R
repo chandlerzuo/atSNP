@@ -205,6 +205,7 @@ plotMotifMatch<-function(motif.match, motif.lib, cex.main = 2, ...) {
   }
   
 { 
+  plot.new()
   par(mfrow=c(4,1), oma=c(1,1,4,1))
   par(mar=c(1.5, 3, 4, 2))
   plotMotifLogo(pcm2pfm(ref_aug_pwm), "Best match to the reference genome", yaxis=FALSE, xaxis=FALSE, xlab="", ylab="PWM", ...)
