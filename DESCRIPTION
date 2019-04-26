@@ -1,7 +1,7 @@
 Package: atSNP
 Type: Package
 Title: Affinity test for identifying regulatory SNPs
-Version: 0.99.24
+Version: 0.99.25
 Date: 2019-04-24
 Authors@R: c(person(given = "Chandler", family = "Zuo", role = "aut"),
         person(given = "Sunyoung",family = "Shin",role = c("aut", "cre"), email = "sunyoung.shin@utdallas.edu"),

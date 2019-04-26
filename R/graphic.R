@@ -205,6 +205,7 @@ plotMotifMatch<-function(motif.match, motif.lib, cex.main = 2, ...) {
   }
   
 { 
+  plot.new()
   layout(matrix(c(1,2,3,4), 4, 1, byrow = TRUE))
   plotMotifLogo(pcm2pfm(ref_aug_pwm), "Best match to the reference genome", yaxis=FALSE, xaxis=FALSE, xlab="", ylab="PWM", ...)
 if(motif.match$ref_strand=='+') {
