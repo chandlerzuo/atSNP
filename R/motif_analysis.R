@@ -231,8 +231,9 @@ LoadSNPData <- function(filename = NULL, genome.lib = "BSgenome.Hsapiens.UCSC.hg
     if(!is.null(snpids)) {
       message("Warning: load SNP information from 'filename' only. The argument 'snpids' is overridden.")
     }
-    tbl <- read.table(filename, header = TRUE, stringsAsFactors = FALSE, ...)
+    tbl <- read.table(filename, header = TRUE, stringsAsFactors = FALSE,  colClasses = c("character"), ...)
     tbl<-tbl[c("snpid", "chr", "snp", "a1", "a2")]
+    tbl$snp<-as.integer(tbl$snp)
     ## check if the input file has the required information
     if(sum(!c("snp", "chr", "a1", "a2", "snpid") %in% names(tbl)) > 0) {
       stop("'filename' must be a table containing 'snp' and 'chr' columns.")
