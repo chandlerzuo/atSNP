@@ -297,7 +297,7 @@ LoadSNPData <- function(filename = NULL, genome.lib = "BSgenome.Hsapiens.UCSC.hg
             a2[id.rev] <- rev.codes[a2[id.rev]]
           }
           tbl <- rbind(tbl,
-                       data.frame(snp = as.numeric(snp.loc.n@ranges), 
+                       data.frame(snp = as.integer(snp.loc.n@ranges), 
                                   chr = as.character(paste0("chr", gsub("ch", "", snp.loc.n@seqnames))), 			  
                                   a1 = as.character(a1),
                                   a2 = as.character(a2),
