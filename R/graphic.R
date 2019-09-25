@@ -142,9 +142,9 @@ dtMotifMatch<-function(snp.tbl, motif.scores, snpids=NULL, motifs=NULL,
 #' @examples
 #' data(example)
 #' plotMotifMatch(motif_match, motif.lib = motif_library)
+#' @import grid
 #' @importFrom motifStack plotMotifLogo pcm2pfm 
 #' @importFrom grDevices dev.off pdf
-#' @importFrom graphics arrows mtext par segments title
 #' @importFrom stats quantile var
 #' @importFrom utils data read.table write.table
 #' @export
@@ -204,60 +204,76 @@ plotMotifMatch<-function(motif.match, motif.lib, cex.main = 2, ...) {
     snp_aug_match_pwm<-snp_aug_match_pwm_reverse
   }
   
-  {
-  par(mfrow=c(4,1), oma=c(1,1,4,1))
-  par(mar=c(1.5, 3, 4, 2))
-  plotMotifLogo(pcm2pfm(ref_aug_pwm), "Best match to the reference genome", yaxis=FALSE, xaxis=FALSE, xlab="", ylab="PWM", ...)
-if(motif.match$ref_strand=='+') {
-arrows((min(which(colSums(ref_aug_pwm)!=0))-1)/ncol(ref_aug_pwm), -0.17, max(which(colSums(ref_aug_pwm)!=0))/ncol(ref_aug_pwm), -0.17, length = 0.1, angle = 15, code = 2, col = "blue", lwd = 1.5, xpd=NA)
-  mtext("5'", 1, adj=(min(which(colSums(ref_aug_pwm)!=0))-1)/ncol(ref_aug_pwm), padj=1, col="blue", cex=1) 
-  mtext("3'", 1, adj=max(which(colSums(ref_aug_pwm)!=0))/ncol(ref_aug_pwm), padj=1, col="blue", cex=1)
-} else {
-arrows(max(which(colSums(ref_aug_pwm)!=0))/ncol(ref_aug_pwm), -0.17, (min(which(colSums(ref_aug_pwm)!=0))-1)/ncol(ref_aug_pwm), -0.17, length = 0.1, angle = 15, code = 2, col = "blue", lwd = 1.5, xpd=NA)
-  mtext("5'", 1, adj=max(which(colSums(ref_aug_pwm)!=0))/ncol(ref_aug_pwm), padj=1, col="blue", cex=1) 
-  mtext("3'", 1, adj=(min(which(colSums(ref_aug_pwm)!=0))-1)/ncol(ref_aug_pwm), padj=1, col="blue", cex=1) 
-}
-  par(mar = c(4, 3, 1.5, 2))
-plotMotifLogo(pcm2pfm(ref_aug_match_pwm), font="mono,Courier", yaxis=FALSE, xlab="", ylab=paste("(", motif.match$ref_strand, ")", sep=""), ...)
-segments(snp_loc/motif.match$snp_ref_length, 0, snp_loc/motif.match$snp_ref_length, 1, col="blue", lty=3, lwd=2)
-segments(snp_loc/motif.match$snp_ref_length, 1, (snp_loc+1)/motif.match$snp_ref_length, 1, col="blue", lty=3, lwd=2)
-segments((snp_loc+1)/motif.match$snp_ref_length, 0, (snp_loc+1)/motif.match$snp_ref_length, 1, col="blue", lty=3, lwd=2)
-segments(snp_loc/motif.match$snp_ref_length, 0, (snp_loc+1)/motif.match$snp_ref_length, 0, col="blue", lty=3, lwd=2)
+  pushViewport(viewport(y =unit(.5, "npc") - unit(2, "lines"), height = unit(1, "npc") - unit(3, "lines")))
+  pushViewport(viewport(y=.875, height=.25))
+  plotMotifLogo(pcm2pfm(ref_aug_pwm), "Best match to the reference genome", yaxis=FALSE,
+                xaxis=FALSE, xlab="", ylab="PWM", newpage=FALSE, margins = c(1.5, 3, 2, 2))
+  if(motif.match$ref_strand=='+') {
+    grid.lines(x=c(convertUnit(unit(3, "lines"), "npc", valueOnly = TRUE), 1 - convertUnit(unit(2, "lines"), "npc", valueOnly = TRUE)),
+               y=unit(1, "lines"),
+               gp=gpar(col = "blue", lwd = 1.5, xpd=NA), arrow=arrow(length = unit(0.1, "inches"), angle = 15, ends = "last"))
+    grid.text("3'", x=unit(1, "npc") - unit(1, "lines"), gp=gpar(col="blue", cex=1), y=unit(.5, "lines"))
+    grid.text("5'", x=unit(2, "lines"), gp=gpar(col="blue", cex=1), y=unit(.5, "lines"))
+  } else {
+    grid.lines(x=c(convertUnit(unit(3, "lines"), "npc", valueOnly = TRUE), 1 - convertUnit(unit(2, "lines"), "npc", valueOnly = TRUE)),
+               y=unit(1, "lines"), gp=gpar(col = "blue", lwd = 1.5, xpd=NA),
+               arrow=arrow(length = unit(0.1, "inches"), angle = 15, ends = "first"))
+    grid.text("5'", x=unit(1, "npc") - unit(1, "lines"), gp=gpar(col="blue", cex=1), y=unit(.5, "lines"))
+    grid.text("3'", x=unit(2, "lines"), gp=gpar(col="blue", cex=1), y=unit(.5, "lines"))
+  }
+  popViewport()
+  pushViewport(viewport(y=.625, height=.25))
+  #par(mar = c(4, 3, 1.5, 2))
+  plotMotifLogo(pcm2pfm(ref_aug_match_pwm), font="mono,Courier", yaxis=FALSE, xlab="",
+                ylab=paste("(", motif.match$ref_strand, ")", sep=""),  newpage=FALSE, margins = c(2, 3, 1.5, 2))
+  pushViewport(plotViewport(margins = c(2, 3, 1.5, 2)))
+  grid.rect(x=(snp_loc+.5)/motif.match$snp_ref_length, width = 1/motif.match$snp_ref_length, gp=gpar(col="blue", lty=3, lwd=2, fill=NA))
+  popViewport()
   if(motif.match$ref_strand=="+")   {
-  mtext("5'", 1,  adj=0, padj=1, col="blue", cex=1) 
-  mtext("3'", 1,  adj=1, padj=1, col="blue", cex=1)
-} else {
-  mtext("3'", 1, adj=0, padj=1, col="blue", cex=1) 
-  mtext("5'", 1, adj=1, padj=1, col="blue", cex=1) 
+    grid.text("3'", x=unit(1, "npc") - unit(1, "lines"), gp=gpar(col="blue", cex=1), y=unit(2.5, "lines"))
+    grid.text("5'", x=unit(2, "lines"), gp=gpar(col="blue", cex=1), y=unit(2.5, "lines"))
+  } else {
+    grid.text("5'", x=unit(1, "npc") - unit(1, "lines"), gp=gpar(col="blue", cex=1), y=unit(2.5, "lines"))
+    grid.text("3'", x=unit(2, "lines"), gp=gpar(col="blue", cex=1), y=unit(2.5, "lines"))
   }
-par(mar=c(1.5, 3, 4, 2))      
-plotMotifLogo(pcm2pfm(snp_aug_match_pwm), "Best match to the SNP genome", font="mono,Courier", yaxis=FALSE, xlab="", ylab=paste("(", motif.match$snp_strand, ")", sep=""), ...)
-segments(snp_loc/motif.match$snp_ref_length, 0, snp_loc/motif.match$snp_ref_length, 1, col="blue", lty=3, lwd=2)
-segments(snp_loc/motif.match$snp_ref_length, 1, (snp_loc+1)/motif.match$snp_ref_length, 1, col="blue", lty=3, lwd=2)
-segments((snp_loc+1)/motif.match$snp_ref_length, 0, (snp_loc+1)/motif.match$snp_ref_length, 1, col="blue", lty=3, lwd=2)
-segments(snp_loc/motif.match$snp_ref_length, 0, (snp_loc+1)/motif.match$snp_ref_length, 0, col="blue", lty=3, lwd=2)
+  popViewport()
+  pushViewport(viewport(y=.375, height=.25))
+  #par(mar=c(1.5, 3, 4, 2))     
+  plotMotifLogo(pcm2pfm(snp_aug_match_pwm), "Best match to the SNP genome", font="mono,Courier",
+                yaxis=FALSE, xlab="", ylab=paste("(", motif.match$snp_strand, ")", sep=""), newpage=FALSE, margins = c(1.5, 3, 2, 2))
+  pushViewport(plotViewport(margins = c(1.5, 3, 2, 2)))
+  grid.rect(x=(snp_loc+.5)/motif.match$snp_ref_length, width = 1/motif.match$snp_ref_length, gp=gpar(col="blue", lty=3, lwd=2, fill=NA))
+  popViewport()
   if(motif.match$snp_strand=="+")   {
-  mtext("5'", 1,  adj=0, padj=1, col="blue", cex=1) 
-  mtext("3'", 1,  adj=1, padj=1, col="blue", cex=1)
-} else {
-  mtext("3'", 1, adj=0, padj=1, col="blue", cex=1) 
-  mtext("5'", 1, adj=1, padj=1, col="blue", cex=1) 
+    grid.text("3'", x=unit(1, "npc") - unit(1, "lines"), gp=gpar(col="blue", cex=1), y=unit(.5, "lines"))
+    grid.text("5'", x=unit(2, "lines"), gp=gpar(col="blue", cex=1), y=unit(.5, "lines"))
+  } else {
+    grid.text("5'", x=unit(1, "npc") - unit(1, "lines"), gp=gpar(col="blue", cex=1), y=unit(.5, "lines"))
+    grid.text("3'", x=unit(2, "lines"), gp=gpar(col="blue", cex=1), y=unit(.5, "lines"))
   }
-par(mar=c(4, 3, 1.5, 2))
-plotMotifLogo(pcm2pfm(snp_aug_pwm), yaxis=FALSE, xaxis=FALSE, xlab="", ylab="PWM", ...)
-if(motif.match$snp_strand=='+') {
-arrows((min(which(colSums(snp_aug_pwm)!=0))-1)/ncol(snp_aug_pwm), -0.17, max(which(colSums(snp_aug_pwm)!=0))/ncol(snp_aug_pwm), -0.17, length = 0.1, angle = 15, code = 2, col = "blue", lwd = 1.5, xpd=NA)
-  mtext("5'", 1, adj=(min(which(colSums(snp_aug_pwm)!=0))-1)/ncol(snp_aug_pwm), padj=1, col="blue", cex=1) 
-  mtext("3'", 1, adj=max(which(colSums(snp_aug_pwm)!=0))/ncol(snp_aug_pwm), padj=1, col="blue", cex=1)
-} else {
-arrows(max(which(colSums(snp_aug_pwm)!=0))/ncol(snp_aug_pwm), -0.17, (min(which(colSums(snp_aug_pwm)!=0))-1)/ncol(snp_aug_pwm), -0.17, length = 0.1, angle = 15, code = 2, col = "blue", lwd = 1.5, xpd=NA)
-  mtext("5'", 1, adj=max(which(colSums(snp_aug_pwm)!=0))/ncol(snp_aug_pwm), padj=1, col="blue", cex=1) 
-  mtext("3'", 1, adj=(min(which(colSums(snp_aug_pwm)!=0))-1)/ncol(snp_aug_pwm), padj=1, col="blue", cex=1)
+  popViewport()
+  pushViewport(viewport(y=.125, height=.25))
+  #par(mar=c(4, 3, 1.5, 2))
+  plotMotifLogo(pcm2pfm(snp_aug_pwm), yaxis=FALSE, xaxis=FALSE, xlab="", ylab="PWM", newpage=FALSE, margins = c(2, 3, 1.5, 2))
+  if(motif.match$snp_strand=='+') {
+    grid.lines(x=c(convertUnit(unit(3, "lines"), "npc", valueOnly = TRUE), 1 - convertUnit(unit(1, "lines"), "npc", valueOnly = TRUE)),
+               y=unit(1.5, "lines"), gp=gpar(col = "blue", lwd = 1.5, xpd=NA),
+               arrow=arrow(length = unit(0.1, "inches"), angle = 15, ends = "last"))
+    grid.text("3'", x=unit(1, "npc") - unit(1, "lines"), gp=gpar(col="blue", cex=1), y=unit(1, "lines"))
+    grid.text("5'", x=unit(2, "lines"), gp=gpar(col="blue", cex=1), y=unit(1, "lines"))
+  } else {
+    grid.lines(x=c(convertUnit(unit(3, "lines"), "npc", valueOnly = TRUE), 1 - convertUnit(unit(1, "lines"), "npc", valueOnly = TRUE)),
+               y=unit(1.5, "lines"), gp=gpar(col = "blue", lwd = 1.5, xpd=NA),
+               arrow=arrow(length = unit(0.1, "inches"), angle = 15, ends = "first"))
+    grid.text("5'", x=unit(1, "npc") - unit(1, "lines"), gp=gpar(col="blue", cex=1), y=unit(1, "lines"))
+    grid.text("3'", x=unit(2, "lines"), gp=gpar(col="blue", cex=1), y=unit(1, "lines"))
+  }
+  popViewport()
+  popViewport()
+  grid.text(label = paste(motif.match$motif, " Motif Scan for ", motif.match$snpid, sep=""),
+            y=unit(1, "npc") - unit(1.5, "lines"),
+            gp=gpar(cex.main=cex.main, fontface="bold"))
 }
-title(main=paste(motif.match$motif, " Motif Scan for ", motif.match$snpid, sep=""), outer=TRUE, cex.main=cex.main)
-}
-}
-
 .find_reverse <- function(sequence) {
   if(length(sequence) > 0) {
     codes <- seq(4)
