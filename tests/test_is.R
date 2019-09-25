@@ -1,25 +1,18 @@
 library(atSNP)
+library(BiocParallel)
 library(testthat)
 data(example)
 
-if(.Platform$OS.type == "unix") {
-  registerDoParallel(4)
-} else {
-  registerDoParallel(cl <- makeCluster(4))
-}
-
 trans_mat <- matrix(rep(snpInfo$prior, each = 4), nrow = 4)
-id <- 1
-test_pwm <- motif_library[[id]]
-##test_pwm <- motif_library[["ALX3_jolma_DBD_M449"]]
-scores <- as.matrix(motif_scores$motif.scores[motif == names(motif_library)[id], list(log_lik_ref, log_lik_snp)])
+test_pwm <- motif_library$SIX5_disc1
+scores <- as.matrix(motif_scores$motif.scores[3:4, 4:5])
 
 motif_len <- nrow(test_pwm)
 
 ## these are functions for this test only
 drawonesample <- function(theta) {
   delta <- snpInfo$prior * t(test_pwm ^ theta)
-  delta <- delta / rep(apply(delta, 2, sum), each = 4)
+  delta <- delta / rep(colSums(delta), each = 4)
   sample <- sample(1:4, 2 * motif_len - 1, replace = TRUE, prob = snpInfo$prior)
   id <- sample(seq(motif_len), 1)
   sample[id : (id + motif_len - 1)] <- apply(delta, 2, function(x) sample(1:4, 1, prob = x))
@@ -52,7 +45,7 @@ maxjointprob <- function(x) {
 get_freq <- function(sample) {
   ids <- cbind(
                rep(sample[motif_len * 2, ], each = motif_len) + seq(motif_len),
-               rep(seq(1000), each = motif_len))
+               rep(seq(100), each = motif_len))
   sample_motif <- matrix(sample[ids], nrow = motif_len) + 1
   emp_freq <- matrix(0, nrow = motif_len, ncol = 4)
   for(i in seq(motif_len)) {
@@ -60,14 +53,15 @@ get_freq <- function(sample) {
       emp_freq[i, j] <- sum(sample_motif[i, ] == j)
     }
   }
-  emp_freq <- emp_freq / apply(emp_freq, 1, sum)
+  emp_freq <- emp_freq / rowSums(emp_freq)
   return(emp_freq)
 }
 
 test_that("Error: quantile function computing are not equivalent.", {
-  for(p in c(1, 10, 50, 90, 99) / 100) {
+  for(p in c(0.01, 0.1, 0.5, 0.9, 0.99)) {
     delta <- .Call("test_find_percentile", c(scores), p, package = "atSNP")
     delta.r <- -sort(-c(scores))[as.integer(p * length(scores)) + 1]
+    delta==delta.r
     expect_equal(delta, delta.r)
   }
 })
@@ -110,7 +104,7 @@ test_that("Error: compute the normalizing constant.", {
   theta <- .Call("test_find_theta", test_pwm, snpInfo$prior, snpInfo$transition, delta, package = "atSNP")
   ##
   const <- .Call("test_func_delta", test_pwm, snpInfo$prior, trans_mat, theta, package = "atSNP")
-  const.r <- prod(apply(snpInfo$prior * t(test_pwm) ^ theta, 2, sum)) * motif_len
+  const.r <- prod(colSums(snpInfo$prior * t(test_pwm) ^ theta)) * motif_len
   expect_equal(abs(const - const.r) / const < 1e-5, TRUE)
 })
 
@@ -124,18 +118,26 @@ test_that("Error: sample distributions are not expected.", {
                         sum(snpInfo$prior * delta[, 1]),
                         nrow = 4, ncol = motif_len - 1), delta)
 
-  results <- foreach(i = seq(motif_len * 2)) %dopar% {
-    ## generate 1000 samples
-    sample <- sapply(seq(1000), function(x)
+  results_i <- function(i) {
+    ## generate 100 samples
+    sample <- sapply(seq(100), function(x)
                      .Call("test_importance_sample",
                            delta, snpInfo$prior, trans_mat, test_pwm, theta, package = "atSNP"))
     emp_freq1 <- get_freq(sample)
     target_freq <- test_pwm ^ theta * snpInfo$prior
-    target_freq <- target_freq / apply(target_freq, 1, sum)
+    target_freq <- target_freq / rowSums(target_freq)
     ## generate samples in R
-    sample <- sapply(rep(theta, 1000), drawonesample)
+    sample <- sapply(rep(theta, 100), drawonesample)
     emp_freq2 <- get_freq(sample[seq(2 * motif_len), ] - 1)
     max(abs(emp_freq1 - target_freq)) > max(abs(emp_freq2 - target_freq))
+  }
+
+  if(Sys.info()[["sysname"]] == "Windows"){
+    snow <- SnowParam(workers = 1, type = "SOCK")
+    results<-bpmapply(results_i, seq(20), BPPARAM = snow,SIMPLIFY = FALSE)
+  }else{
+    results<-bpmapply(results_i, seq(20), BPPARAM = MulticoreParam(workers = 1),
+                      SIMPLIFY = FALSE)
   }
   
   print(sum(unlist(results)))
@@ -151,92 +153,9 @@ test_that("Error: the chosen pvalues should have the smaller variance.", {
            )
   }
   for(p in c(0.01, 0.05, 0.1)) {
-      theta <- .Call("test_find_theta", test_pwm, snpInfo$prior, trans_mat, quantile(c(scores), 1 - p), package = "atSNP")
-      p_values <- .Call("test_p_value", test_pwm, snpInfo$prior, snpInfo$transition, c(scores), theta, 1000, package = "atSNP")
+    theta <- .Call("test_find_theta", test_pwm, snpInfo$prior, trans_mat, quantile(c(scores), 1 - p), package = "atSNP")
+    p_values <- .Call("test_p_value", test_pwm, snpInfo$prior, snpInfo$transition, c(scores), theta, 100, package = "atSNP")
     p_values_s <- .structure(p_values)
     expect_equal(p_values_s[, 2], apply(p_values[, c(2, 4)], 1, min))
   }
 })
-
-## Visual checks
-if(FALSE) {
-
-  plot(log(y <- sapply(seq(200) / 100 - 1, function(x)
-            .Call("test_func_delta", test_pwm, snpInfo$prior, snpInfo$transition, x, package = "atSNP"))))
-
-## test the theta
-
-  theta <- .Call("test_find_theta", test_pwm, snpInfo$prior, trans_mat, quantile(c(scores), 0.01), package = "atSNP")
-  p_values_1 <- .Call("test_p_value", test_pwm, snpInfo$prior, snpInfo$transition, c(scores), theta, 1000, package = "atSNP")
-  theta <- .Call("test_find_theta", test_pwm, snpInfo$prior, trans_mat, quantile(c(scores), 0.9), package = "atSNP")
-  p_values_9 <- .Call("test_p_value", test_pwm, snpInfo$prior, snpInfo$transition, c(scores), theta, 1000, package = "atSNP")
-  theta <- .Call("test_find_theta", test_pwm, snpInfo$prior, trans_mat, quantile(c(scores), 0.99), package = "atSNP")
-  p_values_99 <- .Call("test_p_value", test_pwm, snpInfo$prior, snpInfo$transition, c(scores), theta, 1000, package = "atSNP")
-  
-  par(mfrow = c(1, 3))
-  plot(log(p_values_1[, 1]) ~ c(scores))
-  plot(log(p_values_9[, 1]) ~ c(scores))
-  plot(log(p_values_99[, 1]) ~ c(scores))
-
-  theta <- .Call("test_find_theta", test_pwm, snpInfo$prior, trans_mat, quantile(c(scores), 0.9), package = "atSNP")
-  p_values_9 <- .Call("test_p_value", test_pwm, snpInfo$prior, trans_mat, c(scores), theta, 1000, package = "atSNP")
-  theta <- .Call("test_find_theta", test_pwm, snpInfo$prior, trans_mat, quantile(c(scores), 0.99), package = "atSNP")
-  p_values_99 <- .Call("test_p_value", test_pwm, snpInfo$prior, trans_mat, c(scores), theta, 1000, package = "atSNP")
-  
-  pval_test <- function(x) {
-    delta <- .Call("test_find_percentile", c(scores), x, package = "atSNP")
-    theta <- .Call("test_find_theta", test_pwm, snpInfo$prior, trans_mat, delta, package = "atSNP")
-    const <- prod(apply(snpInfo$prior * t(test_pwm) ^ theta, 2, sum)) * motif_len
-    print(const)
-    sample <- sapply(rep(theta, 1000), drawonesample)
-    pr <- apply(sample[seq(2 * motif_len - 1), ], 2, maxjointprob)
-    wei <- const / sample[2 * motif_len + 1, ]
-    wei.cond <- const / motif_len / sample[2 * motif_len + 2, ]
-    print(mean(log(sample[2 * motif_len + 1, ])))
-    print(mean(log(pr)))
-    print(mean(wei))
-    pval <- sapply(c(scores), function(x) sum(wei[log(pr) >= x]) / length(wei))
-    pval.cond <- sapply(c(scores), function(x) sum(wei.cond[log(pr) >= x]) / length(wei.cond))
-    return(cbind(pval, pval.cond))
-  }
-
-  pval_99 <- pval_test(0.01)
-  pval_9 <- pval_test(0.1)
-  
-  rbind(quantile(pval_9, seq(10) / 200),
-        quantile(p_values_9[, 1], seq(10) / 200),
-        quantile(pval_99, seq(10) / 200),
-        quantile(p_values_99[, 1], seq(10) / 200))
-  
-  plot(log(pval_99[, 1]), log(p_values_99[, 1]))
-  abline(0,1)
-  
-  plot(log(pval_9[, 1]), log(p_values_9[, 1]))
-  abline(0,1)
-
-  plot(log(pval_9[, 2]), log(p_values_9[, 5]))
-  abline(0,1)
-
-  plot(p_values_99[, 2], p_values_99[, 4])
-  abline(0, 1)
-
-  plot(p_values_99[, 6], p_values_99[, 8], ylim = c(0, 0.005))
-  abline(0, 1)
-
-  plot(p_values_99[, 1], p_values_99[, 3])
-  abline(0, 1)
-
-  plot(p_values_99[, 1], p_values_99[, 5], xlim = c(0, 0.001), ylim = c(0, 0.001))
-  abline(0, 0.1)
-
-  test1 <- sapply(seq(1000), function(x) drawonesample(0.01))
-
-  test2 <- sapply(seq(1000), function(x) drawonesample(0.15))
-
-  hist(log(test1[22, ]) / 0.01)
-  hist(log(test2[21, ]) / 0.15)
-}
-
-if(.Platform$OS.type != "unix") {
-  stopCluster(cl)
-}

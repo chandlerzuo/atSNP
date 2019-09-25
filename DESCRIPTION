@@ -1,18 +1,19 @@
 Package: atSNP
 Type: Package
-Title: Affinity test for identifying regulatory SNPs.
-Version: 1.0
-Date: 2015-05-12
-Author: Chandler Zuo, Sunyoung Shin
-Maintainer: Chandler Zuo<zuo@stat.wisc.edu> Sunyoung Shin<shin@stat.wisc.edu>
-Description: Affinity test for regulatory SNPs.
+Title: Affinity test for identifying regulatory SNPs
+Version: 0.99.22
+Date: 2019-02-25
+Authors@R: c(person(given = "Chandler", family = "Kuo", role = "aut"),
+        person(given = "Sunyoung",family = "Shin",role = c("aut", "cre"), email = "sunyoung.shin@utdallas.edu"),
+        person(given = "Sunduz", family = "Keles", role = "aut"))
+Description: atSNP performs affinity tests of motif matches with the SNP or the reference genomes and SNP-led changes in motif matches.
 License: GPL-2
 LinkingTo: Rcpp
-Suggests: testthat, BiocStyle, BSgenome.Hsapiens.UCSC.hg19, SNPlocs.Hsapiens.dbSNP.20120608
-Depends:
-    Rcpp,
-    data.table,
-    doParallel,
-    foreach,
-    GenomicRanges,
-    motifStack
+Depends: R (>= 3.6)
+Suggests: testthat, BiocStyle, knitr, rmarkdown
+Imports: Rcpp, data.table, BiocParallel, BiocFileCache, rappdirs, BSgenome, motifStack, grDevices, graphics, stats, utils
+RoxygenNote: 6.1.1
+biocViews: Software, ChIPSeq, GenomeAnnotation, MotifAnnotation, Visualization
+URL: https://github.com/sunyoungshin/atSNP
+BugReports: https://github.com/sunyoungshin/atSNP/issues
+VignetteBuilder: knitr
