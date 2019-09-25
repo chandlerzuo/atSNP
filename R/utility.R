@@ -326,6 +326,7 @@ results_motif_par<-function(i, par.prior, par.transition, par.motif.lib, par.mot
     print(ggplot(aes(x = score, y = p.value), data = plotdat.diff, environment = localenv) + geom_point() + scale_y_log10(breaks = 10 ^ seq(-8, 0)) + geom_errorbar(aes(ymax = p.value + sqrt(var), ymin = p.value - sqrt(var))) + ggtitle(paste(names(par.motif.lib)[i], " Change")))
     dev.off()
   }
+                      
   
   return(list(rowids = rowids,
               pval_a = pval_a,
