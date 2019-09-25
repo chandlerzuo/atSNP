@@ -61,7 +61,6 @@ test_that("Error: quantile function computing are not equivalent.", {
   for(p in c(0.01, 0.1, 0.5, 0.9, 0.99)) {
     delta <- .Call("test_find_percentile", c(scores), p, package = "atSNP")
     delta.r <- -sort(-c(scores))[as.integer(p * length(scores)) + 1]
-    delta==delta.r
     expect_equal(delta, delta.r)
   }
 })

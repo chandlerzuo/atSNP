@@ -117,11 +117,11 @@ match_subseq_par<-function(i, par.k, par.ncores, par.snp.tbl, par.snpids, par.mo
                                IUPAC, ref_match_seq, snp_match_seq, ref_seq_snp_match, snp_seq_ref_match, snpbase)])
 }
 
-results_motif_par<-function(i, par.prior, par.transition, par.motif.lib, par.motif.scores, par.testing.mc, par.figdir) {
-  rowids <- which(par.motif.scores$motif == names(par.motif.lib)[i])
+results_motif_par<-function(motif.id, par.prior, par.transition, par.motif.lib, par.motif.scores, par.testing.mc, par.figdir) {
+  rowids <- which(par.motif.scores$motif == names(par.motif.lib)[motif.id])
   scores <- cbind(par.motif.scores$log_lik_ref[rowids],
                   par.motif.scores$log_lik_snp[rowids])
-  pwm <- par.motif.lib[[i]]
+  pwm <- par.motif.lib[[motif.id]]
   pwm[pwm < 1e-10] <- 1e-10
   wei.mat <- pwm
   for(i in seq(nrow(wei.mat))) {
@@ -133,9 +133,10 @@ results_motif_par<-function(i, par.prior, par.transition, par.motif.lib, par.mot
   if(nrow(scores) > 5000) {
     p <- 5 / nrow(scores)
   } else {
-    p <- 1 / nrow(scores)
+    p <- 1 / max(2, nrow(scores))
   }
   
+  # Use percentiles of the score distribution to construct groups
   m <- 20
   b <- (1 / p) ^ ( 1 / sum(seq(m)))
   allp <- rep(1, m + 1)
@@ -146,11 +147,18 @@ results_motif_par<-function(i, par.prior, par.transition, par.motif.lib, par.mot
   }
   allp <- allp[-(m + 1)]
   
-  score.p <- unique(quantile(c(scores), 1 - allp))
+  score.p <- quantile(c(scores), 1 - allp)
+  dedup.idx <- c(1, 1 + which(diff(score.p) != 0))
+  score.p <- score.p[dedup.idx]
+  allp <- allp[dedup.idx]
+  
+  # When there are few distinct score values, directly use those values
+  # instead of percentiles
   if(length(score.p) > length(unique(c(scores)))) {
     score.p <- rev(unique(sort(c(scores))))
     allp <- seq_along(score.p) / length(c(scores))
   }
+  assert(length(allp) == length(score.p))
   
   pval_a <- pval_cond <- matrix(1, nrow = nrow(scores), ncol = 4)
   for(l in seq_along(allp)) {
@@ -181,12 +189,7 @@ results_motif_par<-function(i, par.prior, par.transition, par.motif.lib, par.mot
       if(l <= length(allp)) {
         n_sample <- as.integer((1 - allp[l]) / allp[l] * 100)
       }
-      if(n_sample > 1e5) {
-        n_sample <- 1e5
-      }
-      if(n_sample < 5000) {
-        n_sample <- 2000
-      }
+      n_sample <- max(2000, min(n_sample, 1e5))
       pval_a.new <- .Call("test_p_value", pwm, par.prior, par.transition, scores[compute.id], theta, n_sample, package = "atSNP")
     } else {
       pval_a.new <- .Call("test_p_value", pwm, par.prior, par.transition, scores[compute.id], theta, 100, package = "atSNP")
@@ -258,20 +261,10 @@ results_motif_par<-function(i, par.prior, par.transition, par.motif.lib, par.mot
     ## set the importance sample size
     if(par.testing.mc==FALSE) {
       n_sample <- 2000
-      p <- mean(score_diff >= score.p[l])
-      if(p == 0) {
-        p <- 1e-4
-      }
-      if(l <= length(allp)) {
-        n_sample <- as.integer((1 - p) / p * 100)
-      }
-      if(n_sample > 1e5) {
-        n_sample <- 1e5
-      }
-      if(n_sample < 2000) {
-        n_sample <- 2000
-      }
-      
+      p <- max(1e-4, mean(score_diff >= score.p[l]))
+      n_sample <- as.integer((1 - p) / p * 100)
+      n_sample <- max(2000, min(n_sample, 1e5))
+
       pval_diff.new <- .Call("test_p_value_change", pwm,
                              wei.mat, pwm + 0.25,  par.prior,
                              par.transition, score_diff[compute.id],
@@ -298,7 +291,7 @@ results_motif_par<-function(i, par.prior, par.transition, par.motif.lib, par.mot
   pval_diff[pval_diff[, 1] > 1, 1] <- 1
   pval_rank[, 1] <- sort(pval_rank[,1])[rank(-rank_ratio)]
   pval_rank[pval_rank[, 1] > 1, 1] <- 1
-  message("Finished testing motif No. ", i)
+  message("Finished testing motif No. ", motif.id)
   if(!is.null(par.figdir)) {
     if(!file.exists(par.figdir)) {
       dir.create(par.figdir)
@@ -318,7 +311,7 @@ results_motif_par<-function(i, par.prior, par.transition, par.motif.lib, par.mot
     plotdat.diff <- unique(plotdat.diff)
     localenv <- environment()
     options(warn = -1)
-    pdf(file.path(par.figdir, paste("motif", i, ".pdf", sep = "")), width = 10, height = 10)
+    pdf(file.path(par.figdir, paste("motif", motif.id, ".pdf", sep = "")), width = 10, height = 10)
     id <- which(rank(plotdat$p.value[plotdat$Allele == "ref"]) <= 500)
     print(ggplot(aes(x = score, y = p.value), data = plotdat[plotdat$Allele == "ref", ], environment = localenv) + geom_point() + scale_y_log10(breaks = 10 ^ seq(-8, 0)) + geom_errorbar(aes(ymax = p.value + sqrt(var), ymin = p.value - sqrt(var))) + ggtitle(paste(names(par.motif.lib)[i], "ref")))
     id <- which(rank(plotdat$p.value[plotdat$Allele == "snp"]) <= 500)
@@ -326,8 +319,7 @@ results_motif_par<-function(i, par.prior, par.transition, par.motif.lib, par.mot
     print(ggplot(aes(x = score, y = p.value), data = plotdat.diff, environment = localenv) + geom_point() + scale_y_log10(breaks = 10 ^ seq(-8, 0)) + geom_errorbar(aes(ymax = p.value + sqrt(var), ymin = p.value - sqrt(var))) + ggtitle(paste(names(par.motif.lib)[i], " Change")))
     dev.off()
   }
-                      
-  
+
   return(list(rowids = rowids,
               pval_a = pval_a,
               pval_cond = pval_cond,
