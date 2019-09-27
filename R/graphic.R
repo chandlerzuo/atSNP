@@ -190,7 +190,7 @@ plotMotifMatch<-function(motif.match, motif.lib, cex.main = 2, ...) {
   revert.columns <- function(mat) {
     mat[, rev(seq(ncol(mat)))]
   }
-
+  
   ref_aug_match_pwm<-ref_aug_match_pwm_forward
   snp_aug_match_pwm<-snp_aug_match_pwm_forward
 

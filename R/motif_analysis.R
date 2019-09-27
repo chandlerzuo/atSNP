@@ -840,6 +840,8 @@ MatchSubsequence <- function(snp.tbl, motif.scores, motif.lib, snpids = NULL, mo
 #' ComputePValues(motif_library, snpInfo, motif_scores$motif.scores, ncores = 2, testing.mc=TRUE)
 #' @import Rcpp
 #' @import data.table
+#' @import testit
+#' @import ggplot2
 #' @importFrom BiocParallel bpmapply MulticoreParam SnowParam
 #' @useDynLib atSNP
 #' @export
@@ -853,9 +855,9 @@ ComputePValues <- function(motif.lib, snp.info, motif.scores, ncores = 1, testin
   
   if(Sys.info()[["sysname"]] == "Windows"){
     snow <- SnowParam(workers = ncores, type = "SOCK")
-    results<-bpmapply(function(x) results_motif_par(i=x, par.prior=prior, par.transition=transition, par.motif.lib=motif.lib, par.motif.scores=motif.scores, par.testing.mc=testing.mc, par.figdir=figdir), seq_along(motif.lib), BPPARAM = snow,SIMPLIFY = FALSE)
+    results<-bpmapply(function(x) results_motif_par(motif.id=x, par.prior=prior, par.transition=transition, par.motif.lib=motif.lib, par.motif.scores=motif.scores, par.testing.mc=testing.mc, par.figdir=figdir), seq_along(motif.lib), BPPARAM = snow,SIMPLIFY = FALSE)
   }else{
-    results<-bpmapply(function(x) results_motif_par(i=x, par.prior=prior, par.transition=transition, par.motif.lib=motif.lib, par.motif.scores=motif.scores, par.testing.mc=testing.mc, par.figdir=figdir), seq_along(motif.lib), BPPARAM = MulticoreParam(workers = ncores),
+    results<-bpmapply(function(x) results_motif_par(motif.id=x, par.prior=prior, par.transition=transition, par.motif.lib=motif.lib, par.motif.scores=motif.scores, par.testing.mc=testing.mc, par.figdir=figdir), seq_along(motif.lib), BPPARAM = MulticoreParam(workers = ncores),
                       SIMPLIFY = FALSE)
   }
 

@@ -3,3 +3,6 @@ inst/doc
 src/*.o
 src/*.so
 .Rproj.user
+.Rhistory
+*.Rproj
+*.dll
