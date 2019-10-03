@@ -157,11 +157,9 @@ snp_info$rsid.rm
 There are two important arguments in function `LoadSNPData`. First, the 'mutation' argument specifies whether the data set is related to SNP or general single nucleotide mutation. By default, 'mutation=FALSE'. In this case, `LoadSNPData` get the nucleotides on the reference genome based on the genome coordinates specified by 'chr' and 'snp' and match them to 'a1' and 'a2' alleles from the `r Biocannopkg("BSgenome")` package. 'a1' and 'a2' nucleotides are assigned to the refrence or the SNP allele based on which one matches to the reference nucleotide. If neither allele matches to the reference nucleotide, the corresponding row in the SNP information file is discarded. These discarded SNPs are captured by the 'rsid.rm' field in the output. Alternatively, if 'mutation=TRUE', no row is discarded. `LoadSNPData` takes the reference sequences around the SNP locations, replaces the reference nucleotides at the SNP locations by 'a1' nucleotides to construct the 'reference' sequences, and by 'a2' nucleotides to construct the 'SNP' sequences. Notice that in this case, in the subsequent analysis, whenever we refer to the 'reference' or the 'SNP' allele, it actually means the 'a1' or the 'a2' allele.
 
 ```{r eval=FALSE, echo=TRUE, results="markup",tidy=FALSE}
-
-  mutation_info <- LoadSNPData("test_snp_file.txt", genome.lib = "BSgenome.Hsapiens.UCSC.hg38", half.window.size = 30, default.par = TRUE, mutation = TRUE)
-  ncol(mutation_info$sequence) == nrow(snp_tbl)
-  file.remove("test_snp_file.txt")
-
+mutation_info <- LoadSNPData("test_snp_file.txt", genome.lib = "BSgenome.Hsapiens.UCSC.hg38", half.window.size = 30, default.par = TRUE, mutation = TRUE)
+ncol(mutation_info$sequence) == nrow(snp_tbl)
+file.remove("test_snp_file.txt")
 ``` 
 
 Second, the 'default.par' argument specifies how to estimate the first order Markov model parameters. If 'default.par = FALSE', `LoadSNPData` simultaneously estimates the parameters for the first order Markov model in the reference genome using the nucleotides within the SNP windows. Otherwise, it loads a set of parameter values pre-fitted from sequences around all the SNPs in the NHGRI GWAS catalog [@nhgri-gwas]. We recommend setting 'default.par = TRUE' when we have fewer than 1000 SNPs. `LoadSNPData` returns a list object with five fields:
@@ -178,7 +176,6 @@ Second, the 'default.par' argument specifies how to estimate the first order Mar
 `LoadSNPData` also allows users to load a list of rsids for the SNPs. In this case, the function looks up the SNP location and the allele information using the annotation package specified by 'snp.lib', such as 'SNPlocs.Hsapiens.dbSNP144.GRCh38'.
 
 ```{r eval=FALSE, echo=TRUE, results="markup", tidy=FALSE}
-
 snp_info1 <- LoadSNPData(snpids = c("rs5050", "rs616488", "rs11249433", "rs182799", "rs12565013", "rs11208590"), genome.lib ="BSgenome.Hsapiens.UCSC.hg38", snp.lib = "SNPlocs.Hsapiens.dbSNP144.GRCh38", half.window.size = 30, default.par = TRUE, mutation = FALSE)
 ```
 
@@ -204,14 +201,12 @@ snp_info2 <- LoadFastaData(ref.urlname="http://pages.stat.wisc.edu/~keles/atSNP-
 We use a toy example data set included in the package to introduce the usage of functions for affinity score tests.
 
 ```{r eval=TRUE, echo=TRUE, results="markup",tidy=TRUE}
-
-  data(example)
-  names(motif_library)
-  str(snpInfo)
+data(example)
+names(motif_library)
+str(snpInfo)
 ## to look at the motif information
-  data(encode_library)
-  encode_motifinfo[names(motif_library)]
-
+data(encode_library)
+encode_motifinfo[names(motif_library)]
 ``` 
 
 ### Compute affinity scores
@@ -219,9 +214,9 @@ We use a toy example data set included in the package to introduce the usage of 
 The binding affinity scores for all pairs of SNP and PWM can be computed by the `ComputeMotifScore` function. It returns a list of two fields: 'snp.tbl' is a *data.frame* containing the nucleotide sequences for each SNP; 'motif.scores' is a *data.frame* containing the binding affinity scores for each SNP-motif pair.
 
 ```{r eval=TRUE, echo=TRUE, results="markup"}
-  atsnp.scores <- ComputeMotifScore(motif_library, snpInfo, ncores = 1)
-  atsnp.scores$snp.tbl
-  atsnp.scores$motif.scores
+atsnp.scores <- ComputeMotifScore(motif_library, snpInfo, ncores = 1)
+atsnp.scores$snp.tbl
+atsnp.scores$motif.scores
 ``` 
 
 The affinity scores for the reference and the SNP alleles are represented by the `log_lik_ref` and `log_lik_snp` columns in `motif.scores`. The affinity score change is included in the `log_lik_ratio` column. These three affinity scores are tested in the subsequent steps. `motif.scores` also includes other columns for the position of the best matching subsequence on each allele. For a complete description on all these columns, users can look up the help documentation.
@@ -240,7 +235,6 @@ After we have computed the binding affinity scores, they can be tested using the
 We recommend using `pval_ref`and `pval_snp` for assessing the significance of allele specific affinity; and using `pval_rank` for assessing the significance of the SNP effect on the affinity change.
 
 ```{r eval=TRUE,echo=TRUE,results="markup"}
-
 atsnp.result <- ComputePValues(motif.lib = motif_library, snp.info = snpInfo,
                                motif.scores = atsnp.scores$motif.scores, ncores = 1, testing.mc=TRUE)
 atsnp.result
@@ -248,7 +242,7 @@ atsnp.result
 
 First, we can sort this output table according to the `pval_rank` column:
   
-  ```{r eval=TRUE, echo = TRUE, results="markup"}
+```{r eval=TRUE, echo = TRUE, results="markup"}
 head(atsnp.result[order(atsnp.result$pval_rank), c("snpid", "motif", "pval_ref", "pval_snp", "pval_rank")])
 ``` 
 
@@ -266,10 +260,10 @@ atsnp.result[c("snpid", "motif", "pval_rank", "pval_rank_bh")]
 ``` 
 
 Alternatively, if we want to compute Storey's q-values, we may utilize the `r Biocpkg("qvalue")` package from \Bioconductor{}: 
-  
-  ```{r eval=FALSE, echo =TRUE,results="markup"}
+
+```{r eval=FALSE, echo =TRUE,results="markup"}
 library(qvalue)
-qval_rank = qvalue(atsnp.result$pval_rank)$qvalues
+qval_rank = qvalue(atsnp.result$pval_rank, pi0=0.1)$qvalues
 atsnp.result = cbind(atsnp.result, qval_rank)
 ``` 
 
@@ -279,14 +273,12 @@ atSNP provides additional functions to extract the matched nucleotide subsequenc
 
 
 ```{r eval=TRUE,echo=TRUE,results="markup"}
-
 match.subseq_result <- MatchSubsequence(snp.tbl = atsnp.scores$snp.tbl, motif.scores = atsnp.result, motif.lib = motif_library, snpids = c("rs53576", "rs7412"), motifs = names(motif_library)[1], ncores = 1)
 match.subseq_result[c("snpid", "motif", "IUPAC", "ref_match_seq", "snp_match_seq")]
-
 ``` 
 
 To visualize how each motif is matched to each allele using the `plotMotifMatch` function:
-  
+
   
 ```{r eval=TRUE, echo=TRUE, fig.align="center", fig.height=6, fig.width=6, warning=TRUE, dpi=600, include=TRUE, results="markup"}
 match.seq<-dtMotifMatch(atsnp.scores$snp.tbl, atsnp.scores$motif.scores, snpids="rs53576", motifs="SIX5_disc1", motif.lib = motif_library)

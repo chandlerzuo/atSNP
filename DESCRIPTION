@@ -11,7 +11,7 @@ License: GPL-2
 LinkingTo: Rcpp
 Depends: R (>= 3.6)
 Suggests: testthat, BiocStyle, knitr, rmarkdown
-Imports: Rcpp, data.table, BiocParallel, BiocFileCache, rappdirs, BSgenome, motifStack, grDevices, graphics, stats, utils, grid
+Imports: BSgenome, BiocFileCache, BiocParallel, Rcpp, data.table, ggplot2, grDevices, graphics, grid, motifStack, rappdirs, stats, testit, utils
 RoxygenNote: 6.1.1
 biocViews: Software, ChIPSeq, GenomeAnnotation, MotifAnnotation, Visualization
 URL: https://github.com/sunyoungshin/atSNP
