@@ -1,0 +1,15 @@
+citEntry(entry="article",
+         title = "atSNP: transcription factor binding affinity testing for regulatory SNP detection",
+         author = personList( as.person("Chandler Zuo"),
+                              as.person("Sunyoung Shin"),
+                              as.person("Sunduz Keles")),
+         year = 2015,
+         journal = "Bioinformatics",
+         doi = "10.1093/bioinformatics/btv328",
+         volume = 31,
+         issue = 20,
+         pages = 3353 - 3355,
+         textVersion = 
+         paste("Zuo, C., Shin, S., Keles, S.", 
+               "atSNP: transcription factor binding affinity testing for regulatory SNP detection",
+                "Bioinformatics 31(20):3353-3355 (2015)" ) )
