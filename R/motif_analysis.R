@@ -840,7 +840,6 @@ MatchSubsequence <- function(snp.tbl, motif.scores, motif.lib, snpids = NULL, mo
 #' ComputePValues(motif_library, snpInfo, motif_scores$motif.scores, ncores = 2, testing.mc=TRUE)
 #' @import Rcpp
 #' @import data.table
-#' @import testit
 #' @import ggplot2
 #' @importFrom BiocParallel bpmapply MulticoreParam SnowParam
 #' @useDynLib atSNP
