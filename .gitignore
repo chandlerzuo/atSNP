@@ -6,3 +6,5 @@ src/*.so
 .Rhistory
 *.Rproj
 *.dll
+atSNP-Ex.pdf
+*.timings

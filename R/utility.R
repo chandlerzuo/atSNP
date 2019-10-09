@@ -158,7 +158,7 @@ results_motif_par<-function(motif.id, par.prior, par.transition, par.motif.lib, 
     score.p <- rev(unique(sort(c(scores))))
     allp <- seq_along(score.p) / length(c(scores))
   }
-  assert(length(allp) == length(score.p))
+  stopifnot(length(allp) == length(score.p))
   
   pval_a <- pval_cond <- matrix(1, nrow = nrow(scores), ncol = 4)
   for(l in seq_along(allp)) {
