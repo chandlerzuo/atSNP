@@ -15,9 +15,22 @@
  * on Rcpp-devel for a misuse of RcppExport
  */
 using namespace Rcpp;
+
+struct SequenceScores {
+  int best_match_pos;
+  float max_log_lik;
+  float mean_log_lik;
+  float median_log_lik;
+};
+
 RcppExport SEXP motif_score(SEXP, SEXP);
-int find_best_match(NumericMatrix, IntegerVector);
+int get_min_start_pos(int, int);
+int get_max_start_pos(int, int);
+IntegerVector revert_sequence(IntegerVector);
+NumericVector comp_subseq_scores(NumericMatrix, IntegerVector);
+SequenceScores comp_seq_scores(NumericMatrix, IntegerVector);
 double pwm_log_prob(NumericMatrix, IntegerVector, int);
+double bidir_pwm_log_prob(NumericMatrix, IntegerVector, int);
 RcppExport SEXP transition_matrix(SEXP);
 RcppExport SEXP test_max_log_prob(SEXP, SEXP);
 

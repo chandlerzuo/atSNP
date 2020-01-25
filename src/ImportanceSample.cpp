@@ -288,38 +288,8 @@ IntegerVector importance_sample(NumericMatrix delta, NumericVector stat_dist, Nu
 }
 
 NumericVector compute_sample_score(NumericMatrix pwm, IntegerVector sample_vec, int start_pos, double theta) {
-	int seq_len = sample_vec.size();
-	//	printf("\n");
-	// compute the reverse strand sequence
-	IntegerVector rev_sample_vec(seq_len);
-	IntegerVector sample_vec_copy(seq_len);
-	IntegerVector rev_sample_vec_copy(seq_len);
-	for(int i = 0; i < seq_len; i ++) {
-		rev_sample_vec[i] = 3 - sample_vec[seq_len - 1 - i];
-		sample_vec_copy[i] = sample_vec[i];
-		rev_sample_vec_copy[i] = 3 - sample_vec[seq_len - 1 - i];
-	}
 	// compute the maximum score
-	double rnd_score = pwm_log_prob(pwm, sample_vec, find_best_match(pwm, sample_vec));
-	double rnd_score_rev = pwm_log_prob(pwm, rev_sample_vec, find_best_match(pwm, rev_sample_vec));
-	if(rnd_score_rev > rnd_score)
-		rnd_score = rnd_score_rev;
-	// SNP score
-	//	double snp_score[3];
-	int snp_id = 0;
-	double rnd_score_copy, rnd_score_rev_copy;
-	for(int j = 0; j < 4; j ++) {
-		if(sample_vec[seq_len / 2] == j)
-			continue;
-		sample_vec_copy[seq_len / 2] = j;
-		rev_sample_vec_copy[seq_len / 2] = 3 - j;
-		rnd_score_copy = pwm_log_prob(pwm, sample_vec_copy, find_best_match(pwm, sample_vec_copy));
-		rnd_score_rev_copy = pwm_log_prob(pwm, rev_sample_vec_copy, find_best_match(pwm, rev_sample_vec_copy));
-		if(rnd_score_rev_copy > rnd_score_copy)
-			rnd_score_copy = rnd_score_rev_copy;
-		//		snp_score[snp_id] = rnd_score_copy - rnd_score;
-		snp_id ++;
-	}
+	double rnd_score = comp_seq_scores(pwm, sample_vec).max_log_lik;
 	// compute the weight = prior density / importance sampling density
 	// note: must use the score based on the true start_pos to compute the weight
 	// this is a bug that took 2 days to fix!
@@ -332,10 +302,6 @@ NumericVector compute_sample_score(NumericMatrix pwm, IntegerVector sample_vec, 
 	ret[0] = rnd_score;
 	ret[1] = adj_score;
 	ret[2] = exp(theta * pwm_log_prob(pwm, sample_vec, start_pos));
-	//	ret[2] = snp_score[0];
-	//	ret[3] = snp_score[1];
-	//	ret[4] = snp_score[2];
-	//	printf("score:%3.3f\tweight:%3.3f\tconstant:%3.3f\n", ret[0], ret[1], log(delta(0, 3)));
 	return(ret);
 	
 }

@@ -275,32 +275,21 @@ IntegerVector importance_sample_diff(NumericMatrix delta, NumericVector stat_dis
 NumericVector compute_sample_score_diff(NumericMatrix pwm, NumericMatrix wei_mat, NumericMatrix adj_mat, IntegerVector sample_vec, int start_pos, double theta) {
 	// compute the reverse strand sequence
 	int motif_len = pwm.nrow();
-	IntegerVector rev_sample_vec(motif_len * 2 - 1);
 	IntegerVector sample_vec_copy(motif_len * 2 - 1);
-	IntegerVector rev_sample_vec_copy(motif_len * 2 - 1);
 	for(int i = 0; i < motif_len * 2 - 1; i ++) {
-		rev_sample_vec[i] = 3 - sample_vec[motif_len * 2 - 2 - i];
 		sample_vec_copy[i] = sample_vec[i];
-		rev_sample_vec_copy[i] = 3 - sample_vec[motif_len * 2 - 2 - i];
 	}
 	// compute the maximum score
-	double rnd_score = pwm_log_prob(pwm, sample_vec, find_best_match(pwm, sample_vec));
-	double rnd_score_rev = pwm_log_prob(pwm, rev_sample_vec, find_best_match(pwm, rev_sample_vec));
-	if(rnd_score_rev > rnd_score)
-		rnd_score = rnd_score_rev;
+	double rnd_score = comp_seq_scores(pwm, sample_vec).max_log_lik;
 	// SNP score
 	double snp_score[3];
 	int snp_id = 0;
-	double rnd_score_copy, rnd_score_rev_copy;
+	double rnd_score_copy;
 	for(int j = 0; j < 4; j ++) {
 		if(sample_vec[motif_len - 1] == j)
 			continue;
 		sample_vec_copy[motif_len - 1] = j;
-		rev_sample_vec_copy[motif_len - 1] = 3 - j;
-		rnd_score_copy = pwm_log_prob(pwm, sample_vec_copy, find_best_match(pwm, sample_vec_copy));
-		rnd_score_rev_copy = pwm_log_prob(pwm, rev_sample_vec_copy, find_best_match(pwm, rev_sample_vec_copy));
-		if(rnd_score_rev_copy > rnd_score_copy)
-			rnd_score_copy = rnd_score_rev_copy;
+		rnd_score_copy = comp_seq_scores(pwm, sample_vec_copy).max_log_lik;
 		snp_score[snp_id] = rnd_score - rnd_score_copy;
 		snp_id ++;
 	}
