@@ -3,7 +3,7 @@
 \docType{data}
 \name{jaspar_motif}
 \alias{jaspar_motif}
-\title{A motif library containing 593 motifs downloaded from 
+\title{A motif library containing 593 motifs downloaded from
 http://jaspar.genereg.net/html/DOWNLOAD/JASPAR_CORE/pfm/nonredundant/pfm_all
 .txt.}
 \format{A list object.}
@@ -11,6 +11,6 @@ http://jaspar.genereg.net/html/DOWNLOAD/JASPAR_CORE/pfm/nonredundant/pfm_all
 This motif library can be loaded by 'data(jaspar_library)'.
 }
 \author{
-Sunyoung Shin \email{sunyoung.shin@utdallas.edu}, Chandler Zuo 
+Sunyoung Shin \email{sunyoung.shin@utdallas.edu}, Chandler Zuo
 \email{chandler.c.zuo@gmail.com}
 }

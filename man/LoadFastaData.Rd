@@ -25,9 +25,9 @@ Default: FALSE.}
 \value{
 A list object containing the following components:
 \tabular{ll}{
-sequence_matrix \tab A list of integer vectors representing the deroxyribose 
+sequence_matrix \tab A list of integer vectors representing the deroxyribose
 sequence around each SNP.\cr
-a1 \tab An integer vector for the deroxyribose at the SNP location on the 
+a1 \tab An integer vector for the deroxyribose at the SNP location on the
 reference genome.\cr
 a2 \tab An integer vector for the deroxyribose at the SNP location on the SNP
  genome.\cr
@@ -43,6 +43,6 @@ ref.urlname="http://pages.stat.wisc.edu/~keles/atSNP-Data/sample_1.fasta",
 snp.urlname="http://pages.stat.wisc.edu/~keles/atSNP-Data/sample_2.fasta")
 }
 \author{
-Sunyoung Shin \email{sunyoung.shin@utdallas.edu}, Chandler Zuo 
+Sunyoung Shin \email{sunyoung.shin@utdallas.edu}, Chandler Zuo
 \email{chandler.c.zuo@gmail.com}
 }

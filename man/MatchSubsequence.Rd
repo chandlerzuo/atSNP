@@ -13,7 +13,7 @@ MatchSubsequence(snp.tbl, motif.scores, motif.lib, snpids = NULL,
 snpid \tab SNP id.\cr
 ref_seq \tab Reference allele nucleotide sequence.\cr
 snp_seq \tab SNP allele nucleotide sequence.\cr
-ref_seq_rev \tab Reference allele nucleotide sequence on the reverse 
+ref_seq_rev \tab Reference allele nucleotide sequence on the reverse
 strand.\cr
 snp_seq_rev \tab SNP allele nucleotide sequence on the reverse strand.\cr}}
 
@@ -28,47 +28,47 @@ snp_start, snp_end, snp_strand \tab Location of the best matching subsequence
 log_lik_ref \tab Log-likelihood score for the reference allele.\cr
 log_lik_snp \tab Log-likelihood score for the SNP allele.\cr
 log_lik_ratio \tab The log-likelihood ratio.\cr
-log_enhance_odds \tab Difference in log-likelihood ratio between SNP allele 
-and reference allele based on the best matching subsequence on the reference 
+log_enhance_odds \tab Difference in log-likelihood ratio between SNP allele
+and reference allele based on the best matching subsequence on the reference
 allele.\cr
-log_reduce_odds \tab Difference in log-likelihood ratio between reference 
-allele and SNP allele based on the best matching subsequence on the SNP 
+log_reduce_odds \tab Difference in log-likelihood ratio between reference
+allele and SNP allele based on the best matching subsequence on the SNP
 allele.\cr
 }}
 
 \item{motif.lib}{A list of the position weight matrices for the motifs.}
 
-\item{snpids}{A subset of snpids to compute the subsequences. Default: NULL, 
+\item{snpids}{A subset of snpids to compute the subsequences. Default: NULL,
 when all snps are computed.}
 
-\item{motifs}{A subset of motifs to compute the subsequences. Default: NULL, 
+\item{motifs}{A subset of motifs to compute the subsequences. Default: NULL,
 when all motifs are computed.}
 
 \item{ncores}{The number of cores used for parallel computing.}
 }
 \value{
-A data.frame containing all columns in both \code{snp.tbl} and 
+A data.frame containing all columns in both \code{snp.tbl} and
 \code{motif.scores}. In addition, the following columns are added:
 \tabular{ll}{
 ref_match_seq \tab Best matching subsequence on the reference allele.\cr
 snp_match_seq \tab Best matching subsequence on the SNP allele.\cr
-ref_seq_snp_match \tab Subsequence on the reference allele corresponding to 
+ref_seq_snp_match \tab Subsequence on the reference allele corresponding to
 the best matching location on the SNP allele.\cr
-snp_seq_ref_match \tab Subsequence on the SNP allele corresponding to the 
+snp_seq_ref_match \tab Subsequence on the SNP allele corresponding to the
 best matching location on the reference allele.\cr
 }
 }
 \description{
-This function combines the SNP set, the motif library and the 
-affinity score table and produce the matching subsequence found at each SNP 
+This function combines the SNP set, the motif library and the
+affinity score table and produce the matching subsequence found at each SNP
 location for each motif.
 }
 \examples{
 data(example)
-MatchSubsequence(motif_scores$snp.tbl, motif_scores$motif.scores, 
+MatchSubsequence(motif_scores$snp.tbl, motif_scores$motif.scores,
 motif_library, ncores=2)
 }
 \author{
-Sunyoung Shin \email{sunyoung.shin@utdallas.edu}, Chandler Zuo 
+Sunyoung Shin \email{sunyoung.shin@utdallas.edu}, Chandler Zuo
 \email{chandler.c.zuo@gmail.com}
 }

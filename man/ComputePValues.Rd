@@ -8,13 +8,13 @@ ComputePValues(motif.lib, snp.info, motif.scores, ncores = 1,
   testing.mc = FALSE, figdir = NULL)
 }
 \arguments{
-\item{motif.lib}{A list object with the output format of function 
+\item{motif.lib}{A list object with the output format of function
 \code{\link{LoadMotifLibrary}}.}
 
-\item{snp.info}{A list object with the output format of function 
+\item{snp.info}{A list object with the output format of function
 \code{\link{LoadSNPData}}.}
 
-\item{motif.scores}{A data.frame object containing at least the following 
+\item{motif.scores}{A data.frame object containing at least the following
 columns:
 \tabular{ll}{
 motif \tab The name of the motif.\cr
@@ -27,27 +27,27 @@ log_lik_snp \tab The log-likelihood score for the SNP allele.\cr
 \item{testing.mc}{Monte Carlo sample size of 200 is considered. Do not
 change the default unless conducting a quick test. Default: FALSE}
 
-\item{figdir}{A string for the path to print p-value plots for monitoring 
+\item{figdir}{A string for the path to print p-value plots for monitoring
 results. Default: NULL (no figure).}
 }
 \value{
-A data.frame extending \code{motif.scores} by the following 
+A data.frame extending \code{motif.scores} by the following
 additional columns:
 \tabular{ll}{
 pval_ref \tab P-values for scores on the reference allele.\cr
 pval_snp \tab P-values for scores on the SNP allele.\cr
-pval_cond_ref \tab Conditional p-values for scores on the reference 
+pval_cond_ref \tab Conditional p-values for scores on the reference
 allele.\cr
 pval_cond_snp \tab Conditional p-values for scores on the SNP allele.\cr
-pval_diff \tab P-values for the difference in scores between the reference 
+pval_diff \tab P-values for the difference in scores between the reference
 and the SNP alleles.\cr
-pval_rank \tab P-values for the log rank ratio between the reference and the 
+pval_rank \tab P-values for the log rank ratio between the reference and the
 SNP alleles.\cr
 }
 }
 \description{
 This function computes the p-values for allele-specific affinity
- scores and between-allele affinity score changes using the importance 
+ scores and between-allele affinity score changes using the importance
  sampling technique.
 }
 \examples{
@@ -55,6 +55,6 @@ data(example)
 ComputePValues(motif_library, snpInfo, motif_scores$motif.scores, ncores = 2, testing.mc=TRUE)
 }
 \author{
-Sunyoung Shin \email{sunyoung.shin@utdallas.edu}, Chandler Zuo 
+Sunyoung Shin \email{sunyoung.shin@utdallas.edu}, Chandler Zuo
 \email{chandler.c.zuo@gmail.com}
 }

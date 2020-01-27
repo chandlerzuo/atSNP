@@ -7,7 +7,7 @@
 GetIUPACSequence(pwm, prob = 0.25)
 }
 \arguments{
-\item{pwm}{The position weight matrix, with the columns representing 
+\item{pwm}{The position weight matrix, with the columns representing
 A, C, G, T.}
 
 \item{prob}{The probability threshold. Default: 0.25.}
@@ -16,7 +16,7 @@ A, C, G, T.}
 A character string.
 }
 \description{
-Convert the posotion weight matrix of a motif to the IUPAC 
+Convert the posotion weight matrix of a motif to the IUPAC
 sequence.
 }
 \examples{
@@ -24,6 +24,6 @@ data(example)
 GetIUPACSequence(motif_library[[1]], prob = 0.2)
 }
 \author{
-Sunyoung Shin \email{sunyoung.shin@utdallas.edu}, Chandler Zuo 
+Sunyoung Shin \email{sunyoung.shin@utdallas.edu}, Chandler Zuo
 \email{chandler.c.zuo@gmail.com}
 }

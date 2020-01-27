@@ -2,8 +2,8 @@
 % Please edit documentation in R/graphic.R
 \name{plotMotifMatch}
 \alias{plotMotifMatch}
-\title{Plot sequence logos of the position weight matrix of the motif and 
-sequences of its corresponding best matching augmented subsequence on the 
+\title{Plot sequence logos of the position weight matrix of the motif and
+sequences of its corresponding best matching augmented subsequence on the
 reference and SNP allele.}
 \usage{
 plotMotifMatch(motif.match, motif.lib, cex.main = 2, ...)
@@ -18,13 +18,13 @@ plotMotifMatch(motif.match, motif.lib, cex.main = 2, ...)
 \item{...}{Other parameters passed to plotMotifLogo.}
 }
 \value{
-Sequence logo stacks: Reference subsequences, sequence logo of 
-reference allele matching potision weight matrix, SNP subsequences, sequence 
+Sequence logo stacks: Reference subsequences, sequence logo of
+reference allele matching potision weight matrix, SNP subsequences, sequence
 logo of SNP allele matching potision weight matrix
 }
 \description{
-Plot the best matching augmented subsequences on the reference 
-and SNP alleles. Plot sequence logos of the position weight matrix of the 
+Plot the best matching augmented subsequences on the reference
+and SNP alleles. Plot sequence logos of the position weight matrix of the
 motif to the corresponding positions of the best matching subsequences on the
  references and SNP alleles.
 }

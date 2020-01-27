@@ -3,15 +3,15 @@
 \docType{data}
 \name{motif_match}
 \alias{motif_match}
-\title{Composit logo plotting input containing motif scores, the matching 
-subsequences and the augmented matching subsequences on SNP and reference 
+\title{Composit logo plotting input containing motif scores, the matching
+subsequences and the augmented matching subsequences on SNP and reference
 allele}
 \format{A data.frame object.}
 \description{
-This data.frame object loaded by 'data(example)' contains 
+This data.frame object loaded by 'data(example)' contains
 information about MYC_disc1 match to rs53576.
 }
 \author{
-Sunyoung Shin \email{sunyoung.shin@utdallas.edu}, Chandler Zuo 
+Sunyoung Shin \email{sunyoung.shin@utdallas.edu}, Chandler Zuo
 \email{chandler.c.zuo@gmail.com}
 }

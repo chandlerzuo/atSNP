@@ -6,7 +6,7 @@
 \title{A data frame for SNP information.}
 \format{A data.frame object.}
 \description{
-This data frame is loaded by 'data(example)'. It is a table 
+This data frame is loaded by 'data(example)'. It is a table
 including the following columns:
 \tabular{ll}{
 chr \tab The chromosome.\cr
@@ -16,6 +16,6 @@ a1,a2 \tab The nucleotide on the reference and SNP allele.\cr
 }
 }
 \author{
-Sunyoung Shin \email{sunyoung.shin@utdallas.edu}, Chandler Zuo 
+Sunyoung Shin \email{sunyoung.shin@utdallas.edu}, Chandler Zuo
 \email{chandler.c.zuo@gmail.com}
 }
