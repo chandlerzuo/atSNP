@@ -6,19 +6,30 @@ Reference: Hock Peng Chan et al.(2010). Importance sampling of word patterns in 
 
 /*
 Compute the probability that a random sequence can get a score higher than 'score'.
-@arg pwm The position weight matrix, with 4 columns corresponding to A, C, G, T.
-@arg stat_dist A vector of length 4 with stationary distributions of A, C, G, T.
-@arg trans_mat A 4 x 4 transition matrix.
-@arg scores A matrix with 2 columns, with each column corresponding to one allele.
-@arg p The upper percentile of the scores which is used as the mean of the importance sampling distribution.
-@return A matrix with 3 columns. The first two columns are the p-values for the log-likelihood scores of each allele. The third column are the p-values for the likelihood ratios.
+ @arg pwm The position weight matrix, with 4 columns corresponding to A, C, G, T.
+ @arg stat_dist A vector of length 4 with stationary distributions of A, C, G, T.
+ @arg trans_mat A 4 x 4 transition matrix.
+ @arg scores A matrix with 2 columns, with each column corresponding to one allele.
+ @arg p The upper percentile of the scores which is used as the mean of the importance
+ sampling distribution.
+ @arg loglik_type The enum type for max, mean or median.
+ @return A matrix with 3 columns. The first two columns are the p-values for the
+ log-likelihood scores of each allele. The third column are the p-values for the likelihood ratios.
 */
-Rcpp::List p_value_change(NumericMatrix pwm, NumericMatrix wei_mat, NumericMatrix adj_mat, NumericVector stat_dist, NumericMatrix trans_mat, NumericVector scores, NumericVector pval_ratio, double score_percentile, int n_sample) {
-	// double score_percentile = find_percentile_change(scores, p);
-	//	printf("percentile:%3.3f\n", score_percentile);
+Rcpp::List p_value_change(
+  NumericMatrix pwm,
+  NumericMatrix wei_mat,
+  NumericMatrix adj_mat,
+  NumericVector stat_dist,
+  NumericMatrix trans_mat,
+  NumericVector scores,
+  NumericVector pval_ratio,
+  double score_percentile,
+  int n_sample,
+  LoglikType loglik_type
+) {
 	// find the tilting parameter
 	double theta = find_theta_change(wei_mat, adj_mat, score_percentile);
-	//printf("theta:%3.3f\n", theta);
 	NumericMatrix p_values(scores.size(), 4);
 	NumericVector sample_score(5);
 	int start_pos;
@@ -38,7 +49,6 @@ Rcpp::List p_value_change(NumericMatrix pwm, NumericMatrix wei_mat, NumericMatri
 	
 
 	double norm_const = func_delta_change(wei_mat, adj_mat, theta);
-	//printf("Constant value : %3.10f\n", norm_const);
 
 	for(int i = 0; i < p_values.nrow(); i ++) {
 		for(int j = 0; j < 4; j ++) {
@@ -51,12 +61,24 @@ Rcpp::List p_value_change(NumericMatrix pwm, NumericMatrix wei_mat, NumericMatri
 	double score[n_sample][4];
 	NumericMatrix score_diff_sam(n_sample, 3);
 	for(int i = 0; i < n_sample; i ++) {
-		sample = importance_sample_change(adj_mat, stat_dist, trans_mat, wei_mat, theta);
+		sample = importance_sample_change(
+		  adj_mat, stat_dist, trans_mat, wei_mat, theta
+	  );
 		for(int j = 0; j < motif_len * 2 - 1; j ++) {
 			sample_vec[j] = sample[j];
 		}
 		start_pos = sample[2 * motif_len - 1];
-		sample_score = compute_sample_score_change(pwm, wei_mat, adj_mat, sample_vec, stat_dist, trans_mat, start_pos, theta);
+		sample_score = compute_sample_score_change(
+		  pwm,
+		  wei_mat,
+		  adj_mat,
+		  sample_vec,
+		  stat_dist,
+		  trans_mat,
+		  start_pos,
+		  theta,
+		  loglik_type
+		);
 		wei = norm_const / sample_score[0];
 		mean_score += sample_score[4];
 		// copy the weights and the scores for each allele
@@ -64,18 +86,17 @@ Rcpp::List p_value_change(NumericMatrix pwm, NumericMatrix wei_mat, NumericMatri
 		weights[i] = wei;
 		for(int j = 0; j < 3; j ++) {
 			score[i][j + 1] = sample_score[5] - sample_score[j + 1];
-			if(sample_score[j + 1] > 0) {
+			if(sample_score[j + 1] >= 0) {
 				score_diff_sam(i, j) = sample_score[j + 1];
 			} else {
 				score_diff_sam(i, j) = - sample_score[j + 1];
 			}
 		}
-		//		mean_score += sample_score[0];
 	}
 
 	NumericMatrix pval_loglik(scores.size(), 3);
 	pval_loglik = sample_to_p_value(scores, weights, score_diff_sam);
-
+	
 	// compute the sample log ranks
 	double pval_sam[4];
 	NumericMatrix pval_ratio_sam(n_sample, 3);
@@ -107,9 +128,9 @@ Rcpp::List p_value_change(NumericMatrix pwm, NumericMatrix wei_mat, NumericMatri
 	pval_rank = sample_to_p_value(pval_ratio, weights, pval_ratio_sam);
 
 	Rcpp::List ret = Rcpp::List::create(
-					    Rcpp::Named("score") = pval_loglik,
-					    Rcpp::Named("rank") = pval_rank
-					    );
+	  Rcpp::Named("score") = pval_loglik,
+	  Rcpp::Named("rank") = pval_rank
+	);
 	return(ret);
 }
 
@@ -250,11 +271,20 @@ IntegerVector importance_sample_change(NumericMatrix adj_mat, NumericVector stat
 			sample_vec[i] ++;
 		}
 	}
-	//	printf("\n");
 	return(sample_vec);
 }
 
-NumericVector compute_sample_score_change(NumericMatrix pwm, NumericMatrix wei_mat, NumericMatrix adj_mat, IntegerVector sample_vec, NumericVector stat_dist, NumericMatrix trans_mat, int start_pos, double theta) {
+NumericVector compute_sample_score_change(
+  NumericMatrix pwm,
+  NumericMatrix wei_mat,
+  NumericMatrix adj_mat,
+  IntegerVector sample_vec,
+  NumericVector stat_dist,
+  NumericMatrix trans_mat,
+  int start_pos,
+  double theta,
+  LoglikType loglik_type
+) {
 	// compute the reverse strand sequence
 	int motif_len = pwm.nrow();
 	IntegerVector sample_vec_copy(motif_len * 2 - 1);
@@ -262,7 +292,19 @@ NumericVector compute_sample_score_change(NumericMatrix pwm, NumericMatrix wei_m
 		sample_vec_copy[i] = sample_vec[i];
 	}
 	// compute the maximum score
-	double rnd_score = comp_seq_scores(pwm, sample_vec).max_log_lik;
+	double rnd_score = 0;
+	SequenceScores seq_scores = comp_seq_scores(pwm, sample_vec);
+	switch(loglik_type){
+	case LoglikType::mean:
+	  rnd_score = seq_scores.mean_log_lik;
+	  break;
+	case LoglikType::median:
+	  rnd_score = seq_scores.median_log_lik;
+	  break;
+	default:
+	  rnd_score = seq_scores.max_log_lik;
+	  break;
+	}
 	// SNP score
 	double snp_score[3];
 	int snp_id = 0;
@@ -271,13 +313,22 @@ NumericVector compute_sample_score_change(NumericMatrix pwm, NumericMatrix wei_m
 		if(sample_vec[motif_len - 1] == j)
 			continue;
 		sample_vec_copy[motif_len - 1] = j;
-		rnd_score_copy = comp_seq_scores(pwm, sample_vec_copy).max_log_lik;
+		SequenceScores seq_scores_for_copy = comp_seq_scores(pwm, sample_vec_copy);
+		switch(loglik_type){
+		case LoglikType::mean:
+		  rnd_score_copy = seq_scores_for_copy.mean_log_lik;
+		  break;
+		case LoglikType::median:
+		  rnd_score_copy = seq_scores_for_copy.median_log_lik;
+		  break;
+		default:
+		  rnd_score_copy = seq_scores_for_copy.max_log_lik;
+  		break;
+		}
 		snp_score[snp_id] = rnd_score - rnd_score_copy;
 		snp_id ++;
 	}
-	if(snp_id != 3) {
-		printf("Error: snp_id = %d\n", snp_id);
-	}
+	assert(snp_id == 3);
 
 	// compute the weight = prior density / importance sampling density
 	// note: must use the score based on the true start_pos to compute the weight
@@ -312,7 +363,6 @@ NumericVector compute_sample_score_change(NumericMatrix pwm, NumericMatrix wei_m
 	ret[3] = snp_score[2];
 	ret[4] = log(wei_mat(motif_len - 1 - start_pos, sample_vec[motif_len - 1]));
 	ret[5] = rnd_score;
-	//	printf("score:%3.3f\tweight:%3.3f\tconstant:%3.3f\n", ret[0], ret[1], log(delta(0, 3)));
 	return(ret);
 }
 
@@ -369,7 +419,11 @@ double find_percentile_change(NumericVector scores, double p) {
 	return(heap[0]);
 }
 
-NumericMatrix sample_to_p_value(NumericVector scores, NumericVector weights, NumericMatrix sample_score){
+NumericMatrix sample_to_p_value(
+    NumericVector scores,
+    NumericVector weights,
+    NumericMatrix sample_score
+) {
 	double wei_sum = 0;
 	double wei2_sum = 0;
 	int n_sample = sample_score.nrow();
@@ -394,9 +448,6 @@ NumericMatrix sample_to_p_value(NumericVector scores, NumericVector weights, Num
 			}
 		}
 	}
-	//printf("Mean weight : %lf \n", wei_sum / n_sample);
-	//printf("Mean diff score : %lf \n", mean_change / 3 / n_sample);
-	//printf("Mean tilting score : %lf \n", mean_score / n_sample);
 	wei2_sum /= n_sample;
 	wei_sum /= n_sample;
 	double var2 = wei2_sum - wei_sum * wei_sum;
@@ -428,7 +479,18 @@ SEXP test_find_percentile_change(SEXP _scores, SEXP _perc) {
 	return(wrap(ret));
 }
 
-SEXP test_p_value_change(SEXP _pwm, SEXP _wei_mat, SEXP _adj_mat, SEXP _stat_dist, SEXP _trans_mat, SEXP _scores, SEXP _pval_ratio, SEXP _perc, SEXP _n_sample) {
+SEXP compute_p_value_change(
+  SEXP _pwm,
+  SEXP _wei_mat,
+  SEXP _adj_mat,
+  SEXP _stat_dist,
+  SEXP _trans_mat,
+  SEXP _scores,
+  SEXP _pval_ratio,
+  SEXP _perc,
+  SEXP _n_sample,
+  SEXP _loglik_type
+) {
 	NumericMatrix pwm(_pwm);
 	NumericMatrix wei_mat(_wei_mat);
 	NumericMatrix adj_mat(_adj_mat);
@@ -438,8 +500,20 @@ SEXP test_p_value_change(SEXP _pwm, SEXP _wei_mat, SEXP _adj_mat, SEXP _stat_dis
 	NumericVector pval_ratio(_pval_ratio);
 	double perc = as<double>(_perc);
 	int n_sample = as<int>(_n_sample);
-	
-	Rcpp::List p_values = p_value_change(pwm, wei_mat, adj_mat, stat_dist, trans_mat, scores, pval_ratio, perc, n_sample);
+	LoglikType loglik_type = static_cast<LoglikType>(as<int>(_loglik_type));
+
+	Rcpp::List p_values = p_value_change(
+	  pwm,
+	  wei_mat,
+	  adj_mat,
+	  stat_dist,
+	  trans_mat,
+	  scores,
+	  pval_ratio,
+	  perc,
+	  n_sample,
+	  loglik_type
+	 );
 	return(wrap(p_values));
 }
 
@@ -470,7 +544,17 @@ SEXP test_importance_sample_change(SEXP _adj_mat, SEXP _stat_dist, SEXP _trans_m
 	return(wrap(importance_sample_change(adj_mat, stat_dist, trans_mat, wei_mat, theta)));
 }
 
-SEXP test_compute_sample_score_change(SEXP _pwm, SEXP _wei_mat, SEXP _adj_mat, SEXP _sample_vec, SEXP _stat_dist, SEXP _trans_mat, SEXP _start_pos, SEXP _theta) {
+SEXP test_compute_sample_score_change(
+  SEXP _pwm,
+  SEXP _wei_mat,
+  SEXP _adj_mat,
+  SEXP _sample_vec,
+  SEXP _stat_dist,
+  SEXP _trans_mat,
+  SEXP _start_pos,
+  SEXP _theta,
+  SEXP _loglik_type
+) {
 	NumericMatrix pwm(_pwm);
 	NumericMatrix wei_mat(_wei_mat);
 	NumericMatrix adj_mat(_adj_mat);
@@ -479,5 +563,20 @@ SEXP test_compute_sample_score_change(SEXP _pwm, SEXP _wei_mat, SEXP _adj_mat, S
 	IntegerVector sample_vec(_sample_vec);
 	int start_pos = as<int>(_start_pos);
 	double theta = as<double>(_theta);
-	return(wrap(compute_sample_score_change(pwm, wei_mat, adj_mat, sample_vec, stat_dist, trans_mat, start_pos, theta)));
+	LoglikType loglik_type = static_cast<LoglikType>(as<int>(_loglik_type));
+	return(
+	  wrap(
+	    compute_sample_score_change(
+	      pwm,
+	      wei_mat,
+	      adj_mat,
+  	    sample_vec,
+	      stat_dist,
+	      trans_mat,
+	      start_pos,
+	      theta,
+	      loglik_type
+      )
+	  )
+	);
 }

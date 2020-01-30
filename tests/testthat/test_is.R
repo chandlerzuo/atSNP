@@ -50,13 +50,14 @@ maxjointprob <- function(x) {
   return(maxp)
 }
 get_freq <- function(sample) {
-  ids <- cbind(rep(sample[motif_len * 2,], each = motif_len) + seq(motif_len),
-               rep(seq(100), each = motif_len))
+  ids <-
+    cbind(rep(sample[motif_len * 2, ], each = motif_len) + seq(motif_len),
+          rep(seq(100), each = motif_len))
   sample_motif <- matrix(sample[ids], nrow = motif_len) + 1
   emp_freq <- matrix(0, nrow = motif_len, ncol = 4)
   for (i in seq(motif_len)) {
     for (j in seq(4)) {
-      emp_freq[i, j] <- sum(sample_motif[i,] == j)
+      emp_freq[i, j] <- sum(sample_motif[i, ] == j)
     }
   }
   emp_freq <- emp_freq / rowSums(emp_freq)
@@ -177,13 +178,14 @@ test_that("Error: the chosen pvalues should have the smaller variance.", {
       )
     p_values <-
       .Call(
-        "test_p_value",
+        "compute_p_values",
         test_pwm,
         snpInfo$prior,
         snpInfo$transition,
         c(scores),
         theta,
         100,
+        0,
         package = "atSNP"
       )
     p_values_s <- .structure(p_values)

@@ -35,6 +35,14 @@ snp_start, snp_end, snp_strand \tab Location of the best matching subsequence
 log_lik_ref \tab Log-likelihood score for the reference allele.\cr
 log_lik_snp \tab Log-likelihood score for the SNP allele.\cr
 log_lik_ratio \tab The log-likelihood ratio.\cr
+mean_log_lik_ref \tab Mean subsequence log-likelihood score for the reference allele.\cr
+mean_log_lik_snp \tab Mean subsequence log-likelihood score for the SNP allele.\cr
+mean_log_lik_ratio \tab The ratio of mean subsequence log-likelihood between the SNP
+ and the reference allele.\cr
+median_log_lik_ref \tab Median subsequence log-likelihood score for the reference allele.\cr
+median_log_lik_snp \tab Median subsequence log-likelihood score for the SNP allele.\cr
+median_log_lik_ratio \tab The ratio of median subsequence log-likelihood between the SNP
+ and the reference allele.\cr
 log_enhance_odds \tab Difference in log-likelihood ratio between SNP allele
 and reference allele based on the best matching subsequence on the reference
 allele.\cr

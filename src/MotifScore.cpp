@@ -206,7 +206,7 @@ SequenceScores comp_seq_scores(NumericMatrix pwm, IntegerVector sequence) {
   }
   float max_log_lik = Rcpp::max(subseq_scores);
   float mean_log_lik = Rcpp::mean(subseq_scores);
-  float median_log_lik = Rcpp::mean(subseq_scores);
+  float median_log_lik = Rcpp::median(subseq_scores);
   SequenceScores scores = {
     match_pos, max_log_lik, mean_log_lik, median_log_lik
   };

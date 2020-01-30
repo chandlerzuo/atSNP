@@ -9,17 +9,26 @@ Compute the probability that a random sequence can get a score higher than 'scor
 @arg pwm The position weight matrix, with 4 columns corresponding to A, C, G, T.
 @arg stat_dist A vector of length 4 with stationary distributions of A, C, G, T.
 @arg trans_mat A 4 x 4 transition matrix.
-@arg scores A matrix with 2 columns, with each column corresponding to one allele.
-@arg p The upper percentile of the scores which is used as the mean of the importance sampling distribution.
-@return A matrix with 8 columns. Column 1-2 are simple estimates of p-values and their variances. Column 3-4 are ratio estimates of p-values and their variances. Column 5-6 are simple estimates of conditional p-values and their variances. Column 7-8 are ratio estimates for conditional p-values and their variances.
+@arg scores A vector of log-lik scores from both alleles.
+@arg theta A float parameter used to construct the importance sampling distribution.
+@arg n_sample An integer for the number of Monte Carlo examples.
+@arg loglik_type The enum type for max, mean or median.
+@return A matrix with 8 columns:
+  Column 1-2 are simple estimates of p-values and their variances.
+  Column 3-4 are ratio estimates of p-values and their variances.
+  Column 5-6 are simple estimates of conditional p-values and their variances.
+  Column 7-8 are ratio estimates for conditional p-values and their variances.
 */
-NumericMatrix p_value(NumericMatrix pwm, NumericVector stat_dist, NumericMatrix trans_mat, NumericVector scores, double theta, int n_sample) {
-	// double score_percentile = find_percentile(scores, p);
-	// printf("percentile:%3.3f\n", score_percentile);
-	// find the tilting parameter
-	// double theta = find_theta(pwm, stat_dist, trans_mat, score_percentile);
-	//printf("theta:%3.3f\n", theta);
-	NumericMatrix p_values(scores.size(), 8);
+NumericMatrix p_value(
+    NumericMatrix pwm,
+    NumericVector stat_dist,
+    NumericMatrix trans_mat,
+    NumericVector scores,
+    double theta,
+    int n_sample,
+    LoglikType loglik_type
+) {
+  NumericMatrix p_values(scores.size(), 8);
 
 	double tol = 1e-10;
 	int motif_len = pwm.nrow();
@@ -39,7 +48,6 @@ NumericMatrix p_value(NumericMatrix pwm, NumericVector stat_dist, NumericMatrix 
 		} else {
 			delta(i, 2 * motif_len - 2) = pow(pwm(motif_len - 1, i), theta);
 		}
-		//printf("delta(%d,%d)=%3.10f\n", i, motif_len - 1, delta(i, motif_len - 1));
 	}
 	// Formula (A.4)
 	for(int m = 2 * motif_len - 3; m >= 0; m --) {
@@ -58,7 +66,6 @@ NumericMatrix p_value(NumericMatrix pwm, NumericVector stat_dist, NumericMatrix 
 			if(delta(i, m) < tol) {
 				delta(i, m) = tol;
 			}
-			//printf("delta(%d,%d)=%3.10f\n", i, m, delta(i, m));
 		}
 	}
 
@@ -68,42 +75,40 @@ NumericMatrix p_value(NumericMatrix pwm, NumericVector stat_dist, NumericMatrix 
 			norm_const += stat_dist[i] * delta(i, j);
 		}
 	}
-	//	printf("Constant value : %3.10f\n", norm_const);
 
 	for(int i = 0; i < p_values.nrow(); i ++)
-		for(int j = 0; j < 4; j ++)
-			p_values(i, j) = 0;
-	
-	double mean_sample = 0;
+	  for(int j = 0; j < 4; j ++)
+	    p_values(i, j) = 0;
+  double mean_sample = 0;
 	double mean_adj_score = 0;
 	double mean_wei = 0;
 	double mean_wei2 = 0;
 	double wei = 0;
 	double wei_cond = 0, mean_wei_cond = 0, mean_wei_cond2 = 0;
 	for(int i = 0; i < n_sample; i ++) {
-		sample = importance_sample(delta, stat_dist, trans_mat, pwm, theta);
+    sample = importance_sample(delta, stat_dist, trans_mat, pwm, theta);
 		for(int j = 0; j < sample.size() - 1; j ++) {
-			sample_vec[j] = sample[j];
+  		sample_vec[j] = sample[j];
 		}
 		sample_score = compute_sample_score(pwm, sample_vec, sample[2 * motif_len - 1], theta);
-		mean_sample += sample_score[0];
-		wei = norm_const / sample_score[1];
-		wei_cond = norm_const / sample_score[2] / motif_len;
+		mean_sample += sample_score[loglik_type];
+		wei = norm_const / sample_score[3];
+		wei_cond = norm_const / sample_score[4] / motif_len;
 		mean_wei += wei;
 		mean_wei2 += wei * wei;
 		mean_wei_cond += wei_cond;
 		mean_wei_cond2 += wei_cond * wei_cond;
-		mean_adj_score += log(sample_score[1]);
+		mean_adj_score += log(sample_score[3]);
 		for(int j = 0; j < scores.size(); j ++) {
-			if(scores(j) <= sample_score[0]) {
-				p_values(j, 0) += wei;
-				p_values(j, 1) += wei * wei;
-				p_values(j, 4) += wei_cond;
-				p_values(j, 5) += wei_cond * wei_cond;
-			}
+  		if(scores(j) <= sample_score[loglik_type]) {
+			  p_values(j, 0) += wei;
+			  p_values(j, 1) += wei * wei;
+			  p_values(j, 4) += wei_cond;
+			  p_values(j, 5) += wei_cond * wei_cond;
+		  }
 		}
 	}
-	//printf("Mean sample : %lf \t adj_score : %lf \t weight : %lf \n", mean_sample / n_sample, mean_adj_score / n_sample, mean_wei / n_sample);
+	  
 	mean_wei /= n_sample;
 	mean_wei2 /= n_sample;
 	mean_wei_cond /= n_sample;
@@ -111,36 +116,36 @@ NumericMatrix p_value(NumericMatrix pwm, NumericVector stat_dist, NumericMatrix 
 	double var_wei = mean_wei2 - mean_wei * mean_wei;
 	double var_wei_cond = mean_wei_cond2 - mean_wei_cond * mean_wei_cond;
 	for(int j = 0; j < scores.size(); j ++) {
-		// p values
-		p_values(j, 0) /= n_sample;
-		p_values(j, 1) /= n_sample;
-		double cov = p_values(j, 1) - mean_wei * p_values(j, 0);
-		p_values(j, 1) -= p_values(j, 0) * p_values(j, 0);
-		p_values(j, 2) = p_values(j, 0) / mean_wei;
-		double grad1 = 1 / mean_wei;
+    // p values
+	  p_values(j, 0) /= n_sample;
+	  p_values(j, 1) /= n_sample;
+	  double cov = p_values(j, 1) - mean_wei * p_values(j, 0);
+	  p_values(j, 1) -= p_values(j, 0) * p_values(j, 0);
+	  p_values(j, 2) = p_values(j, 0) / mean_wei;
+	  double grad1 = 1 / mean_wei;
 		double grad2 = - p_values(j, 0) * grad1 * grad1;
 		p_values(j, 3) = grad1 * grad1 * p_values(j, 1) + grad2 * grad2 * var_wei + 2 * grad1 * grad2 * cov;
 		// weights and the weight * indicator are the same; discard the estimate
 		if(var_wei == p_values(j, 1)) {
-			p_values(j, 3) = n_sample - 1;
+  		p_values(j, 3) = n_sample - 1;
 		}
-		p_values(j, 1) /= n_sample - 1;
-		p_values(j, 3) /= n_sample - 1;
-		// conditional p values
-		p_values(j, 4) /= n_sample;
-		p_values(j, 5) /= n_sample;
-		cov = p_values(j, 5) - mean_wei_cond * p_values(j, 4);
-		p_values(j, 5) -= p_values(j, 4) * p_values(j, 4);
-		p_values(j, 6) = p_values(j, 4) / mean_wei_cond;
-		grad1 = 1 / mean_wei_cond;
-		grad2 = - p_values(j, 4) * grad1 * grad1;
-		p_values(j, 7) = grad1 * grad1 * p_values(j, 5) + grad2 * grad2 * var_wei_cond + 2 * grad1 * grad2 * cov;
-		// weights and the weight * indicator are the same; discard the estimate
-		if(var_wei_cond == p_values(j, 5)) {
-			p_values(j, 7) = n_sample - 1;
-		}
-		p_values(j, 5) /= n_sample - 1;
-		p_values(j, 7) /= n_sample - 1;
+	  p_values(j, 1) /= n_sample - 1;
+	  p_values(j, 3) /= n_sample - 1;
+	  // conditional p values
+	  p_values(j, 4) /= n_sample;
+	  p_values(j, 5) /= n_sample;
+	  cov = p_values(j, 5) - mean_wei_cond * p_values(j, 4);
+	  p_values(j, 5) -= p_values(j, 4) * p_values(j, 4);
+	  p_values(j, 6) = p_values(j, 4) / mean_wei_cond;
+	  grad1 = 1 / mean_wei_cond;
+	  grad2 = - p_values(j, 4) * grad1 * grad1;
+	  p_values(j, 7) = grad1 * grad1 * p_values(j, 5) + grad2 * grad2 * var_wei_cond + 2 * grad1 * grad2 * cov;
+	  // weights and the weight * indicator are the same; discard the estimate
+	  if(var_wei_cond == p_values(j, 5)) {
+  		p_values(j, 7) = n_sample - 1;
+	  }
+	  p_values(j, 5) /= n_sample - 1;
+	  p_values(j, 7) /= n_sample - 1;
 	}
 	return(p_values);
 }
@@ -162,7 +167,6 @@ double func_delta(NumericMatrix pwm, NumericVector stat_dist, NumericMatrix tran
 		} else {
 			delta(i, 2 * motif_len - 2) = pow(pwm(motif_len - 1, i), theta);
 		}
-		//printf("delta(%d,%d)=%3.10f\n", i, motif_len - 1, delta(i, motif_len - 1));
 	}
 	// Formula (A.4)
 	for(int m = 2 * motif_len - 3; m >= 0; m --) {
@@ -181,7 +185,6 @@ double func_delta(NumericMatrix pwm, NumericVector stat_dist, NumericMatrix tran
 			if(delta(i, m) < tol) {
 				delta(i, m) = tol;
 			}
-			//printf("delta(%d,%d)=%3.10f\n", i, m, delta(i, m));
 		}
 	}
 
@@ -261,47 +264,31 @@ IntegerVector importance_sample(NumericMatrix delta, NumericVector stat_dist, Nu
 				cond_prob[j] += cond_prob[j - 1];
 			}
 		}
-		/*
-		if(i >= start_pos && i < start_pos + motif_len) {
-			double test_prob[4];
-			for(int j = 0; j < 4; j ++) {
-				test_prob[j] = stat_dist[j];
-				test_prob[j] *= pow(pwm(i - start_pos, j), theta);
-				if(j > 0)
-					test_prob[j] += test_prob[j - 1];
-			}
-			for(int j = 0; j < 4; j ++) {
-				printf("%d,%d: prob = %3.10f \t %3.10f \n", i - start_pos, j, cond_prob[j] / cond_prob[3], test_prob[j] / test_prob[3]);
-			}
-		}
-		*/
 		rv[i] *= cond_prob[3];
 		sample_vec[i] = 0;
 		while(sample_vec[i] < 3 && rv[i] > cond_prob[sample_vec[i]]) {
 			sample_vec[i] ++;
 		}
-		// index from 1
-		// sample_vec[i] ++;
-		//		printf("%d\t", sample_vec[i]);
 	}
 	return(sample_vec);
 }
 
 NumericVector compute_sample_score(NumericMatrix pwm, IntegerVector sample_vec, int start_pos, double theta) {
 	// compute the maximum score
-	double rnd_score = comp_seq_scores(pwm, sample_vec).max_log_lik;
+	SequenceScores seq_scores = comp_seq_scores(pwm, sample_vec);
 	// compute the weight = prior density / importance sampling density
-	// note: must use the score based on the true start_pos to compute the weight
-	// this is a bug that took 2 days to fix!
+	// NOTE: must use the score based on the true start_pos to compute the weight
 	double adj_score = 0;
 	for(int s = 0; s < pwm.nrow(); s ++) {
 		adj_score += exp(theta * pwm_log_prob(pwm, sample_vec, s));
 	}
 	// return value
-	NumericVector ret(3);
-	ret[0] = rnd_score;
-	ret[1] = adj_score;
-	ret[2] = exp(theta * pwm_log_prob(pwm, sample_vec, start_pos));
+	NumericVector ret(5);
+	ret[0] = seq_scores.max_log_lik;
+	ret[1] = seq_scores.mean_log_lik;
+	ret[2] = seq_scores.median_log_lik;
+	ret[3] = adj_score;
+	ret[4] = exp(theta * pwm_log_prob(pwm, sample_vec, start_pos));
 	return(ret);
 	
 }
@@ -362,16 +349,24 @@ SEXP test_find_percentile(SEXP _scores, SEXP _p) {
 	return(wrap(ret));
 }
 
-SEXP test_p_value(SEXP _pwm, SEXP _stat_dist, SEXP _trans_mat, SEXP _scores, SEXP _theta, SEXP _n_sample) {
+SEXP compute_p_values(
+  SEXP _pwm,
+  SEXP _stat_dist,
+  SEXP _trans_mat,
+  SEXP _scores,
+  SEXP _theta,
+  SEXP _n_sample,
+  SEXP _loglik_type
+) {
 	NumericMatrix pwm(_pwm);
 	NumericVector stat_dist(_stat_dist);
 	NumericMatrix trans_mat(_trans_mat);
 	NumericVector scores(_scores);
 	double theta = as<double>(_theta);
 	double n_sample = as<int>(_n_sample);
+	LoglikType loglik_type = static_cast<LoglikType>(as<int>(_loglik_type));
 	
-	NumericMatrix p_values = p_value(pwm, stat_dist, trans_mat, scores, theta, n_sample);
-	return(wrap(p_values));
+	return p_value(pwm, stat_dist, trans_mat, scores, theta, n_sample, loglik_type);
 }
 
 SEXP test_find_theta(SEXP _pwm, SEXP _stat_dist, SEXP _trans_mat, SEXP _score) {

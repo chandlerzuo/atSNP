@@ -75,7 +75,8 @@ LoadMotifLibrary <-
           field = "rname"
         ))
       if (!length(rid))
-        rid <- names(bfcadd(bfc, rname = basename(urlname), urlname))
+        rid <-
+        names(bfcadd(bfc, rname = basename(urlname), urlname))
       lines <- readLines(bfcrpath(rids = rid))
     } else {
       lines <- readLines(filename)
@@ -365,7 +366,7 @@ LoadSNPData <-
         }
       }
       
-      tbl <- tbl[order(tbl$index),]
+      tbl <- tbl[order(tbl$index), ]
       if (!is.null(filename)) {
         write.table(
           tbl[, c('snp', 'chr', 'a1', 'a2', 'snpid')],
@@ -404,8 +405,8 @@ LoadSNPData <-
       message(
         "Warning: the following rows are discarded because the reference genome sequences contain non ACGT characters:"
       )
-      rsid.na <- tbl[-keep.id,]$snpid
-      print(tbl[-keep.id,])
+      rsid.na <- tbl[-keep.id, ]$snpid
+      print(tbl[-keep.id, ])
     }
     ## remove sequences containing non ACGT characters
     sequences <- sequences[, keep.id, drop = FALSE]
@@ -428,8 +429,10 @@ LoadSNPData <-
     }
     if (!mutation) {
       ## real SNP data
-      a1.ref.base.id <- which(a1 == sequences[half.window.size + 1,])
-      a2.ref.base.id <- which(a2 == sequences[half.window.size + 1,])
+      a1.ref.base.id <-
+        which(a1 == sequences[half.window.size + 1, ])
+      a2.ref.base.id <-
+        which(a2 == sequences[half.window.size + 1, ])
       ## store SNPs that have the same base in SNP and REF alleles only once
       a2.ref.base.id <-
         a2.ref.base.id[!a2.ref.base.id %in% a1.ref.base.id]
@@ -440,7 +443,7 @@ LoadSNPData <-
           "Warning: the following sequences are discarded because the reference nucleotide matches to neither a1 nor a2:"
         )
         rsid.rm <-
-          unique(as.character(tbl[keep.id[discard.id],]$snpid))
+          unique(as.character(tbl[keep.id[discard.id], ]$snpid))
         message("snpid\tchr\tsnp\ta1\ta2")
         message(paste(apply(tbl[keep.id[discard.id], c("snpid", "chr", "snp", "a1", "a2")], 1, function(x)
           paste(x, collapse = "\t")), collapse = "\n"))
@@ -606,7 +609,7 @@ LoadFastaData <- function(ref.filename = NULL,
   
   id.na1 <- which(apply(refmat, 2, function(x)
     sum(is.na(x))) > 0)
-  id.na2 <- which(is.na(snpmat[(m + 1) / 2,]))
+  id.na2 <- which(is.na(snpmat[(m + 1) / 2, ]))
   id.na <- union(id.na1, id.na2)
   if (length(id.na) > 0) {
     message(
@@ -616,7 +619,7 @@ LoadFastaData <- function(ref.filename = NULL,
   }
   
   id.wrong <-
-    which(apply((refmat != snpmat)[-(m + 1) / 2,], 2, sum) > 0)
+    which(apply((refmat != snpmat)[-(m + 1) / 2, ], 2, sum) > 0)
   if (length(id.wrong) > 0) {
     message(
       "Warning: the following sequences are discarded, because they have unidentical nucleotides between the SNP and the reference allele at positions other than the central location: "
@@ -626,13 +629,13 @@ LoadFastaData <- function(ref.filename = NULL,
   
   ids <- union(id.wrong, id.na)
   if (length(ids) > 0) {
-    sequences <- refmat[,-ids, drop = FALSE]
-    ref.base <- refmat[(m + 1) / 2,-ids]
-    snp.base <- snpmat[(m + 1) / 2,-ids]
+    sequences <- refmat[, -ids, drop = FALSE]
+    ref.base <- refmat[(m + 1) / 2, -ids]
+    snp.base <- snpmat[(m + 1) / 2, -ids]
   } else {
     sequences <- refmat
-    ref.base <- refmat[(m + 1) / 2,]
-    snp.base <- snpmat[(m + 1) / 2,]
+    ref.base <- refmat[(m + 1) / 2, ]
+    snp.base <- snpmat[(m + 1) / 2, ]
   }
   
   if (!default.par) {
@@ -692,6 +695,14 @@ LoadFastaData <- function(ref.filename = NULL,
 #' log_lik_ref \tab Log-likelihood score for the reference allele.\cr
 #' log_lik_snp \tab Log-likelihood score for the SNP allele.\cr
 #' log_lik_ratio \tab The log-likelihood ratio.\cr
+#' mean_log_lik_ref \tab Mean subsequence log-likelihood score for the reference allele.\cr
+#' mean_log_lik_snp \tab Mean subsequence log-likelihood score for the SNP allele.\cr
+#' mean_log_lik_ratio \tab The ratio of mean subsequence log-likelihood between the SNP
+#'  and the reference allele.\cr
+#' median_log_lik_ref \tab Median subsequence log-likelihood score for the reference allele.\cr
+#' median_log_lik_snp \tab Median subsequence log-likelihood score for the SNP allele.\cr
+#' median_log_lik_ratio \tab The ratio of median subsequence log-likelihood between the SNP
+#'  and the reference allele.\cr
 #' log_enhance_odds \tab Difference in log-likelihood ratio between SNP allele
 #' and reference allele based on the best matching subsequence on the reference
 #' allele.\cr
@@ -754,7 +765,7 @@ ComputeMotifScore <- function(motif.lib, snp.info, ncores = 1) {
            ))
   nmotifs <- length(motif.lib)
   len_seq <- nrow(snp.info$sequence_matrix)
-  snp.info$sequence_matrix[(len_seq + 1) / 2, ] <- snp.info$ref_base
+  snp.info$sequence_matrix[(len_seq + 1) / 2,] <- snp.info$ref_base
   ncores <- min(c(ncores, length(snp.info$ref_base)))
   
   k <- as.integer(length(snp.info$ref_base) / ncores)
@@ -832,7 +843,7 @@ ComputeMotifScore <- function(motif.lib, snp.info, ncores = 1) {
   motif.scores <-
     motif.scores[order(motif.scores$motif,
                        motif.scores$snpid,
-                       motif.scores$snpbase),]
+                       motif.scores$snpbase), ]
   # motif.scores[with(motif.scores, order(motif, snpid, snpbase)), ]
   ## sequences on the reference genome
   ref_seqs <-
@@ -872,7 +883,7 @@ ComputeMotifScore <- function(motif.lib, snp.info, ncores = 1) {
       snpbase = snpbases,
       stringsAsFactors = FALSE
     )
-  snp_tbl[with(snp_tbl, order(snpid, snpbase)), ]
+  snp_tbl[with(snp_tbl, order(snpid, snpbase)),]
   return(list(snp.tbl = snp_tbl, motif.scores = motif.scores))
 }
 
@@ -966,8 +977,8 @@ MatchSubsequence <-
     snp.tbl <- as.data.table(snp.tbl)
     setkey(snp.tbl, snpid, snpbase)
     motif.scores <-
-      motif.scores_dt[snpid %in% snpids & motif %in% motifs,]
-    snp.tbl <- snp.tbl[snpid %in% snpids,]
+      motif.scores_dt[snpid %in% snpids & motif %in% motifs, ]
+    snp.tbl <- snp.tbl[snpid %in% snpids, ]
     snp.tbl[, len_seq := nchar(ref_seq)]
     
     ## get the IUPAC subsequence for the motifs
@@ -1067,8 +1078,10 @@ MatchSubsequence <-
 #' log_lik_snp \tab The log-likelihood score for the SNP allele.\cr
 #' }
 #' @param ncores An integer for the number of parallel process. Default: 1.
-#' @param  testing.mc Monte Carlo sample size of 200 is considered. Do not
-#'  change the default unless conducting a quick test. Default: FALSE
+#' @param  testing.mc If FALSE, Monte Carlo sample size is adaptively chosen
+#'  between 2000 and 100K. If TRUE, the sample size is 100, which is used for
+#'  testing purposes. Default: FALSE
+#' @param loglik.type A string of 'max', 'mean', 'median'.
 #' @param figdir A string for the path to print p-value plots for monitoring
 #' results. Default: NULL (no figure).
 #' @return A data.frame extending \code{motif.scores} by the following
@@ -1101,6 +1114,7 @@ ComputePValues <-
            motif.scores,
            ncores = 1,
            testing.mc = FALSE,
+           loglik.type = "max",
            figdir = NULL) {
     ncores <- min(c(ncores, length(motif.lib)))
     results <- as.list(seq_along(motif.lib))
@@ -1109,18 +1123,23 @@ ComputePValues <-
     prior <- snp.info$prior
     transition <- snp.info$transition
     
+    if (!loglik.type %in% LOGLIK_TYPES) {
+      stop(loglik.type, "is not one of", LOGLIK_TYPES)
+    }
+    
     if (Sys.info()[["sysname"]] == "Windows") {
       snow <- SnowParam(workers = ncores, type = "SOCK")
       results <-
         bpmapply(
           function(x)
-            results_motif_par(
+            p_values_for_motif(
               motif.id = x,
               par.prior = prior,
               par.transition = transition,
               par.motif.lib = motif.lib,
               par.motif.scores = motif.scores,
               par.testing.mc = testing.mc,
+              par.loglik.type = loglik.type,
               par.figdir = figdir
             ),
           seq_along(motif.lib),
@@ -1131,13 +1150,14 @@ ComputePValues <-
       results <-
         bpmapply(
           function(x)
-            results_motif_par(
+            p_values_for_motif(
               motif.id = x,
               par.prior = prior,
               par.transition = transition,
               par.motif.lib = motif.lib,
               par.motif.scores = motif.scores,
               par.testing.mc = testing.mc,
+              par.loglik.type = loglik.type,
               par.figdir = figdir
             ),
           seq_along(motif.lib),

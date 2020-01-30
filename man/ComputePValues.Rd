@@ -5,7 +5,7 @@
 \title{Compute p-values for affinity scores.}
 \usage{
 ComputePValues(motif.lib, snp.info, motif.scores, ncores = 1,
-  testing.mc = FALSE, figdir = NULL)
+  testing.mc = FALSE, loglik.type = "max", figdir = NULL)
 }
 \arguments{
 \item{motif.lib}{A list object with the output format of function
@@ -24,8 +24,11 @@ log_lik_snp \tab The log-likelihood score for the SNP allele.\cr
 
 \item{ncores}{An integer for the number of parallel process. Default: 1.}
 
-\item{testing.mc}{Monte Carlo sample size of 200 is considered. Do not
-change the default unless conducting a quick test. Default: FALSE}
+\item{testing.mc}{If FALSE, Monte Carlo sample size is adaptively chosen
+between 2000 and 100K. If TRUE, the sample size is 100, which is used for
+testing purposes. Default: FALSE}
+
+\item{loglik.type}{A string of 'max', 'mean', 'median'.}
 
 \item{figdir}{A string for the path to print p-value plots for monitoring
 results. Default: NULL (no figure).}

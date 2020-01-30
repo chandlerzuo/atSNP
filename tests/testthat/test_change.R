@@ -10,20 +10,21 @@ score_diff <- abs(scores[, 2] - scores[, 1])
 
 
 pval_a <-
-  .Call("test_p_value",
+  .Call("compute_p_values",
         test_pwm,
         snpInfo$prior,
         snpInfo$transition,
         scores,
         0.15,
-        100)
+        100,
+        0)
 pval_ratio <-
   abs(log(pval_a[seq(nrow(scores)), 1]) - log(pval_a[seq(nrow(scores)) + nrow(scores), 1]))
 
 test_score <- test_pwm
 for (i in seq(nrow(test_score))) {
   for (j in seq(ncol(test_score))) {
-    test_score[i, j] <- exp(mean(log(test_pwm[i, j] / test_pwm[i,-j])))
+    test_score[i, j] <- exp(mean(log(test_pwm[i, j] / test_pwm[i, -j])))
   }
 }
 
@@ -40,8 +41,8 @@ drawonesample <- function(theta) {
            replace = TRUE,
            prob = snpInfo$prior)
   delta <- adj_mat
-  delta[motif_len - id + 1,] <-
-    test_score[motif_len - id + 1,] ^ theta
+  delta[motif_len - id + 1, ] <-
+    test_score[motif_len - id + 1, ] ^ theta
   sample[id - 1 + seq(motif_len)] <-
     apply(delta, 1, function(x)
       sample(seq(4), 1, prob = x))
@@ -49,8 +50,8 @@ drawonesample <- function(theta) {
   sc <- 0
   for (s in seq(motif_len)) {
     delta <- adj_mat
-    delta[motif_len + 1 - s,] <-
-      test_score[motif_len + 1 - s,] ^ theta
+    delta[motif_len + 1 - s, ] <-
+      test_score[motif_len + 1 - s, ] ^ theta
     sc <-
       sc + prod(delta[cbind(seq(motif_len), sample[s - 1 + seq(motif_len)])]) /
       prod(snpInfo$prior[sample[s - 1 + seq(motif_len)]])
@@ -79,7 +80,7 @@ get_freq <- function(sample) {
   emp_freq <- matrix(0, nrow = 2 * motif_len - 1, ncol = 4)
   for (i in seq(2 * motif_len - 1)) {
     for (j in seq(4)) {
-      emp_freq[i, j] <- sum(sample[i,] == j - 1)
+      emp_freq[i, j] <- sum(sample[i, ] == j - 1)
     }
   }
   emp_freq <- emp_freq / rowSums(emp_freq)
@@ -211,7 +212,7 @@ test_that("Error: the chosen pvalues should have the smaller variance.", {
   for (p in c(0.05, 0.1, 0.2, 0.5)) {
     p_values <-
       .Call(
-        "test_p_value_change",
+        "compute_p_value_change",
         test_pwm,
         test_score,
         adj_mat,
@@ -221,6 +222,7 @@ test_that("Error: the chosen pvalues should have the smaller variance.", {
         pval_ratio,
         quantile(score_diff, 1 - p),
         100,
+        0,
         package = "atSNP"
       )$score
     p_values_s <- .structure_diff(p_values)

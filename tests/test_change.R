@@ -9,20 +9,21 @@ scores <- as.matrix(motif_scores$motif.scores[3:4, 4:5])
 score_diff <- abs(scores[, 2] - scores[, 1])
 
 pval_a <-
-  .Call("test_p_value",
+  .Call("compute_p_values",
         test_pwm,
         snpInfo$prior,
         snpInfo$transition,
         scores,
         0.15,
-        100)
+        100,
+        0)
 pval_ratio <-
   abs(log(pval_a[seq(nrow(scores)), 1]) - log(pval_a[seq(nrow(scores)) + nrow(scores), 1]))
 
 test_score <- test_pwm
 for (i in seq(nrow(test_score))) {
   for (j in seq(ncol(test_score))) {
-    test_score[i, j] <- exp(mean(log(test_pwm[i, j] / test_pwm[i, -j])))
+    test_score[i, j] <- exp(mean(log(test_pwm[i, j] / test_pwm[i,-j])))
   }
 }
 
@@ -39,8 +40,8 @@ drawonesample <- function(theta) {
            replace = TRUE,
            prob = snpInfo$prior)
   delta <- adj_mat
-  delta[motif_len - id + 1, ] <-
-    test_score[motif_len - id + 1, ] ^ theta
+  delta[motif_len - id + 1,] <-
+    test_score[motif_len - id + 1,] ^ theta
   sample[id - 1 + seq(motif_len)] <-
     apply(delta, 1, function(x)
       sample(seq(4), 1, prob = x))
@@ -48,8 +49,8 @@ drawonesample <- function(theta) {
   sc <- 0
   for (s in seq(motif_len)) {
     delta <- adj_mat
-    delta[motif_len + 1 - s, ] <-
-      test_score[motif_len + 1 - s, ] ^ theta
+    delta[motif_len + 1 - s,] <-
+      test_score[motif_len + 1 - s,] ^ theta
     sc <-
       sc + prod(delta[cbind(seq(motif_len), sample[s - 1 + seq(motif_len)])]) /
       prod(snpInfo$prior[sample[s - 1 + seq(motif_len)]])
@@ -78,7 +79,7 @@ get_freq <- function(sample) {
   emp_freq <- matrix(0, nrow = 2 * motif_len - 1, ncol = 4)
   for (i in seq(2 * motif_len - 1)) {
     for (j in seq(4)) {
-      emp_freq[i, j] <- sum(sample[i, ] == j - 1)
+      emp_freq[i, j] <- sum(sample[i,] == j - 1)
     }
   }
   emp_freq <- emp_freq / rowSums(emp_freq)
@@ -100,18 +101,18 @@ if (TRUE) {
   ## construct the delta matrix
   delta <- matrix(1, nrow = 4 * motif_len, ncol = 2 * motif_len - 1)
   for (pos in seq(motif_len)) {
-    delta[seq(4) + 4 * (pos - 1), ] <- snpInfo$prior
+    delta[seq(4) + 4 * (pos - 1),] <- snpInfo$prior
     delta[seq(4) + 4 * (pos - 1), pos - 1 + seq(motif_len)] <-
       t(test_pwm)
     delta[seq(4) + 4 * (pos - 1), motif_len] <-
-      test_score[motif_len + 1 - pos, ] ^ theta
-    delta[seq(4) + 4 * (pos - 1), ] <-
-      delta[seq(4) + 4 * (pos - 1),] / rep(colSums(delta[seq(4) + 4 * (pos - 1), ]), each = 4)
+      test_score[motif_len + 1 - pos,] ^ theta
+    delta[seq(4) + 4 * (pos - 1),] <-
+      delta[seq(4) + 4 * (pos - 1), ] / rep(colSums(delta[seq(4) + 4 * (pos - 1),]), each = 4)
   }
   target_freq <- matrix(0, nrow = 4, ncol = 2 * motif_len - 1)
   for (pos in seq(motif_len)) {
     target_freq <-
-      target_freq + delta[seq(4) + 4 * (pos - 1), ] * prob_start[pos]
+      target_freq + delta[seq(4) + 4 * (pos - 1),] * prob_start[pos]
   }
   target_freq <- t(target_freq)
   target_freq <- target_freq / rowSums(target_freq)
