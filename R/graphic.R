@@ -273,7 +273,9 @@ plotMotifMatch<-function(motif.match, motif.lib, cex.main = 2, ...) {
   grid.text(label = paste(motif.match$motif, " Motif Scan for ", motif.match$snpid, sep=""),
             y=unit(1, "npc") - unit(1.5, "lines"),
             gp=gpar(cex.main=cex.main, fontface="bold"))
+  graphics.off()
 }
+
 .find_reverse <- function(sequence) {
   if(length(sequence) > 0) {
     codes <- seq(4)
