@@ -274,6 +274,7 @@ plotMotifMatch<-function(motif.match, motif.lib, cex.main = 2, ...) {
             y=unit(1, "npc") - unit(1.5, "lines"),
             gp=gpar(cex.main=cex.main, fontface="bold"))
   graphics.off()
+  
 }
 
 .find_reverse <- function(sequence) {
