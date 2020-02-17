@@ -144,7 +144,7 @@ dtMotifMatch<-function(snp.tbl, motif.scores, snpids=NULL, motifs=NULL,
 #' plotMotifMatch(motif_match, motif.lib = motif_library)
 #' @import grid
 #' @importFrom motifStack plotMotifLogo pcm2pfm 
-#' @importFrom grDevices graphics.off pdf
+#' @importFrom grDevices graphics.off
 #' @importFrom stats quantile var
 #' @importFrom utils data read.table write.table
 #' @export
