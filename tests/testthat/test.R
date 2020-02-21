@@ -17,7 +17,7 @@ motif_scores <-
   )
 
 motif_scores[which(motif_scores$snpid == "rs7412" &
-                     motif_scores$motif == "SIX5_disc1"),]
+                     motif_scores$motif == "SIX5_disc1"), ]
 
 len_seq <- sapply(motif_scores$ref_seq, nchar)
 snp_pos <- as.integer(len_seq / 2) + 1
@@ -27,8 +27,8 @@ i <-
           motif_scores$motif == "SIX5_disc1")
 
 test_that("Error: reference bases are not the same as the sequence matrix.", {
-  expect_equal(sum(snpInfo$sequence_matrix[31,] != snpInfo$ref_base), 0)
-  expect_equal(sum(snpInfo$sequence_matrix[31,] == snpInfo$snp_base), 0)
+  expect_equal(sum(snpInfo$sequence_matrix[31, ] != snpInfo$ref_base), 0)
+  expect_equal(sum(snpInfo$sequence_matrix[31, ] == snpInfo$snp_base), 0)
 })
 
 test_that("Error: log_lik_ratio is not correct.", {
@@ -50,7 +50,7 @@ test_that("Error: log likelihoods are not correct.", {
                                                bases)]))
                     })
   
-  expect_equal(log_lik, motif_scores$log_lik_ref)
+  expect_equal(log_lik, motif_scores$log_lik_ref, tolerance=1e-5)
   
   snp_mat <- snpInfo$sequence_matrix
   snp_mat[cbind(snp_pos, seq(ncol(snp_mat)))] <- snpInfo$snp_base
@@ -67,7 +67,7 @@ test_that("Error: log likelihoods are not correct.", {
                                                bases)]))
                     })
   
-  expect_equal(log_lik, motif_scores$log_lik_snp)
+  expect_equal(log_lik, motif_scores$log_lik_snp, tolerance=1e-5)
 })
 
 test_that("Error: log_enhance_odds not correct.", {
@@ -123,7 +123,7 @@ test_that("Error: the maximum log likelihood computation is not correct.", {
   snp_mat <- snpInfo$sequence_matrix
   snp_mat[cbind(snp_pos, seq(ncol(snp_mat)))] <- snpInfo$snp_base
   
-  .findMaxLog <- function(seq_vec, pwm) {
+  .AggLogLik <- function(seq_vec, pwm) {
     snp_pos <- as.integer(length(seq_vec) / 2) + 1
     start_pos <- snp_pos - nrow(pwm) + 1
     end_pos <- snp_pos
@@ -134,10 +134,16 @@ test_that("Error: the maximum log likelihood computation is not correct.", {
       subseq_log_probs[2 * (i - start_pos) + 1] <-
         log(prod(pwm[cbind(seq(nrow(pwm)),
                            seq_vec[i - 1 + seq(nrow(pwm))])]))
-      subseq_log_probs[2 * (i - start_pos) + 2] <- log(prod(pwm[cbind(seq(nrow(pwm)),
-                                                                      rev_seq[i - 1 + seq(nrow(pwm))])]))
+      subseq_log_probs[2 * (i - start_pos) + 2] <-
+        log(prod(pwm[cbind(seq(nrow(pwm)),
+                           rev_seq[i - 1 + seq(nrow(pwm))])]))
     }
-    return(max(subseq_log_probs))
+    return(c(
+      max(subseq_log_probs),
+      max(mean(subseq_log_probs[seq(1, length(subseq_log_probs), 2)]),
+          mean(subseq_log_probs[seq(2, length(subseq_log_probs), 2)])),
+      median(subseq_log_probs)
+    ))
   }
   
   ## find the maximum log likelihood on the reference sequence
@@ -149,7 +155,7 @@ test_that("Error: the maximum log likelihood computation is not correct.", {
                                snpInfo$sequence_matrix[, colind]
                              pwm <-
                                motif_library[[motif_scores$motif[x]]]
-                             return(.findMaxLog(seq_vec, pwm))
+                             return(.AggLogLik(seq_vec, pwm))
                            })
   
   ## find the maximum log likelihood on the SNP sequence
@@ -160,9 +166,13 @@ test_that("Error: the maximum log likelihood computation is not correct.", {
                              seq_vec <- snp_mat[, colind]
                              pwm <-
                                motif_library[[motif_scores$motif[x]]]
-                             return(.findMaxLog(seq_vec, pwm))
+                             return(.AggLogLik(seq_vec, pwm))
                            })
   
-  expect_equal(my_log_lik_ref, motif_scores$log_lik_ref)
-  expect_equal(my_log_lik_snp, motif_scores$log_lik_snp)
+  expect_equal(my_log_lik_ref[1,], motif_scores$log_lik_ref, tolerance=1e-5)
+  expect_equal(my_log_lik_snp[1,], motif_scores$log_lik_snp, tolerance=1e-5)
+  expect_equal(my_log_lik_ref[2,], motif_scores$mean_log_lik_ref, tolerance=1e-5)
+  expect_equal(my_log_lik_snp[2,], motif_scores$mean_log_lik_snp, tolerance=1e-5)
+  expect_equal(my_log_lik_ref[3,], motif_scores$median_log_lik_ref, tolerance=1e-5)
+  expect_equal(my_log_lik_snp[3,], motif_scores$median_log_lik_snp, tolerance=1e-5)
 })

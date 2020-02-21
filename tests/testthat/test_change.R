@@ -121,6 +121,7 @@ test_that("Error: the scores for samples are not equivalent.", {
         trans_mat,
         sample[2 * motif_len] - 1,
         theta,
+        0,
         package = "atSNP"
       )
     expect_equal(sample[2 * motif_len + 1], sample_score[1])
@@ -135,7 +136,7 @@ test_that("Error: the scores for samples are not equivalent.", {
         maxjointprob(sample2[seq(2 * motif_len - 1)]),
         maxjointprob(sample3[seq(2 * motif_len - 1)])
       ))
-    expect_equal(sample_score_r, sample_score[2:4])
+    expect_equal(sample_score_r, sample_score[2:4], tolerance=1e-5)
   }
   
   ## Use C code to generate a random sample
@@ -172,6 +173,7 @@ test_that("Error: the scores for samples are not equivalent.", {
         trans_mat,
         sample[2 * motif_len],
         theta,
+        0,
         package = "atSNP"
       )
     expect_equal(adj_score, sample_score[1])

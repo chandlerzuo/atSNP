@@ -205,7 +205,14 @@ SequenceScores comp_seq_scores(NumericMatrix pwm, IntegerVector sequence) {
     match_pos = -match_pos;
   }
   float max_log_lik = Rcpp::max(subseq_scores);
-  float mean_log_lik = Rcpp::mean(subseq_scores);
+  NumericVector mean_log_lik_per_strand(2, 0.0);
+  for(int i = 0; i < subseq_scores.size(); ++ i) {
+    mean_log_lik_per_strand[i % 2] += subseq_scores[i];
+  }
+  for(int i = 0; i < 2; ++ i) {
+    mean_log_lik_per_strand[i] /= subseq_scores.size() / 2;
+  }
+  float mean_log_lik = Rcpp::max(mean_log_lik_per_strand);
   float median_log_lik = Rcpp::median(subseq_scores);
   SequenceScores scores = {
     match_pos, max_log_lik, mean_log_lik, median_log_lik

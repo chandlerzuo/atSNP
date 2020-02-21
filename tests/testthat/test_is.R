@@ -94,8 +94,8 @@ test_that("Error: the scores for samples are not equivalent.", {
             sample[motif_len * 2] - 1,
             theta,
             package = "atSNP")
-    expect_equal(sample[2 * motif_len + 1], sample_score[2])
-    expect_equal(sample[2 * motif_len + 2], sample_score[3])
+    expect_equal(sample[2 * motif_len + 1], sample_score[4])
+    expect_equal(sample[2 * motif_len + 2], sample_score[5])
   }
   ## Use C code to generate a random sample
   for (i in seq(10)) {
@@ -130,8 +130,8 @@ test_that("Error: the scores for samples are not equivalent.", {
             sample[motif_len * 2],
             theta,
             package = "atSNP")
-    expect_equal(adj_score, sample_score[2])
-    expect_equal(adj_score_cond, sample_score[3])
+    expect_equal(adj_score, sample_score[4])
+    expect_equal(adj_score_cond, sample_score[5])
   }
 })
 

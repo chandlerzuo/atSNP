@@ -125,7 +125,7 @@ test_that("Error: the scores for samples are not equivalent.", {
         maxjointprob(sample2[seq(2 * motif_len - 1)]),
         maxjointprob(sample3[seq(2 * motif_len - 1)])
       ))
-    expect_equal(sample_score_r, sample_score[-1])
+    expect_equal(sample_score_r, sample_score[-1], tolerance=1e-5)
   }
   
   ## Use C code to generate a random sample

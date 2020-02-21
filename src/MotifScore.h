@@ -105,7 +105,7 @@ RcppExport SEXP compute_p_value_change(
 RcppExport SEXP test_find_theta_change(SEXP, SEXP, SEXP);
 RcppExport SEXP test_func_delta_change(SEXP, SEXP, SEXP);
 RcppExport SEXP test_importance_sample_change(SEXP, SEXP, SEXP, SEXP, SEXP);
-RcppExport SEXP test_compute_sample_score_change(SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP);
+RcppExport SEXP test_compute_sample_score_change(SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP);
 
 
 #endif
