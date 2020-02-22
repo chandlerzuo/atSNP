@@ -240,7 +240,7 @@ LoadMotifLibrary <-
 #' genome.lib ="BSgenome.Hsapiens.UCSC.hg38", snp.lib =
 #' "SNPlocs.Hsapiens.dbSNP144.GRCh38", half.window.size = 30, default.par = TRUE
 #' , mutation = FALSE)}
-#' @import BSgenome
+#' @import BSgenome Biostrings
 #' @useDynLib atSNP
 #' @export
 LoadSNPData <-
@@ -366,7 +366,7 @@ LoadSNPData <-
         }
       }
       
-      tbl <- tbl[order(tbl$index), ]
+      tbl <- tbl[order(tbl$index),]
       if (!is.null(filename)) {
         write.table(
           tbl[, c('snp', 'chr', 'a1', 'a2', 'snpid')],
@@ -405,8 +405,8 @@ LoadSNPData <-
       message(
         "Warning: the following rows are discarded because the reference genome sequences contain non ACGT characters:"
       )
-      rsid.na <- tbl[-keep.id, ]$snpid
-      print(tbl[-keep.id, ])
+      rsid.na <- tbl[-keep.id,]$snpid
+      print(tbl[-keep.id,])
     }
     ## remove sequences containing non ACGT characters
     sequences <- sequences[, keep.id, drop = FALSE]
@@ -430,9 +430,9 @@ LoadSNPData <-
     if (!mutation) {
       ## real SNP data
       a1.ref.base.id <-
-        which(a1 == sequences[half.window.size + 1, ])
+        which(a1 == sequences[half.window.size + 1,])
       a2.ref.base.id <-
-        which(a2 == sequences[half.window.size + 1, ])
+        which(a2 == sequences[half.window.size + 1,])
       ## store SNPs that have the same base in SNP and REF alleles only once
       a2.ref.base.id <-
         a2.ref.base.id[!a2.ref.base.id %in% a1.ref.base.id]
@@ -443,7 +443,7 @@ LoadSNPData <-
           "Warning: the following sequences are discarded because the reference nucleotide matches to neither a1 nor a2:"
         )
         rsid.rm <-
-          unique(as.character(tbl[keep.id[discard.id], ]$snpid))
+          unique(as.character(tbl[keep.id[discard.id],]$snpid))
         message("snpid\tchr\tsnp\ta1\ta2")
         message(paste(apply(tbl[keep.id[discard.id], c("snpid", "chr", "snp", "a1", "a2")], 1, function(x)
           paste(x, collapse = "\t")), collapse = "\n"))
@@ -609,7 +609,7 @@ LoadFastaData <- function(ref.filename = NULL,
   
   id.na1 <- which(apply(refmat, 2, function(x)
     sum(is.na(x))) > 0)
-  id.na2 <- which(is.na(snpmat[(m + 1) / 2, ]))
+  id.na2 <- which(is.na(snpmat[(m + 1) / 2,]))
   id.na <- union(id.na1, id.na2)
   if (length(id.na) > 0) {
     message(
@@ -619,7 +619,7 @@ LoadFastaData <- function(ref.filename = NULL,
   }
   
   id.wrong <-
-    which(apply((refmat != snpmat)[-(m + 1) / 2, ], 2, sum) > 0)
+    which(apply((refmat != snpmat)[-(m + 1) / 2,], 2, sum) > 0)
   if (length(id.wrong) > 0) {
     message(
       "Warning: the following sequences are discarded, because they have unidentical nucleotides between the SNP and the reference allele at positions other than the central location: "
@@ -629,13 +629,13 @@ LoadFastaData <- function(ref.filename = NULL,
   
   ids <- union(id.wrong, id.na)
   if (length(ids) > 0) {
-    sequences <- refmat[, -ids, drop = FALSE]
-    ref.base <- refmat[(m + 1) / 2, -ids]
-    snp.base <- snpmat[(m + 1) / 2, -ids]
+    sequences <- refmat[,-ids, drop = FALSE]
+    ref.base <- refmat[(m + 1) / 2,-ids]
+    snp.base <- snpmat[(m + 1) / 2,-ids]
   } else {
     sequences <- refmat
-    ref.base <- refmat[(m + 1) / 2, ]
-    snp.base <- snpmat[(m + 1) / 2, ]
+    ref.base <- refmat[(m + 1) / 2,]
+    snp.base <- snpmat[(m + 1) / 2,]
   }
   
   if (!default.par) {
@@ -765,7 +765,7 @@ ComputeMotifScore <- function(motif.lib, snp.info, ncores = 1) {
            ))
   nmotifs <- length(motif.lib)
   len_seq <- nrow(snp.info$sequence_matrix)
-  snp.info$sequence_matrix[(len_seq + 1) / 2,] <- snp.info$ref_base
+  snp.info$sequence_matrix[(len_seq + 1) / 2, ] <- snp.info$ref_base
   ncores <- min(c(ncores, length(snp.info$ref_base)))
   
   k <- as.integer(length(snp.info$ref_base) / ncores)
@@ -843,7 +843,7 @@ ComputeMotifScore <- function(motif.lib, snp.info, ncores = 1) {
   motif.scores <-
     motif.scores[order(motif.scores$motif,
                        motif.scores$snpid,
-                       motif.scores$snpbase), ]
+                       motif.scores$snpbase),]
   # motif.scores[with(motif.scores, order(motif, snpid, snpbase)), ]
   ## sequences on the reference genome
   ref_seqs <-
@@ -883,7 +883,8 @@ ComputeMotifScore <- function(motif.lib, snp.info, ncores = 1) {
       snpbase = snpbases,
       stringsAsFactors = FALSE
     )
-  snp_tbl[with(snp_tbl, order(snpid, snpbase)),]
+  snpid <- snpbase <- NULL
+  snp_tbl[with(snp_tbl, order(snpid, snpbase)), ]
   return(list(snp.tbl = snp_tbl, motif.scores = motif.scores))
 }
 
@@ -977,8 +978,9 @@ MatchSubsequence <-
     snp.tbl <- as.data.table(snp.tbl)
     setkey(snp.tbl, snpid, snpbase)
     motif.scores <-
-      motif.scores_dt[snpid %in% snpids & motif %in% motifs, ]
-    snp.tbl <- snp.tbl[snpid %in% snpids, ]
+      motif.scores_dt[snpid %in% snpids & motif %in% motifs,]
+    snp.tbl <- snp.tbl[snpid %in% snpids,]
+    len_seq <- ref_seq <- NULL
     snp.tbl[, len_seq := nchar(ref_seq)]
     
     ## get the IUPAC subsequence for the motifs
@@ -986,6 +988,7 @@ MatchSubsequence <-
                             IUPAC = sapply(motif.lib[motifs],
                                            function(x)
                                              GetIUPACSequence(x, prob = 0.25)))
+    motif <- snpid <- snpbase <- NULL
     setkey(motif.tbl, motif)
     setkey(snp.tbl, snpid, snpbase)
     
@@ -1167,8 +1170,15 @@ ComputePValues <-
     }
     
     motif.scores_dt <- as.data.table(motif.scores)
+    motif <- snpid <- snpbase <- NULL
     setkey(motif.scores_dt, motif, snpid, snpbase)
     
+    pval_ref <-
+      pval_snp <-
+      pval_cond_ref <- 
+      pval_cond_snp <- 
+      pval_diff <- 
+      pval_rank <- NULL
     for (i in seq_along(results)) {
       motif.scores_dt[results[[i]]$rowids, pval_ref := results[[i]]$pval_a[, 1]]
       motif.scores_dt[results[[i]]$rowids, pval_snp := results[[i]]$pval_a[, 2]]

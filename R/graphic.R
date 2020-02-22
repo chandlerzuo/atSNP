@@ -106,6 +106,28 @@ dtMotifMatch <-
       )
     motif.match.dt <- as.data.table(motif.match)
     ##Augmentation of SNP and reference sequences###
+    len_seq <- 
+      snpid <-
+      snp_ref_start <-
+      snp_ref_end <-
+      snp_ref_length <-
+      ref_start <-
+      snp_start <-
+      ref_end <-
+      snp_end <-
+      ref_seq <-
+      snp_seq <-
+      ref_strand <-
+      ref_location <-
+      snp_strand <-
+      snp_location <-
+      ref_extra_pwm_left <-
+      ref_extra_pwm_right <- 
+      snp_extra_pwm_left <- 
+      snp_extra_pwm_right <-
+      ref_aug_match_seq_forward <-
+      ref_aug_match_seq_reverse <-
+      snp_aug_match_seq_forward <- snp_aug_match_seq_reverse <- NULL
     motif.match.dt[, len_seq := nchar(ref_seq)]
     motif.match.dt[, snp_ref_start := apply(cbind(ref_start, snp_start), 1, min)]
     motif.match.dt[, snp_ref_end := apply(cbind(ref_end, snp_end), 1, max)]

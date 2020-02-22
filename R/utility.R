@@ -97,6 +97,7 @@ motif_score_par <-
       par.len_seq + motif.scores$match_snp_base[!strand_snp] - motif_len.m[!strand_snp] +
       2
     snp_end <- snp_start + motif_len.m - 1
+    motif <- snpid <- snpbase <- NULL
     motif_score_tbl_dt <-
       data.table(
         snpid = rep(par.snpids[ids], par.nmotifs),
@@ -147,6 +148,34 @@ match_subseq_par <-
     motif.scores_i <- par.motif.tbl[motif.scores_i]
     setkey(motif.scores_i, snpid, snpbase)
     motif.scores_i <- par.snp.tbl[motif.scores_i]
+    snpid <-
+      motif <-
+      ref_seq <-
+      snp_seq <-
+      motif_len <-
+      ref_start <-
+      ref_end <-
+      ref_strand <-
+      snp_start <-
+      snp_end <-
+      snp_strand <-
+      log_lik_ref <-
+      log_lik_snp <-
+      log_lik_ratio <-
+      mean_log_lik_ref <-
+      mean_log_lik_snp <-
+      mean_log_lik_ratio <-
+      median_log_lik_ref <-
+      median_log_lik_snp <-
+      median_log_lik_ratio <-
+      log_enhance_odds <-
+      log_reduce_odds <-
+      IUPAC <-
+      ref_match_seq <-
+      snp_match_seq <-
+      ref_seq_snp_match <-
+      snp_seq_ref_match <-
+      snpbase <- ref_seq_rev <- snp_seq_rev <- len_seq <- NULL
     motif.scores_i[ref_strand == "+", ref_match_seq := substr(ref_seq, ref_start, ref_end)]
     motif.scores_i[ref_strand == "-", ref_match_seq := substr(ref_seq_rev, len_seq - ref_end + 1, len_seq - ref_start + 1)]
     motif.scores_i[snp_strand == "+", snp_match_seq := substr(snp_seq, snp_start, snp_end)]
@@ -199,6 +228,7 @@ match_subseq_par <-
 #'   by \code{ComputeMotifScores}.
 #' @param par.testing.mc See testing.mc in \code{ComputePValues}.
 #' @param par.loglik.type A string for the log-lik type, "max", "mean" or "median".
+#' @param par.figdir A string for the path to output figures.
 #' @return A list object.
 p_values_for_motif <-
   function(motif.id,
@@ -467,6 +497,7 @@ p_values_for_motif <-
     pval_rank[, 1] <- sort(pval_rank[, 1])[rank(-rank_ratio)]
     pval_rank[pval_rank[, 1] > 1, 1] <- 1
     message("Finished testing motif No. ", motif.id)
+    p.value <- NULL
     if (!is.null(par.figdir)) {
       if (!file.exists(par.figdir)) {
         dir.create(par.figdir)

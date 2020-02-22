@@ -22,6 +22,8 @@ by \code{ComputeMotifScores}.}
 \item{par.testing.mc}{See testing.mc in \code{ComputePValues}.}
 
 \item{par.loglik.type}{A string for the log-lik type, "max", "mean" or "median".}
+
+\item{par.figdir}{A string for the path to output figures.}
 }
 \value{
 A list object.
