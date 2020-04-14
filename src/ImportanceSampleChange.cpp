@@ -1,4 +1,5 @@
 #include "MotifScore.h"
+#include "helper.h"
 
 /*
 Reference: Hock Peng Chan et al.(2010). Importance sampling of word patterns in DNA and protein sequences. Journal of computational biology, 17(12).
@@ -95,7 +96,7 @@ Rcpp::List p_value_change(
 	}
 
 	NumericMatrix pval_loglik(scores.size(), 3);
-	pval_loglik = sample_to_p_value(scores, weights, score_diff_sam);
+	pval_loglik = comp_empirical_p_values(scores, weights, score_diff_sam);
 	
 	// compute the sample log ranks
 	double pval_sam[4];
@@ -125,7 +126,7 @@ Rcpp::List p_value_change(
 	}
 
 	NumericMatrix pval_rank(scores.size(), 4);
-	pval_rank = sample_to_p_value(pval_ratio, weights, pval_ratio_sam);
+	pval_rank = comp_empirical_p_values(pval_ratio, weights, pval_ratio_sam);
 
 	Rcpp::List ret = Rcpp::List::create(
 	  Rcpp::Named("score") = pval_loglik,
@@ -418,59 +419,6 @@ double find_percentile_change(NumericVector scores, double p) {
 	}
 	return(heap[0]);
 }
-
-NumericMatrix sample_to_p_value(
-    NumericVector scores,
-    NumericVector weights,
-    NumericMatrix sample_score
-) {
-	double wei_sum = 0;
-	double wei2_sum = 0;
-	int n_sample = sample_score.nrow();
-	int n_scores = scores.size();
-	NumericMatrix p_values(n_scores, 4);
-	NumericMatrix moments(n_scores, 4);
-	for(int j = 0; j < n_scores; j ++) {
-		for(int k = 0; k < 2; k ++) {
-			moments(j, k) = 0;
-		}
-	}
-	for(int i = 0; i < n_sample; i ++) {
-		wei_sum += weights[i];
-		wei2_sum += weights[i] * weights[i];
-		for(int j = 0; j < n_scores; j ++) {
-			for(int k = 0; k < 3; k ++) {
-				// SNP changes binding affinity
-				if(sample_score(i, k) >= scores(j) || sample_score(i, k) <= -scores(j)) {
-					moments(j, 0) += weights[i];
-					moments(j, 1) += weights[i] * weights[i];
-				}
-			}
-		}
-	}
-	wei2_sum /= n_sample;
-	wei_sum /= n_sample;
-	double var2 = wei2_sum - wei_sum * wei_sum;
-	double grad1 = 1 / wei_sum;
-	double grad2 = 0, var1 = 0, cov = 0;
-	for(int j = 0; j < n_scores; j ++) {
-		p_values(j, 0) = moments(j, 0) / 3 / n_sample;
-		p_values(j, 1) = moments(j, 1) / 3 / n_sample - p_values(j, 0) * p_values(j, 0);
-		p_values(j, 2) = p_values(j, 0) / wei_sum;
-		grad2 = - p_values(j, 0) * grad1 * grad1;
-		var1 = p_values(j, 1);
-		cov = moments(j, 1) / 3 / n_sample - p_values(j, 0) * wei_sum;
-		p_values(j, 1) /= 3 * n_sample - 1;
-		if(p_values(j, 0) != wei_sum) {
-			p_values(j, 3) = grad1 * grad1 * var1 + grad2 * grad2 * var2 + 2 * grad1 * grad2 * cov;
-			p_values(j, 3) /= 3 * n_sample - 1;
-		} else {
-			p_values(j, 3) = 1;
-		}
-	}
-	return(p_values);
-}
-
 
 SEXP test_find_percentile_change(SEXP _scores, SEXP _perc) {
 	NumericVector scores(_scores);

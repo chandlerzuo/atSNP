@@ -1,7 +1,8 @@
-#ifndef _csnet_RCPP_HELLO_WORLD_H
-#define _csnet_RCPP_HELLO_WORLD_H
+#ifndef __MOTIF_SCORE__
+#define __MOTIF_SCORE__
 
-#include <Rcpp.h>
+#include "helper.h"
+#include "struct.h"
 
 /*
  * note : RcppExport is an alias to `extern "C"` defined by Rcpp.
@@ -16,13 +17,6 @@
  */
 using namespace Rcpp;
 
-struct SequenceScores {
-  int best_match_pos;
-  float max_log_lik;
-  float mean_log_lik;
-  float median_log_lik;
-};
-
 RcppExport SEXP motif_score(SEXP, SEXP);
 int get_min_start_pos(int, int);
 int get_max_start_pos(int, int);
@@ -34,7 +28,6 @@ double bidir_pwm_log_prob(NumericMatrix, IntegerVector, int);
 RcppExport SEXP transition_matrix(SEXP);
 RcppExport SEXP test_max_log_prob(SEXP, SEXP);
 
-enum LoglikType {max, mean, median};
 NumericMatrix p_value(
   NumericMatrix,
   NumericVector,
@@ -97,7 +90,7 @@ NumericVector compute_sample_score_change(
   LoglikType
 );
 double find_percentile_change(NumericVector, double);
-NumericMatrix sample_to_p_value(NumericVector, NumericVector, NumericMatrix);
+NumericMatrix comp_empirical_p_value(NumericVector, NumericVector, NumericMatrix);
 RcppExport SEXP test_find_percentile_change(SEXP, SEXP);
 RcppExport SEXP compute_p_value_change(
   SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP
