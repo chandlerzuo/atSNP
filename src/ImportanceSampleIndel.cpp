@@ -35,7 +35,6 @@ Rcpp::List p_value_change_indel(
     double tol = 1e-10;
 
     rowwise_l1_normalize(pwm, tol);
-    rowwise_l1_normalize(mat_d, tol);
 
     for (int i = 0; i < p_values.nrow(); i++)
     {
@@ -190,7 +189,7 @@ SampleSequence ImportanceSampleIndel::gen_importance_sample()
     // 1. sample the starting position
     int start_pos = sample_start_position(rv[sample_seq_len]);
     // 2. sample the actual vector
-    IntegerVector sample_vec(sample_seq_len - 1);
+    IntegerVector sample_vec(sample_seq_len);
     for (int i = 0; i < sample_seq_len; i++)
     {
         NumericVector cond_prob(ImportanceSampleIndel::N_LETTERS);
@@ -233,7 +232,7 @@ SampleSequence ImportanceSampleIndel::gen_importance_sample()
         }
         sample_vec[i] = sample_discrete(rv[i], cond_prob);
     }
-    SampleSequence seq ={start_pos, sample_vec};
+    SampleSequence seq = {start_pos, sample_vec};
     return (seq);
 }
 
@@ -250,12 +249,11 @@ ScorePair ImportanceSampleIndel::comp_score_pair(
     // motif_len*2+insertion_len-2.
     // The shorter sequence has length motif_len*2-2
     int short_seq_len = motif_len * 2 - 2;
-    assert(sample_vec.size() == long_seq_len);
     IntegerVector short_seq(short_seq_len);
     for (int i = 0; i < motif_len - 1; ++i)
     {
         short_seq[i] = sample_vec[i];
-        short_seq[short_seq_len - 1 - i] = sample_vec[short_seq_len - 1 - i];
+        short_seq[short_seq_len - 1 - i] = sample_vec[sample_vec.size() - 1 - i];
     }
     // compute the maximum score for both sequences
     double long_seq_score = 0, short_seq_score = 0;
@@ -277,11 +275,7 @@ ScorePair ImportanceSampleIndel::comp_score_pair(
         break;
     }
 
-    // compute the weight = prior density / importance sampling density
-    // note: must use the score based on the true start_pos to compute the weight
-    // this is a bug that took 2 days to fix!
-    // return value
-    ScorePair sp={long_seq_score, short_seq_score};
+    ScorePair sp = {long_seq_score, short_seq_score};
     return (sp);
 }
 
@@ -309,13 +303,16 @@ AdjWeights ImportanceSampleIndel::gen_importance_sample_weights(
         // the right stationary subsequence does not exist.
         for (int i = s; i <= s + motif_len && i < example.size(); ++i)
         {
-            if (i >= motif_len - 1 && i < motif_len + this->insertion_len - 1)
+            if (i < s + motif_len)
             {
-                adj_s += this->theta * log(this->mat_d(i - s, example[i]));
-            }
-            else if (i < s + motif_len)
-            {
-                adj_s += log(this->mat_d(i - s, example[i]));
+                if (i >= motif_len - 1 && i < motif_len + this->insertion_len - 1)
+                {
+                    adj_s += this->theta * log(this->mat_d(i - s, example[i]));
+                }
+                else
+                {
+                    adj_s += log(this->adj_pwm(i - s, example[i]));
+                }
             }
             else
             {
@@ -337,18 +334,11 @@ AdjWeights ImportanceSampleIndel::gen_importance_sample_weights(
     for (int s = 0; s < motif_len + this->insertion_len - 1; ++s)
     {
         double adj_s = log(this->cond_norm_const[s]);
-        for (int i = s; i < s + motif_len && i < example.size(); ++i)
+        for (int i = s; i < s + motif_len; ++i)
         {
             if (i < motif_len - 1 || i >= motif_len + this->insertion_len - 1)
             {
-                if (i < s + motif_len)
-                {
-                    adj_s += log(this->adj_pwm(i - s, example[i]));
-                }
-                else
-                {
-                    adj_s += log(this->mc_param.stat_dist(example[i]));
-                }
+                adj_s += log(this->adj_pwm(i - s, example[i]));
                 if (i == 0)
                 {
                     adj_s -= log(this->mc_param.stat_dist(example[i]));
@@ -363,9 +353,20 @@ AdjWeights ImportanceSampleIndel::gen_importance_sample_weights(
                 }
             }
         }
-        base_adj += adj_s;
+        // position after the matching subsequence
+        if (s + motif_len <= motif_len + this->insertion_len - 1)
+        {
+            adj_s += log(this->mc_param.stat_dist(example[motif_len + this->insertion_len - 1]));
+            adj_s -= log(this->mc_param.trans_mat(example[motif_len - 2], example[motif_len + this->insertion_len - 1]));
+        }
+        else if (s + motif_len < example.size())
+        {
+            adj_s += log(this->mc_param.stat_dist(example[s + motif_len]));
+            adj_s -= log(this->mc_param.trans_mat(example[s + motif_len - 1], example[s + motif_len]));
+        }
+        base_adj += exp(adj_s);
     }
-    AdjWeights adj_weights={this->norm_const / joint_adj, this->norm_const / base_adj};
+    AdjWeights adj_weights = {this->norm_const / joint_adj, this->norm_const / base_adj};
     return adj_weights;
 }
 
@@ -416,7 +417,7 @@ SEXP test_importance_sample_indel(
 {
     NumericVector stat_dist(_stat_dist);
     NumericMatrix trans_mat(_trans_mat);
-    MarkovChainParam mc_param={stat_dist, trans_mat};
+    MarkovChainParam mc_param = {stat_dist, trans_mat};
     NumericMatrix adj_pwm(_adj_pwm);
     NumericMatrix mat_d(_mat_d);
     int insertion_len = as<int>(_insertion_len);
@@ -432,6 +433,7 @@ SEXP test_importance_sample_indel(
     Rcpp::List ret = Rcpp::List::create(
         Rcpp::Named("start_pos") = example.start_pos,
         Rcpp::Named("sample_sequence") = example.sequence,
+        Rcpp::Named("mat_d") = sampler.mat_d,
         Rcpp::Named("theta") = sampler.theta,
         Rcpp::Named("norm_const") = sampler.norm_const,
         Rcpp::Named("cond_norm_const") = sampler.cond_norm_const,

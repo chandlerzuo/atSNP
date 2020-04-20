@@ -8,7 +8,7 @@ using namespace Rcpp;
 class PairedImportanceSamplingBase
 {
 public:
-    static constexpr double THETA_MAX = 1, THETA_MIN = -1;
+    static constexpr double THETA_MAX = 1, THETA_MIN = 0;
     static const int N_LETTERS = 4;
     MarkovChainParam mc_param;
     int insertion_len;

@@ -8,3 +8,4 @@ src/*.so
 *.dll
 atSNP-Ex.pdf
 *.timings
+.vscode

@@ -47,5 +47,4 @@ void PairedImportanceSamplingBase::validate()
     assert(this->adj_pwm.nrow() == this->mat_d.nrow());
     assert(this->adj_pwm.ncol() == PairedImportanceSamplingBase::N_LETTERS);
     assert(this->mat_d.ncol() == PairedImportanceSamplingBase::N_LETTERS);
-    rowwise_l1_normalize(mat_d, 1e-10);
 }

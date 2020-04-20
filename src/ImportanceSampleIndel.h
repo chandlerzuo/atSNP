@@ -47,7 +47,7 @@ Rcpp::List p_value_change_indel(
     int,
     LoglikType);
 
-SEXP test_importance_sample_indel(
+RcppExport SEXP test_importance_sample_indel(
     SEXP,
     SEXP,
     SEXP,

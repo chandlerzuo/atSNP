@@ -32,23 +32,7 @@ drawonesample <- function(theta) {
   sample <- c(sample, id, sc, s_cond)
   return(sample)
 }
-jointprob <- function(x)
-  prod(test_pwm[cbind(seq(motif_len), x)])
-maxjointprob <- function(x) {
-  maxp <- -Inf
-  p <- -Inf
-  for (i in 1:motif_len) {
-    p <- jointprob(x[i:(i + motif_len - 1)])
-    if (p > maxp)
-      maxp <- p
-  }
-  for (i in 1:motif_len) {
-    p <- jointprob(5 - x[(i + motif_len - 1):i])
-    if (p > maxp)
-      maxp <- p
-  }
-  return(maxp)
-}
+
 get_freq <- function(sample) {
   ids <- cbind(rep(sample[motif_len * 2,], each = motif_len) + seq(motif_len),
                rep(seq(100), each = motif_len))

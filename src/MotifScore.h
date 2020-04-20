@@ -26,7 +26,6 @@ SequenceScores comp_seq_scores(NumericMatrix, IntegerVector);
 double pwm_log_prob(NumericMatrix, IntegerVector, int);
 double bidir_pwm_log_prob(NumericMatrix, IntegerVector, int);
 RcppExport SEXP transition_matrix(SEXP);
-RcppExport SEXP test_max_log_prob(SEXP, SEXP);
 
 NumericMatrix p_value(
   NumericMatrix,
