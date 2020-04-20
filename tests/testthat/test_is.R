@@ -32,37 +32,6 @@ drawonesample <- function(theta) {
   sample <- c(sample, id, sc, s_cond)
   return(sample)
 }
-jointprob <- function(x)
-  prod(test_pwm[cbind(seq(motif_len), x)])
-maxjointprob <- function(x) {
-  maxp <- -Inf
-  p <- -Inf
-  for (i in 1:motif_len) {
-    p <- jointprob(x[i:(i + motif_len - 1)])
-    if (p > maxp)
-      maxp <- p
-  }
-  for (i in 1:motif_len) {
-    p <- jointprob(5 - x[(i + motif_len - 1):i])
-    if (p > maxp)
-      maxp <- p
-  }
-  return(maxp)
-}
-get_freq <- function(sample) {
-  ids <-
-    cbind(rep(sample[motif_len * 2, ], each = motif_len) + seq(motif_len),
-          rep(seq(100), each = motif_len))
-  sample_motif <- matrix(sample[ids], nrow = motif_len) + 1
-  emp_freq <- matrix(0, nrow = motif_len, ncol = 4)
-  for (i in seq(motif_len)) {
-    for (j in seq(4)) {
-      emp_freq[i, j] <- sum(sample_motif[i, ] == j)
-    }
-  }
-  emp_freq <- emp_freq / rowSums(emp_freq)
-  return(emp_freq)
-}
 
 test_that("Error: quantile function computing are not equivalent.", {
   for (p in c(0.01, 0.1, 0.5, 0.9, 0.99)) {

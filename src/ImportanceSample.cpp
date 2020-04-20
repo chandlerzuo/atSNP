@@ -290,7 +290,6 @@ NumericVector compute_sample_score(NumericMatrix pwm, IntegerVector sample_vec, 
 	ret[3] = adj_score;
 	ret[4] = exp(theta * pwm_log_prob(pwm, sample_vec, start_pos));
 	return(ret);
-	
 }
 
 double find_percentile(NumericVector scores, double p) {

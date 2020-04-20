@@ -16,7 +16,8 @@ pval_a <-
         scores,
         0.15,
         100,
-        0)
+        0,
+        package="atSNP")
 pval_ratio <-
   abs(log(pval_a[seq(nrow(scores)), 1]) - log(pval_a[seq(nrow(scores)) + nrow(scores), 1]))
 
@@ -58,23 +59,7 @@ drawonesample <- function(theta) {
   sample <- c(sample, id, sc)
   return(sample)
 }
-jointprob <- function(x)
-  prod(test_pwm[cbind(seq(motif_len), x)])
-maxjointprob <- function(x) {
-  maxp <- -Inf
-  p <- -Inf
-  for (i in 1:motif_len) {
-    p <- jointprob(x[i:(i + motif_len - 1)])
-    if (p > maxp)
-      maxp <- p
-  }
-  for (i in 1:motif_len) {
-    p <- jointprob(5 - x[(i + motif_len - 1):i])
-    if (p > maxp)
-      maxp <- p
-  }
-  return(maxp)
-}
+
 get_freq <- function(sample) {
   emp_freq <- matrix(0, nrow = 2 * motif_len - 1, ncol = 4)
   for (i in seq(2 * motif_len - 1)) {

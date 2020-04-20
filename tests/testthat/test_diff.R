@@ -11,7 +11,7 @@ score_diff <- abs(scores[, 2] - scores[, 1])
 test_score <- test_pwm
 for (i in seq(nrow(test_score))) {
   for (j in seq(ncol(test_score))) {
-    test_score[i, j] <- exp(mean(log(test_pwm[i, j] / test_pwm[i,-j])))
+    test_score[i, j] <- exp(mean(log(test_pwm[i, j] / test_pwm[i, -j])))
   }
 }
 
@@ -22,9 +22,9 @@ motif_len <- nrow(test_pwm)
 drawonesample <- function(theta) {
   prob_start <- sapply(seq(motif_len),
                        function(j)
-                         sum(snpInfo$prior * test_score[motif_len + 1 - j,] ^ theta *
-                               adj_mat[motif_len + 1 - j,]) /
-                         sum(snpInfo$prior * adj_mat[motif_len + 1 - j,]))
+                         sum(snpInfo$prior * test_score[motif_len + 1 - j, ] ^ theta *
+                               adj_mat[motif_len + 1 - j, ]) /
+                         sum(snpInfo$prior * adj_mat[motif_len + 1 - j, ]))
   id <- sample(seq(motif_len), 1, prob = prob_start)
   sample <-
     sample(1:4,
@@ -32,47 +32,20 @@ drawonesample <- function(theta) {
            replace = TRUE,
            prob = snpInfo$prior)
   delta <- adj_mat
-  delta[motif_len + 1 - id,] <-
-    delta[motif_len + 1 - id,] * test_score[motif_len + 1 - id,] ^ theta
+  delta[motif_len + 1 - id, ] <-
+    delta[motif_len + 1 - id, ] * test_score[motif_len + 1 - id, ] ^ theta
   sample[id - 1 + seq(motif_len)] <- apply(delta, 1, function(x)
     sample(seq(4), 1, prob = x * snpInfo$prior))
   sc <- 0
   for (s in seq(motif_len)) {
     delta <- adj_mat
-    delta[motif_len + 1 - s,] <-
-      delta[motif_len + 1 - s,] * test_score[motif_len + 1 - s,] ^ theta
+    delta[motif_len + 1 - s, ] <-
+      delta[motif_len + 1 - s, ] * test_score[motif_len + 1 - s, ] ^ theta
     sc <-
       sc + prod(delta[cbind(seq(motif_len), sample[s - 1 + seq(motif_len)])])
   }
   sample <- c(sample, id, sc)
   return(sample)
-}
-jointprob <- function(x)
-  prod(test_pwm[cbind(seq(motif_len), x)])
-maxjointprob <- function(x) {
-  maxp <- -Inf
-  p <- -Inf
-  for (i in 1:motif_len) {
-    p <- jointprob(x[i:(i + motif_len - 1)])
-    if (p > maxp)
-      maxp <- p
-  }
-  for (i in 1:motif_len) {
-    p <- jointprob(5 - x[(i + motif_len - 1):i])
-    if (p > maxp)
-      maxp <- p
-  }
-  return(maxp)
-}
-get_freq <- function(sample) {
-  emp_freq <- matrix(0, nrow = 2 * motif_len - 1, ncol = 4)
-  for (i in seq(2 * motif_len - 1)) {
-    for (j in seq(4)) {
-      emp_freq[i, j] <- sum(sample[i,] == j - 1)
-    }
-  }
-  emp_freq <- emp_freq / rowSums(emp_freq)
-  return(emp_freq)
 }
 
 test_that("Error: quantile function computing are not equivalent.", {
@@ -119,13 +92,13 @@ test_that("Error: the scores for samples are not equivalent.", {
     sample2[motif_len] <- seq(4)[-sample[motif_len]][2]
     sample3[motif_len] <- seq(4)[-sample[motif_len]][3]
     sample_score_r <-
-      log(maxjointprob(sample[seq(2 * motif_len - 1)])) -
-      log(c(
-        maxjointprob(sample1[seq(2 * motif_len - 1)]),
-        maxjointprob(sample2[seq(2 * motif_len - 1)]),
-        maxjointprob(sample3[seq(2 * motif_len - 1)])
-      ))
-    expect_equal(sample_score_r, sample_score[-1], tolerance=1e-5)
+      R_motif_score_max(sample[seq(2 * motif_len - 1)], test_pwm) -
+      c(
+        R_motif_score_max(sample1[seq(2 * motif_len - 1)], test_pwm),
+        R_motif_score_max(sample2[seq(2 * motif_len - 1)], test_pwm),
+        R_motif_score_max(sample3[seq(2 * motif_len - 1)], test_pwm)
+      )
+    expect_equal(sample_score_r, sample_score[-1], tolerance = 1e-5)
   }
   
   ## Use C code to generate a random sample
@@ -138,11 +111,11 @@ test_that("Error: the scores for samples are not equivalent.", {
       }
       if (j >= pos) {
         delta[4 * (pos - 1) + seq(4), j] <-
-          delta[4 * (pos - 1) + seq(4), j] * adj_mat[j - pos + 1,]
+          delta[4 * (pos - 1) + seq(4), j] * adj_mat[j - pos + 1, ]
       }
       if (j == motif_len) {
         delta[4 * (pos - 1) + seq(4), j] <-
-          delta[4 * (pos - 1) + seq(4), j] * test_score[j - pos + 1,] ^ theta
+          delta[4 * (pos - 1) + seq(4), j] * test_score[j - pos + 1, ] ^ theta
       }
     }
   }
@@ -211,9 +184,9 @@ test_that("Error: compute the normalizing constant.", {
   
   prob_start <- sapply(seq(motif_len),
                        function(j)
-                         sum(snpInfo$prior * test_score[motif_len + 1 - j,] ^ theta *
-                               adj_mat[motif_len + 1 - j,]) /
-                         sum(snpInfo$prior * adj_mat[motif_len + 1 - j,]))
+                         sum(snpInfo$prior * test_score[motif_len + 1 - j, ] ^ theta *
+                               adj_mat[motif_len + 1 - j, ]) /
+                         sum(snpInfo$prior * adj_mat[motif_len + 1 - j, ]))
   
   const.r <-
     prod(colSums(snpInfo$prior * t(adj_mat))) * sum(prob_start)

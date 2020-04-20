@@ -11,7 +11,8 @@ Compute the probability that a random sequence can get a score higher than 'scor
 @arg trans_mat A 4 x 4 transition matrix.
 @arg scores A matrix with 2 columns, with each column corresponding to one allele.
 @arg p The upper percentile of the scores which is used as the mean of the importance sampling distribution.
-@return A matrix with 3 columns. The first two columns are the p-values for the log-likelihood scores of each allele. The third column are the p-values for the likelihood ratios.
+@return A matrix with 3 columns. The first two columns are the p-values for the log-likelihood 
+ scores of each allele. The third column are the p-values for the likelihood ratios.
 */
 NumericMatrix p_value_diff(NumericMatrix pwm, NumericMatrix wei_mat, NumericMatrix adj_mat, NumericVector stat_dist, NumericMatrix trans_mat, NumericVector scores, double score_percentile, int n_sample) {
 	// double score_percentile = find_percentile_diff(scores, p);
