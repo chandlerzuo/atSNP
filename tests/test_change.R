@@ -8,19 +8,6 @@ test_pwm <- motif_library$SIX5_disc1
 scores <- as.matrix(motif_scores$motif.scores[3:4, 4:5])
 score_diff <- abs(scores[, 2] - scores[, 1])
 
-pval_a <-
-  .Call("compute_p_values",
-        test_pwm,
-        snpInfo$prior,
-        snpInfo$transition,
-        scores,
-        0.15,
-        100,
-        0,
-        package="atSNP")
-pval_ratio <-
-  abs(log(pval_a[seq(nrow(scores)), 1]) - log(pval_a[seq(nrow(scores)) + nrow(scores), 1]))
-
 test_score <- test_pwm
 for (i in seq(nrow(test_score))) {
   for (j in seq(ncol(test_score))) {
@@ -71,7 +58,7 @@ get_freq <- function(sample) {
   return(emp_freq)
 }
 
-if (TRUE) {
+if (FALSE) {
   ## parameters
   p <- 0.1
   delta <-
@@ -117,7 +104,6 @@ if (TRUE) {
     emp_freq1 <- get_freq(sample1)
     sample2 <- sapply(rep(theta, 100), drawonesample)
     emp_freq2 <- get_freq(sample2 - 1)
-    ##    print(rbind(emp_freq1[10, ], emp_freq2[10, ], target_freq[10, ]))
     max(abs(emp_freq1 - target_freq)) > max(abs(emp_freq2 - target_freq))
   }
   
@@ -135,7 +121,4 @@ if (TRUE) {
                BPPARAM = MulticoreParam(workers = 1),
                SIMPLIFY = FALSE)
   }
-  
-  print(sum(unlist(results)))
-  print(pbinom(sum(unlist(results)), size = 20, prob = 0.5))
 }

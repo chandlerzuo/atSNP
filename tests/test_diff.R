@@ -59,7 +59,7 @@ get_freq <- function(sample) {
   return(emp_freq)
 }
 
-if (TRUE) {
+if (FALSE) {
   ## parameters
   p <- 0.1
   delta <-
@@ -125,7 +125,6 @@ if (TRUE) {
     sample2 <- sapply(rep(theta, 100), drawonesample)
     emp_freq2 <- get_freq(sample2 - 1)
     
-    ##    print(rbind(emp_freq1[10, ], emp_freq2[10, ], target_freq[10, ]))
     max(abs(emp_freq1 - target_freq)) > max(abs(emp_freq2 - target_freq))
   }
   
@@ -143,9 +142,4 @@ if (TRUE) {
                BPPARAM = MulticoreParam(workers = 1),
                SIMPLIFY = FALSE)
   }
-  
-  print(sum(unlist(results)))
-  
-  print(pbinom(sum(unlist(results)), size = 20, prob = 0.5))
-  
 }

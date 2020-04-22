@@ -47,7 +47,7 @@ get_freq <- function(sample) {
   return(emp_freq)
 }
 
-if (TRUE) {
+if (FALSE) {
   ## parameters
   p <- 0.1
   delta <-
@@ -101,7 +101,4 @@ if (TRUE) {
                BPPARAM = MulticoreParam(workers = 1),
                SIMPLIFY = FALSE)
   }
-  
-  print(sum(unlist(results)))
-  print(pbinom(sum(unlist(results)), size = 20, prob = 0.5))
 }

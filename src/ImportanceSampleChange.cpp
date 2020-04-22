@@ -422,7 +422,7 @@ double find_percentile_change(NumericVector scores, double p) {
 	return(heap[0]);
 }
 
-SEXP test_find_percentile_change(SEXP _scores, SEXP _perc) {
+RcppExport SEXP test_find_percentile_change(SEXP _scores, SEXP _perc) {
 	NumericVector scores(_scores);
 	double perc = as<double>(_perc);
 	double ret = find_percentile_change(scores, perc);
