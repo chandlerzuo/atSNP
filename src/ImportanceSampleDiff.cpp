@@ -16,8 +16,10 @@ Compute the probability that a random sequence can get a score higher than 'scor
 */
 NumericMatrix p_value_diff(NumericMatrix pwm, NumericMatrix wei_mat, NumericMatrix adj_mat, NumericVector stat_dist, NumericMatrix trans_mat, NumericVector scores, double score_percentile, int n_sample) {
 	// double score_percentile = find_percentile_diff(scores, p);
+	//	printf("percentile:%3.3f\n", score_percentile);
 	// find the tilting parameter
 	double theta = find_theta_diff(wei_mat, adj_mat, stat_dist, trans_mat, score_percentile);
+	//	printf("theta:%3.3f\n", theta);
 	NumericMatrix p_values(scores.size(), 4);
 	NumericMatrix moments(scores.size(), 4);
 	NumericVector sample_score(4);
@@ -62,6 +64,7 @@ NumericMatrix p_value_diff(NumericMatrix pwm, NumericMatrix wei_mat, NumericMatr
 					delta(i + 4 * pos, m) = tol;
 				}
 			}
+			//printf("delta(%d,%d)=%3.10f\n", i, motif_len - 1, delta(i, motif_len - 1));
 		}
 	}
 
@@ -71,6 +74,7 @@ NumericMatrix p_value_diff(NumericMatrix pwm, NumericMatrix wei_mat, NumericMatr
 			norm_const += stat_dist[i] * delta(i + 4 * pos, 0);
 		}
 	}
+	//	printf("Constant value : %3.10f\n", norm_const);
 
 	for(int i = 0; i < p_values.nrow(); i ++) {
 		for(int j = 0; j < 4; j ++) {
@@ -107,6 +111,9 @@ NumericMatrix p_value_diff(NumericMatrix pwm, NumericMatrix wei_mat, NumericMatr
 			}
 		}
 	}
+	//	printf("Mean weight : %lf \n", moments(0, 0) / 3 / n_sample);
+	//	printf("Mean diff score : %lf \n", mean_diff / 3 / n_sample);
+	//	printf("Mean score : %lf \n", mean_score / n_sample);
 	wei2_sum /= n_sample;
 	wei_sum /= n_sample;
 	double var2 = wei2_sum - wei_sum * wei_sum;
@@ -159,6 +166,7 @@ double func_delta_diff(NumericMatrix wei_mat, NumericMatrix adj_mat, NumericVect
 					delta(i + 4 * pos, m) = tol;
 				}
 			}
+			//printf("delta(%d,%d)=%3.10f\n", i, motif_len - 1, delta(i, motif_len - 1));
 		}
 	}
 
@@ -238,12 +246,30 @@ IntegerVector importance_sample_diff(NumericMatrix delta, NumericVector stat_dis
 				cond_prob[j] += cond_prob[j - 1];
 			}
 		}
+		/*
+		  if(i >= start_pos && i < start_pos + motif_len) {
+			double test_prob[4];
+			for(int j = 0; j < 4; j ++) {
+				test_prob[j] = stat_dist[j];
+				test_prob[j] *= pow(wei_mat(i - start_pos, j), theta);
+				if(j > 0)
+					test_prob[j] += test_prob[j - 1];
+			}
+			for(int j = 0; j < 4; j ++) {
+				printf("%d,%d: prob = %3.10f \t %3.10f \n", i - start_pos, j, cond_prob[j] / cond_prob[3], test_prob[j] / test_prob[3]);
+			}
+		}
+		*/
 		rv[i] *= cond_prob[3];
 		sample_vec[i] = 0;
 		while(sample_vec[i] < 3 && rv[i] > cond_prob[sample_vec[i]]) {
 			sample_vec[i] ++;
 		}
+		// index from 1
+		// sample_vec[i] ++;
+		//		printf("%d\t", sample_vec[i]);
 	}
+	//	printf("\n");
 	return(sample_vec);
 }
 
@@ -269,7 +295,7 @@ NumericVector compute_sample_score_diff(NumericMatrix pwm, NumericMatrix wei_mat
 		snp_id ++;
 	}
 	if(snp_id != 3) {
-		throw std::range_error("Invalid snp_id.");
+		printf("Error: snp_id = %d\n", snp_id);
 	}
 
 	// compute the weight = prior density / importance sampling density
@@ -291,6 +317,7 @@ NumericVector compute_sample_score_diff(NumericMatrix pwm, NumericMatrix wei_mat
 	ret[1] = snp_score[0];
 	ret[2] = snp_score[1];
 	ret[3] = snp_score[2];
+	//	printf("score:%3.3f\tweight:%3.3f\tconstant:%3.3f\n", ret[0], ret[1], log(delta(0, 3)));
 	return(ret);
 }
 

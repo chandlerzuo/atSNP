@@ -132,10 +132,7 @@ void ImportanceSampleIndel::set_theta(double score)
             return;
         }
         // Bisect. We assume that d log(comp_norm_const) / d theta is increasing with theta.
-        if (lower_sign || !upper_sign)
-        {
-            throw std::range_error("Bisecting error.");
-        };
+        assert(!lower_sign && upper_sign);
         while (upper_bound - lower_bound > tol)
         {
             mid_point = (lower_bound + upper_bound) * 0.5;
@@ -224,10 +221,7 @@ SampleSequence ImportanceSampleIndel::gen_importance_sample()
                 cond_prob[j] = 0;
                 if (i >= motif_len - 1 && i <= motif_len + this->insertion_len - 2)
                 {
-                    if (i - start_pos >= motif_len)
-                    {
-                        throw std::range_error("Invalid position for the motif length.");
-                    };
+                    assert(i - start_pos < motif_len);
                     cond_prob[j] = exp(log(this->mat_d(i - start_pos, j)) * this->theta);
                 }
                 else
@@ -248,12 +242,9 @@ ScorePair ImportanceSampleIndel::comp_score_pair(
     LoglikType loglik_type)
 {
     // compute the reverse strand sequence
+    assert(pwm.nrow() == ImportanceSampleIndel::N_LETTERS);
     int motif_len = pwm.nrow();
-    if (pwm.nrow() != ImportanceSampleIndel::N_LETTERS ||
-        motif_len != this->mat_d.nrow())
-    {
-        throw std::length_error("Inconsistent matrix/vector dimensions.");
-    };
+    assert(motif_len == this->mat_d.nrow());
     // The longer sequence, passed in by 'example', has length
     // motif_len*2+insertion_len-2.
     // The shorter sequence has length motif_len*2-2
@@ -296,15 +287,9 @@ AdjWeights ImportanceSampleIndel::gen_importance_sample_weights(
 {
     for (int i = 0; i < example.size(); ++i)
     {
-        if (example[i] < 0 || example[i] >= ImportanceSampleIndel::N_LETTERS)
-        {
-            throw std::range_error("Invalid nucleotide code.");
-        };
+        assert(example[i] >= 0 && example[i] <= ImportanceSampleIndel::N_LETTERS);
     }
-    if (example.size() != 2 * this->mat_d.nrow() + this->insertion_len - 2)
-    {
-        throw std::length_error("Invalid sequence length.");
-    };
+    assert(example.size() == 2 * this->mat_d.nrow() + this->insertion_len - 2);
     int motif_len = this->mat_d.nrow();
     double joint_adj = 0;
     for (int s = 0; s < motif_len + this->insertion_len - 1; ++s)

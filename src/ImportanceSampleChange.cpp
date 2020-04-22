@@ -329,9 +329,7 @@ NumericVector compute_sample_score_change(
 		snp_score[snp_id] = rnd_score - rnd_score_copy;
 		snp_id ++;
 	}
-	if(snp_id != 3){
-		throw std::length_error("snp_score has a wrong size.");
-	};
+	assert(snp_id == 3);
 
 	// compute the weight = prior density / importance sampling density
 	// note: must use the score based on the true start_pos to compute the weight

@@ -1,9 +1,7 @@
 #include "helper.h"
 
 int sample_discrete(double rnd, NumericVector pdf) {
-    if(rnd<0 || rnd >1) {
-		throw std::invalid_argument("Random number has to be between 0 and 1.");
-	};
+    assert(rnd>=0 && rnd <=1);
     double norm_const = 0;
     for(int i = 0; i < pdf.size(); ++ i) {
         norm_const += pdf[i];
@@ -12,9 +10,7 @@ int sample_discrete(double rnd, NumericVector pdf) {
     int pos = 0;
     double cum_sum = pdf[0];
     while(cum_sum < rnd) {
-        if(pos >= pdf.size() - 1){
-			throw std::range_error("Index out of range.");
-		};
+        assert(pos < pdf.size() - 1);
         cum_sum += pdf[++pos];
     }
     return pos;
@@ -55,9 +51,7 @@ NumericMatrix comp_empirical_p_values(
 	double wei_sum = 0;
 	double wei2_sum = 0;
 	int sample_size = sample_score.nrow();
-    if(weights.size() != sample_size){
-		throw std::length_error("weights has a wrong size.");
-	};
+    assert(weights.size() == sample_size);
 	int n_scores = scores.size();
 	NumericMatrix p_values(n_scores, 4);
 	NumericMatrix moments(n_scores, 4);
