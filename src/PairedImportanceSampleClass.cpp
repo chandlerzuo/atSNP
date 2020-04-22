@@ -39,12 +39,18 @@ void PairedImportanceSamplingBase::validate()
     {
         this->theta = PairedImportanceSamplingBase::THETA_MAX;
     }
-    assert(this->insertion_len >= 1);
-    assert(this->theta >= PairedImportanceSamplingBase::THETA_MIN && 
-    this->theta <= PairedImportanceSamplingBase::THETA_MAX);
-    assert(this->mc_param.stat_dist.size() == N_LETTERS);
-    assert(this->mc_param.trans_mat.ncol() == N_LETTERS);
-    assert(this->adj_pwm.nrow() == this->mat_d.nrow());
-    assert(this->adj_pwm.ncol() == PairedImportanceSamplingBase::N_LETTERS);
-    assert(this->mat_d.ncol() == PairedImportanceSamplingBase::N_LETTERS);
+    if (this->insertion_len < 1 ||
+        this->mc_param.stat_dist.size() != N_LETTERS ||
+        this->mc_param.trans_mat.ncol() != N_LETTERS ||
+        this->adj_pwm.ncol() != PairedImportanceSamplingBase::N_LETTERS ||
+        this->mat_d.ncol() != PairedImportanceSamplingBase::N_LETTERS ||
+        this->adj_pwm.nrow() != this->mat_d.nrow())
+    {
+        throw std::length_error("Invalid matrix/vector dimensions.");
+    };
+    if (this->theta < PairedImportanceSamplingBase::THETA_MIN &&
+        this->theta > PairedImportanceSamplingBase::THETA_MAX)
+    {
+        throw std::range_error("Invalid theta parameter.");
+    };
 }

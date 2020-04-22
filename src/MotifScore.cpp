@@ -262,7 +262,9 @@ SequenceScores comp_seq_scores(NumericMatrix pwm, IntegerVector sequence)
 */
 double pwm_log_prob(NumericMatrix pwm, IntegerVector sequence, int start_pos)
 {
-	assert(start_pos >= 0);
+	if(start_pos < 0){
+		throw std::range_error("Invalid start position.");
+	};
 	double tol = 1e-10;
 	double log_prob = 0;
 	for (int i = 0; i < pwm.nrow(); i++)
@@ -284,7 +286,9 @@ double pwm_log_prob(NumericMatrix pwm, IntegerVector sequence, int start_pos)
  */
 double bidir_pwm_log_prob(NumericMatrix pwm, IntegerVector sequence, int start_pos)
 {
-	assert(start_pos != 0);
+	if(start_pos == 0) {
+		throw std::range_error("Invalid matching position.");
+	};
 	IntegerVector _sequence(sequence);
 	if (start_pos < 0)
 	{
