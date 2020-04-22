@@ -341,14 +341,14 @@ double find_percentile(NumericVector scores, double p) {
 	return(heap[0]);
 }
 
-RcppExport SEXP test_find_percentile(SEXP _scores, SEXP _p) {
+SEXP test_find_percentile(SEXP _scores, SEXP _p) {
 	NumericVector scores(_scores);
 	double p = as<double>(_p);
 	double ret = find_percentile(scores, p);
 	return(wrap(ret));
 }
 
-RcppExport SEXP compute_p_values(
+SEXP compute_p_values(
   SEXP _pwm,
   SEXP _stat_dist,
   SEXP _trans_mat,
