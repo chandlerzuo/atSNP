@@ -249,7 +249,7 @@ ScorePair ImportanceSampleIndel::comp_score_pair(
 {
     // compute the reverse strand sequence
     int motif_len = pwm.nrow();
-    if (pwm.nrow() != ImportanceSampleIndel::N_LETTERS ||
+    if (pwm.ncol() != ImportanceSampleIndel::N_LETTERS ||
         motif_len != this->mat_d.nrow())
     {
         throw std::length_error("Inconsistent matrix/vector dimensions.");
