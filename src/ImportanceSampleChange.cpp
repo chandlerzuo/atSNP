@@ -115,6 +115,12 @@ Rcpp::List p_value_change(
 		}
 		for (int i1 = 0; i1 < n_sample; i1++)
 		{
+			// IS weights for the base sequences are the same as the 
+			// IS weights for the joint sequences. However, IS weights 
+			// for the SNP sequences are more complicated.
+			// To simplify calculation, for both base and SNP sequence, 
+			// when computing p-values using such bootstrapping, only 
+			// base sequences and their weights are used.
 			for (int j = 0; j < 4; j++)
 			{
 				if (score[i1][0] >= score[i][j])
