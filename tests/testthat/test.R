@@ -1,7 +1,3 @@
-library(atSNP)
-library(BiocParallel)
-library(testthat)
-
 ## process the data
 data(example)
 

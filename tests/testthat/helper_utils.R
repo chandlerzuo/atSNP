@@ -47,3 +47,24 @@ R_motif_score_max <- function(sample_seq, pwm) {
   }
   return(maxlogp)
 }
+
+
+#' Generate artifacts for unit tests.
+gen_test_artifacts <- function() {
+  data(example)
+  trans_mat <- matrix(rep(snpInfo$prior, each = 4), nrow = 4)
+  test_pwm <- motif_library$SIX5_disc1
+  adj_pwm <- (test_pwm + 0.25) / apply(test_pwm + 0.25, 1, sum)
+  mat_d <- test_pwm
+  for (i in seq(nrow(test_pwm))) {
+    for (j in seq(ncol(test_pwm))) {
+      mat_d[i, j] <- exp(mean(log(test_pwm[i, j] / snpInfo$prior)))
+    }
+  }
+  return(list(
+    snpInfo = snpInfo,
+    pwm = test_pwm,
+    adj_pwm = adj_pwm,
+    mat_d = mat_d
+  ))
+}
