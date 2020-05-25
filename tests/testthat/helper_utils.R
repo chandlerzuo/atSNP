@@ -40,13 +40,32 @@ gen_mc_sequence <- function(prior, transition, sequence_len) {
 R_motif_score_max <- function(sample_seq, pwm) {
   maxlogp <- -Inf
   motif_len <- nrow(pwm)
-  for (i in seq(length(sample_seq) - motif_len + 1)) {
-    maxlogp <- max(c(maxlogp,
-                     sum(log(pwm[cbind(seq(motif_len), sample_seq[i:(i + motif_len - 1)])])),
-                     sum(log(pwm[cbind(seq(motif_len), ncol(pwm) + 1 - sample_seq[(i + motif_len - 1):i])]))))
+  for (start_pos in seq(length(sample_seq) - motif_len + 1)) {
+    maxlogp <- max(c(
+      maxlogp,
+      R_motif_score_subseq(sample_seq, pwm, start_pos, FALSE),
+      R_motif_score_subseq(sample_seq, pwm, start_pos, TRUE)
+    ))
   }
   return(maxlogp)
 }
+
+
+#' Find the log-lik score for a subsequence to an PWM.
+R_motif_score_subseq <-
+  function(sample_seq, pwm, start_pos, reverse) {
+    motif_len <- nrow(pwm)
+    if (reverse) {
+      ret <-
+        sum(log(pwm[cbind(seq(motif_len), (ncol(pwm) + 1 - rev(sample_seq))[
+          start_pos:(start_pos + motif_len - 1)])
+        ]))
+      return(ret)
+    }
+    ret <-
+      sum(log(pwm[cbind(seq(motif_len), sample_seq[start_pos:(start_pos + motif_len - 1)])]))
+    return(ret)
+  }
 
 
 #' Generate artifacts for unit tests.

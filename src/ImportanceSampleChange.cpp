@@ -115,11 +115,11 @@ Rcpp::List p_value_change(
 		}
 		for (int i1 = 0; i1 < n_sample; i1++)
 		{
-			// IS weights for the base sequences are the same as the 
-			// IS weights for the joint sequences. However, IS weights 
+			// IS weights for the base sequences are the same as the
+			// IS weights for the joint sequences. However, IS weights
 			// for the SNP sequences are more complicated.
-			// To simplify calculation, for both base and SNP sequence, 
-			// when computing p-values using such bootstrapping, only 
+			// To simplify calculation, for both base and SNP sequence,
+			// when computing p-values using such bootstrapping, only
 			// base sequences and their weights are used.
 			for (int j = 0; j < 4; j++)
 			{
@@ -365,7 +365,7 @@ NumericVector compute_sample_score_change(
 	}
 	// SNP score
 	double snp_score[3];
-	int snp_id = 0;
+	int indel_id = 0;
 	double rnd_score_copy;
 	for (int j = 0; j < 4; j++)
 	{
@@ -385,10 +385,10 @@ NumericVector compute_sample_score_change(
 			rnd_score_copy = seq_scores_for_copy.max_log_lik;
 			break;
 		}
-		snp_score[snp_id] = rnd_score - rnd_score_copy;
-		snp_id++;
+		snp_score[indel_id] = rnd_score - rnd_score_copy;
+		indel_id++;
 	}
-	if (snp_id != 3)
+	if (indel_id != 3)
 	{
 		throw std::length_error("snp_score has a wrong size.");
 	};

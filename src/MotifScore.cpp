@@ -165,14 +165,6 @@ extern "C" SEXP motif_score(SEXP _motif_library, SEXP _snpinfo)
 		Rcpp::Named("median_log_lik_ratio") = median_log_lik_ratio);
 }
 
-int get_min_start_pos(int motif_len, int seq_len)
-{
-	int min_start_pos = seq_len / 2 - motif_len + 1;
-	if (min_start_pos < 0)
-		min_start_pos = 0;
-	return (min_start_pos);
-}
-
 int get_max_start_pos(int motif_len, int seq_len)
 {
 	int max_start_pos = seq_len / 2;
@@ -232,8 +224,7 @@ SequenceScores comp_seq_scores(NumericMatrix pwm, IntegerVector sequence)
 {
 	NumericVector subseq_scores = comp_subseq_scores(pwm, sequence);
 	int raw_max_idx = Rcpp::which_max(subseq_scores);
-	int match_pos = raw_max_idx / 2 + get_min_start_pos(pwm.nrow(), sequence.size());
-	match_pos++;
+	int match_pos = raw_max_idx / 2 + 1;
 	if (raw_max_idx % 2 == 1)
 	{
 		// This is the negative strand

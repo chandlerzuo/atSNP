@@ -191,10 +191,67 @@ test_that("Error: distribution of the motif scores is not correct.",
                   )
                 })
               message("KS test for long sequence scores: ",
-                      ks.test(score_pairs[1, ], score_pairs[3,])$p.value)
+                      ks.test(score_pairs[1,], score_pairs[3, ])$p.value)
               message("KS test for short sequence scores: ",
-                      ks.test(score_pairs[2, ], score_pairs[4,])$p.value)
-              expect_gte(ks.test(score_pairs[1, ], score_pairs[3,])$p.value, 0.05)
-              expect_gte(ks.test(score_pairs[2, ], score_pairs[4,])$p.value, 0.05)
+                      ks.test(score_pairs[2,], score_pairs[4, ])$p.value)
+              expect_gte(ks.test(score_pairs[1,], score_pairs[3, ])$p.value, 0.05)
+              expect_gte(ks.test(score_pairs[2,], score_pairs[4, ])$p.value, 0.05)
+            }
+          })
+
+
+test_that("Error: max log lik score is not consistent with the matching position",
+          {
+            artifacts <- gen_test_artifacts()
+            motif_len <- nrow(artifacts$pwm)
+            n_indels <- 10
+            indel_info <- list()
+            for (i in seq_len(n_indels)) {
+              offset <- sample(0:3, size=1)
+              insertion_len <- sample(seq_len(10), size=1)
+              indel_info[[i]] <- list(
+                inserted_sequence = sample(seq_len(4),
+                                           size = motif_len * 2 - 2 + insertion_len +
+                                             offset * 2,
+                                           replace = TRUE),
+                insertion_len = insertion_len
+              )
+            }
+            motif_scores <- .Call("comp_indel_motif_scores",
+                                  list(artifacts$pwm),
+                                  indel_info,
+                                  0,
+                                  package = "atSNP")
+            for (i in seq_len(n_indels)) {
+              long_seq <- indel_info[[i]]$inserted_sequence
+              insertion_len <- indel_info[[i]]$insertion_len
+              short_seq_len <- length(long_seq) - insertion_len
+              short_seq <-
+                c(long_seq[1:(short_seq_len / 2)], long_seq[(short_seq_len / 2 + insertion_len + 1):length(long_seq)])
+              offset <- length(short_seq) / 2 - motif_len + 1
+              
+              long_seq_score <- R_motif_score_subseq(
+                long_seq,
+                artifacts$pwm,
+                abs(motif_scores$match_pos_long[i]),
+                motif_scores$match_pos_long[i] < 0
+              )
+              short_seq_score <- R_motif_score_subseq(
+                short_seq,
+                artifacts$pwm,
+                abs(motif_scores$match_pos_short[i]),
+                motif_scores$match_pos_short[i] < 0
+              )
+              expect_equal(long_seq_score, motif_scores$log_lik_long[i], 1e-3)
+              expect_equal(short_seq_score, motif_scores$log_lik_short[i], 1e-3)
+              
+              long_seq_score <- R_motif_score_max(long_seq[(offset + 1):(length(long_seq) -
+                                                                           offset)],
+                                                  artifacts$pwm)
+              short_seq_score <- R_motif_score_max(short_seq[(offset + 1):(length(short_seq) -
+                                                                             offset)],
+                                                   artifacts$pwm)
+              expect_equal(long_seq_score, motif_scores$log_lik_long[i], 1e-3)
+              expect_equal(short_seq_score, motif_scores$log_lik_short[i], 1e-3)
             }
           })

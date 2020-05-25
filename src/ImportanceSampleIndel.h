@@ -35,17 +35,21 @@ private:
     void set_theta(double);
 };
 
-Rcpp::List p_value_change_indel(
-    MarkovChainParam,
-    NumericMatrix,
-    int,
-    NumericMatrix,
-    NumericMatrix,
-    NumericVector,
-    NumericVector,
-    double,
-    int,
-    LoglikType);
+SEXP p_value_change_indel(
+    SEXP,
+    SEXP,
+    SEXP,
+    SEXP,
+    SEXP,
+    SEXP,
+    SEXP,
+    SEXP,
+    SEXP,
+    SEXP,
+    SEXP
+); 
+
+RcppExport SEXP comp_indel_motif_scores(SEXP, SEXP, SEXP);
 
 RcppExport SEXP test_importance_sample_indel(
     SEXP,

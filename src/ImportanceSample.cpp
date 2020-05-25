@@ -28,7 +28,7 @@ NumericMatrix p_value(
     int n_sample,
     LoglikType loglik_type
 ) {
-  NumericMatrix p_values(scores.size(), 8);
+	NumericMatrix p_values(scores.size(), 8);
 
 	double tol = 1e-10;
 	int motif_len = pwm.nrow();

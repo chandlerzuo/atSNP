@@ -2,29 +2,175 @@
 #include "MotifScore.h"
 
 /*
-Compute the probability that a random sequence can get a score higher than 'score'.
- @arg pwm The position weight matrix, with 4 columns corresponding to A, C, G, T.
- @arg stat_dist A vector of length 4 with stationary distributions of A, C, G, T.
- @arg trans_mat A 4 x 4 transition matrix.
- @arg scores A matrix with 2 columns, with each column corresponding to one allele.
- @arg p The upper percentile of the scores which is used as the mean of the importance
- sampling distribution.
- @arg loglik_type The enum type for max, mean or median.
- @return A matrix with 3 columns. The first two columns are the p-values for the
- log-likelihood scores of each allele. The third column are the p-values for the likelihood ratios.
+Compute likelihood ratio scores for SNPs' effect on motif matching.
+@arg _motif_library The list object containing a 'matrix' component, which is a list of position weight matrices.
+@arg _indel_info A list object. Each element contains
+sequence: A vector for the long sequence;
+insertion_len: The interger value for the insertion length, which corresponds to the middle part of the sequence.
+@return A list of objects.
 */
-Rcpp::List p_value_change_indel(
-    MarkovChainParam mc_param,
-    NumericMatrix mat_d,
-    int insertion_len,
-    NumericMatrix pwm,
-    NumericMatrix adj_pwm,
-    NumericVector scores,
-    NumericVector pval_ratio,
-    double score_percentile,
-    int sample_size,
-    LoglikType loglik_type)
+RcppExport SEXP comp_indel_motif_scores(
+    SEXP _motif_library,
+    SEXP _indel_info,
+    SEXP _loglik_type)
 {
+    Rcpp::List pwms(_motif_library);
+    Rcpp::List indel_info(_indel_info);
+    LoglikType loglik_type = static_cast<LoglikType>(as<int>(_loglik_type));
+
+    int n_motifs = pwms.size();
+    int n_indels = indel_info.size();
+
+    IntegerMatrix match_pos_short(n_indels, n_motifs);
+    IntegerMatrix match_pos_long(n_indels, n_motifs);
+    NumericMatrix log_lik_ratio(n_indels, n_motifs);
+    NumericMatrix log_lik_short(n_indels, n_motifs);
+    NumericMatrix log_lik_long(n_indels, n_motifs);
+
+    double tol = 1e-10;
+
+    //for each snp
+    for (int indel_id = 0; indel_id < n_indels; indel_id++)
+    {
+        //construct reverse sequence
+        SEXP _single_indel_info(indel_info[indel_id]);
+        Rcpp::List single_indel_info(_single_indel_info);
+        SEXP _inserted_sequence(single_indel_info["inserted_sequence"]);
+        SEXP _insertion_len(single_indel_info["insertion_len"]);
+        IntegerVector R_inserted_sequence(_inserted_sequence);
+        int insertion_len = as<int>(_insertion_len);
+        int seq_len = R_inserted_sequence.size();
+
+        if ((seq_len - insertion_len) % 2 != 0)
+        {
+            throw std::length_error("Long sequence should have equal length on both sizes of insertion.");
+        }
+        // change the sequence to be indexed by 0
+        NumericVector inserted_sequence(seq_len);
+        for (int i = 0; i < inserted_sequence.size(); ++i)
+        {
+            inserted_sequence[i] = R_inserted_sequence[i] - 1;
+        }
+
+        // for each motif
+        for (int motif_id = 0; motif_id < n_motifs; motif_id++)
+        {
+            SEXP _pwm(pwms[motif_id]);
+            NumericMatrix pwm(_pwm);
+            int motif_len = pwm.nrow();
+            rowwise_l1_normalize(pwm, tol);
+
+            if (2 * motif_len + insertion_len - 2 > seq_len)
+            {
+                throw std::length_error("Inserted sequence does not have enough length.");
+            }
+
+            IntegerVector long_seq(2 * motif_len + insertion_len - 2);
+            IntegerVector short_seq(2 * motif_len - 2);
+
+            int offset = (seq_len - long_seq.size()) / 2;
+            for (int i = 0; i < long_seq.size(); ++i)
+            {
+                long_seq[i] = inserted_sequence[i + offset];
+                if (i < motif_len - 1)
+                {
+                    short_seq[i] = long_seq[i];
+                }
+                else if (i >= motif_len - 1 + insertion_len)
+                {
+                    short_seq[i - insertion_len] = inserted_sequence[i + offset];
+                }
+            }
+
+            SequenceScores long_seq_scores = comp_seq_scores(pwm, long_seq);
+            SequenceScores short_seq_scores = comp_seq_scores(pwm, short_seq);
+
+            if (long_seq_scores.best_match_pos > 0)
+            {
+                match_pos_long(indel_id, motif_id) = long_seq_scores.best_match_pos + offset;
+            }
+            else
+            {
+                match_pos_long(indel_id, motif_id) = long_seq_scores.best_match_pos - offset;
+            }
+            if (short_seq_scores.best_match_pos > 0)
+            {
+                match_pos_short(indel_id, motif_id) = short_seq_scores.best_match_pos + offset;
+            }
+            else
+            {
+                match_pos_short(indel_id, motif_id) = short_seq_scores.best_match_pos - offset;
+            }
+
+            switch (loglik_type)
+            {
+            case LoglikType::median:
+                log_lik_short(indel_id, motif_id) = short_seq_scores.median_log_lik;
+                log_lik_long(indel_id, motif_id) = long_seq_scores.median_log_lik;
+                log_lik_ratio(indel_id, motif_id) = long_seq_scores.median_log_lik - short_seq_scores.median_log_lik;
+            case LoglikType::mean:
+                log_lik_short(indel_id, motif_id) = short_seq_scores.mean_log_lik;
+                log_lik_long(indel_id, motif_id) = long_seq_scores.mean_log_lik;
+                log_lik_ratio(indel_id, motif_id) = long_seq_scores.mean_log_lik - short_seq_scores.mean_log_lik;
+            default:
+                log_lik_short(indel_id, motif_id) = short_seq_scores.max_log_lik;
+                log_lik_long(indel_id, motif_id) = long_seq_scores.max_log_lik;
+                log_lik_ratio(indel_id, motif_id) = long_seq_scores.max_log_lik - short_seq_scores.max_log_lik;
+            }
+        }
+    }
+
+    Rcpp::List ret = Rcpp::List::create(
+		Rcpp::Named("match_pos_short") = match_pos_short,
+		Rcpp::Named("match_pos_long") = match_pos_long,
+		Rcpp::Named("log_lik_ratio") = log_lik_ratio,
+		Rcpp::Named("log_lik_short") = log_lik_short,
+		Rcpp::Named("log_lik_long") = log_lik_long
+    );
+    return (wrap(ret));
+}
+
+/*
+Compute the probability that a random sequence can get a score higher than 'score'.
+@arg mc_param The Markov chain parameters.
+@arg mat_d The D matrix to induce score change.
+@arg insertion_len An integer for the length of insertion.
+@arg pwm The position weight matrix, with 4 columns corresponding to A, C, G, T.
+@arg scores A matrix with 2 columns, with each column corresponding to one sequence.
+@arg pval_ratio A vector for the p-value ratios.
+@arg score_percentile The score percentile used to generate the importance sampling distribution.
+@arg sample_size Importance sampling sample size.
+@arg loglik_type The enum type for max, mean or median.
+@return A list containing two elements:
+score contains the p-values for score differences;
+rank contains the rank p-values.
+*/
+SEXP p_value_change_indel(
+    SEXP _trans_mat,
+    SEXP _stat_dist,
+    SEXP _mat_d,
+    SEXP _insertion_len,
+    SEXP _pwm,
+    SEXP _adj_pwm,
+    SEXP _scores,
+    SEXP _pval_ratio,
+    SEXP _score_percentile,
+    SEXP _sample_size,
+    SEXP _loglik_type
+) {
+    NumericMatrix trans_mat(_trans_mat);
+    NumericVector stat_dist(_stat_dist);
+    MarkovChainParam mc_param={stat_dist,trans_mat};
+    NumericMatrix mat_d(_mat_d);
+    int insertion_len=as<int>(_insertion_len);
+    NumericMatrix pwm(_pwm);
+    NumericMatrix adj_pwm(_adj_pwm);
+    NumericVector scores(_scores);
+    NumericVector pval_ratio(_pval_ratio);
+    double score_percentile=as<double>(_score_percentile);
+    int sample_size=as<int>(_sample_size);
+    LoglikType loglik_type=static_cast<LoglikType>(as<int>(_loglik_type));;
+
     NumericMatrix p_values(scores.size(), 4);
     NumericVector sample_score(5);
 
@@ -98,7 +244,7 @@ Rcpp::List p_value_change_indel(
     Rcpp::List ret = Rcpp::List::create(
         Rcpp::Named("score") = pval_loglik,
         Rcpp::Named("rank") = pval_rank);
-    return (ret);
+    return (wrap(ret));
 }
 
 /* Bisect to find the optimal theta based on a target score.
