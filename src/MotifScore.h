@@ -28,14 +28,13 @@ double bidir_pwm_log_prob(NumericMatrix, IntegerVector, int);
 RcppExport SEXP transition_matrix(SEXP);
 
 NumericMatrix p_value(
-  NumericMatrix,
-  NumericVector,
-  NumericMatrix,
-  NumericVector,
-  double,
-  int,
-  LoglikType
-);
+    NumericMatrix,
+    NumericVector,
+    NumericMatrix,
+    NumericVector,
+    double,
+    int,
+    LoglikType);
 double func_delta(NumericMatrix, NumericVector, NumericMatrix, double);
 double find_theta(NumericMatrix, NumericVector, NumericMatrix, double);
 IntegerVector importance_sample(NumericMatrix, NumericVector, NumericMatrix, NumericMatrix, double);
@@ -49,41 +48,37 @@ RcppExport SEXP test_importance_sample(SEXP, SEXP, SEXP, SEXP, SEXP);
 RcppExport SEXP test_compute_sample_score(SEXP, SEXP, SEXP, SEXP);
 
 Rcpp::List p_value_change(
-  NumericMatrix,
-  NumericMatrix,
-  NumericMatrix,
-  NumericVector,
-  NumericMatrix,
-  NumericVector,
-  NumericVector,
-  double,
-  int,
-  LoglikType
-);
+    NumericMatrix,
+    NumericMatrix,
+    NumericMatrix,
+    NumericVector,
+    NumericMatrix,
+    NumericVector,
+    NumericVector,
+    double,
+    int,
+    LoglikType);
 double func_delta_change(NumericMatrix, NumericMatrix, double);
 double find_theta_change(NumericMatrix, NumericMatrix, double);
 IntegerVector importance_sample_change(NumericMatrix, NumericVector, NumericMatrix, NumericMatrix, double);
 NumericVector compute_sample_score_change(
-  NumericMatrix,
-  NumericMatrix,
-  NumericMatrix,
-  IntegerVector,
-  NumericVector,
-  NumericMatrix,
-  int,
-  double,
-  LoglikType
-);
+    NumericMatrix,
+    NumericMatrix,
+    NumericMatrix,
+    IntegerVector,
+    NumericVector,
+    NumericMatrix,
+    int,
+    double,
+    LoglikType);
 double find_percentile_change(NumericVector, double);
 NumericMatrix comp_empirical_p_value(NumericVector, NumericVector, NumericMatrix);
 RcppExport SEXP test_find_percentile_change(SEXP, SEXP);
 RcppExport SEXP compute_p_value_change(
-  SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP
-);
+    SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP);
 RcppExport SEXP test_find_theta_change(SEXP, SEXP, SEXP);
 RcppExport SEXP test_func_delta_change(SEXP, SEXP, SEXP);
 RcppExport SEXP test_importance_sample_change(SEXP, SEXP, SEXP, SEXP, SEXP);
 RcppExport SEXP test_compute_sample_score_change(SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP);
-
 
 #endif
