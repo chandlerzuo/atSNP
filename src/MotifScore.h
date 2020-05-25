@@ -34,6 +34,7 @@ NumericMatrix p_value(
     NumericVector,
     double,
     int,
+    int,
     LoglikType);
 double func_delta(NumericMatrix, NumericVector, NumericMatrix, double);
 double find_theta(NumericMatrix, NumericVector, NumericMatrix, double);
@@ -41,7 +42,7 @@ IntegerVector importance_sample(NumericMatrix, NumericVector, NumericMatrix, Num
 NumericVector compute_sample_score(NumericMatrix, IntegerVector, int, double);
 double find_percentile(NumericVector, double);
 RcppExport SEXP test_find_percentile(SEXP, SEXP);
-RcppExport SEXP compute_p_values(SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP);
+RcppExport SEXP compute_p_values(SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP);
 RcppExport SEXP test_find_theta(SEXP, SEXP, SEXP, SEXP);
 RcppExport SEXP test_func_delta(SEXP, SEXP, SEXP, SEXP);
 RcppExport SEXP test_importance_sample(SEXP, SEXP, SEXP, SEXP, SEXP);

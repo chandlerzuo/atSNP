@@ -1,4 +1,4 @@
-#include "MotifScore.h"
+#include "ImportanceSample.h"
 
 /*
 Reference: Hock Peng Chan et al.(2010). Importance sampling of word patterns in DNA and protein sequences. Journal of computational biology, 17(12).
@@ -12,6 +12,11 @@ Compute the probability that a random sequence can get a score higher than 'scor
 @arg scores A vector of log-lik scores from both alleles.
 @arg theta A float parameter used to construct the importance sampling distribution.
 @arg n_sample An integer for the number of Monte Carlo examples.
+@arg seq_len An integer for the sequence length. This should be
+	SNP: motif length *2 - 1 for SNP;
+	Shorter sequence in Indel: 2 * motif length - 2;
+	Longer sequence in Indel: 2 * motif length - 2 + insertion_length.
+for the longer sequence in Indel.
 @arg loglik_type The enum type for max, mean or median.
 @return A matrix with 8 columns:
   Column 1-2 are simple estimates of p-values and their variances.
@@ -26,65 +31,32 @@ NumericMatrix p_value(
 	NumericVector scores,
 	double theta,
 	int n_sample,
+	int seq_len,
 	LoglikType loglik_type)
 {
 	NumericMatrix p_values(scores.size(), 8);
 
 	double tol = 1e-10;
 	int motif_len = pwm.nrow();
-	NumericMatrix delta(4, motif_len * 2 - 1);
-	IntegerVector sample_vec(2 * motif_len - 1);
-	IntegerVector sample(2 * motif_len);
+	IntegerVector sample_vec(seq_len);
+	IntegerVector sample(seq_len + 1);
 	NumericVector sample_score(5);
+
+	if (seq_len < motif_len)
+	{
+		throw std::length_error("Sequence length cannot be smaller than motif length.");
+	}
 
 	for (int i = 0; i < 4; i++)
 		for (int m = 0; m < motif_len; m++)
 			if (pwm(m, i) < tol)
 				pwm(m, i) = tol;
-	for (int i = 0; i < 4; i++)
-	{
-		delta(i, 2 * motif_len - 2) = 1;
-		if (theta < 0)
-		{
-			delta(i, 2 * motif_len - 2) = 1 / pow(pwm(motif_len - 1, i), -theta);
-		}
-		else
-		{
-			delta(i, 2 * motif_len - 2) = pow(pwm(motif_len - 1, i), theta);
-		}
-	}
-	// Formula (A.4)
-	for (int m = 2 * motif_len - 3; m >= 0; m--)
-	{
-		for (int i = 0; i < 4; i++)
-		{
-			delta(i, m) = 0;
-			for (int j = 0; j < 4; j++)
-			{
-				delta(i, m) += trans_mat(i, j) * delta(j, m + 1);
-			}
-			if (m >= motif_len - 1)
-			{
-				if (theta < 0)
-				{
-					delta(i, m) /= pow(pwm(m - motif_len + 1, i), -theta);
-				}
-				else
-				{
-					delta(i, m) *= pow(pwm(m - motif_len + 1, i), theta);
-				}
-			}
-			if (delta(i, m) < tol)
-			{
-				delta(i, m) = tol;
-			}
-		}
-	}
 
+	NumericMatrix delta = gen_utility_matrix(pwm, trans_mat, seq_len, theta);
 	double norm_const = 0;
 	for (int i = 0; i < 4; i++)
 	{
-		for (int j = 0; j < motif_len; j++)
+		for (int j = 0; j < seq_len - motif_len + 1; j++)
 		{
 			norm_const += stat_dist[i] * delta(i, j);
 		}
@@ -106,7 +78,7 @@ NumericMatrix p_value(
 		{
 			sample_vec[j] = sample[j];
 		}
-		sample_score = compute_sample_score(pwm, sample_vec, sample[2 * motif_len - 1], theta);
+		sample_score = compute_sample_score(pwm, sample_vec, sample[seq_len], theta);
 		mean_sample += sample_score[loglik_type];
 		wei = norm_const / sample_score[3];
 		wei_cond = norm_const / sample_score[4] / motif_len;
@@ -176,51 +148,7 @@ double func_delta(NumericMatrix pwm, NumericVector stat_dist, NumericMatrix tran
 	int motif_len = pwm.nrow();
 	double tol = 1e-10;
 
-	NumericMatrix delta(4, motif_len * 2 - 1);
-
-	for (int i = 0; i < 4; i++)
-		for (int m = 0; m < motif_len; m++)
-			if (pwm(m, i) < tol)
-				pwm(m, i) = tol;
-	for (int i = 0; i < 4; i++)
-	{
-		delta(i, 2 * motif_len - 2) = 1;
-		if (theta < 0)
-		{
-			delta(i, 2 * motif_len - 2) = 1 / pow(pwm(motif_len - 1, i), -theta);
-		}
-		else
-		{
-			delta(i, 2 * motif_len - 2) = pow(pwm(motif_len - 1, i), theta);
-		}
-	}
-	// Formula (A.4)
-	for (int m = 2 * motif_len - 3; m >= 0; m--)
-	{
-		for (int i = 0; i < 4; i++)
-		{
-			delta(i, m) = 0;
-			for (int j = 0; j < 4; j++)
-			{
-				delta(i, m) += trans_mat(i, j) * delta(j, m + 1);
-			}
-			if (m >= motif_len - 1)
-			{
-				if (theta < 0)
-				{
-					delta(i, m) /= pow(pwm(m - motif_len + 1, i), -theta);
-				}
-				else
-				{
-					delta(i, m) *= pow(pwm(m - motif_len + 1, i), theta);
-				}
-			}
-			if (delta(i, m) < tol)
-			{
-				delta(i, m) = tol;
-			}
-		}
-	}
+	NumericMatrix delta = gen_utility_matrix(pwm, trans_mat, 2 * motif_len - 1, theta);
 
 	double cst = 0;
 	for (int i = 0; i < 4; i++)
@@ -266,36 +194,22 @@ double find_theta(NumericMatrix pwm, NumericVector stat_dist, NumericMatrix tran
 IntegerVector importance_sample(NumericMatrix delta, NumericVector stat_dist, NumericMatrix trans_mat, NumericMatrix pwm, double theta)
 {
 	int motif_len = pwm.nrow();
+	int seq_len = delta.ncol();
 	// compute the sampling distribution for each coordinate
 	// sample a random vector
 	RNGScope scope;
-	NumericVector rv = runif(2 * motif_len);
+	NumericVector rv = runif(seq_len + 1);
 	// note: the last digit is for sampling the start position
 	// sampling the starting position of the motif
-	double prob_stat[motif_len];
-	for (int i = 0; i < motif_len; i++)
-	{
-		prob_stat[motif_len - 1 - i] = 0;
-		for (int j = 0; j < 4; j++)
-		{
-			prob_stat[motif_len - i - 1] += stat_dist[j] * delta(j, i);
-		}
-		if (i > 0)
-			prob_stat[i] += prob_stat[i - 1];
-	}
+	NumericVector prob_start_pos = gen_prob_start_pos(delta, motif_len, stat_dist);
 
-	rv[2 * motif_len - 1] *= prob_stat[motif_len - 1];
-	int start_pos = 0;
-	while (rv[2 * motif_len - 1] > prob_stat[start_pos])
-	{
-		start_pos++;
-	}
+	int start_pos = sample_discrete(rv[seq_len], prob_start_pos);
 	// the subsequence of length motif_len starting from start_pos follows the importance sampling distribution
 	// the rest of the subsequence follows the prior distribution
-	IntegerVector sample_vec(motif_len * 2);
-	sample_vec[motif_len * 2 - 1] = start_pos;
+	IntegerVector sample_vec(seq_len + 1);
+	sample_vec[seq_len] = start_pos;
 
-	for (int i = 0; i < 2 * motif_len - 1; i++)
+	for (int i = 0; i < seq_len; i++)
 	{
 		double cond_prob[4];
 		for (int j = 0; j < 4; j++)
@@ -308,9 +222,9 @@ IntegerVector importance_sample(NumericMatrix delta, NumericVector stat_dist, Nu
 			{
 				cond_prob[j] = trans_mat(sample_vec[i - 1], j);
 			}
-			if (motif_len - 1 - start_pos + i < motif_len * 2 - 1)
+			if (i - start_pos < motif_len)
 			{
-				cond_prob[j] *= delta(j, motif_len - 1 - start_pos + i);
+				cond_prob[j] *= delta(j, seq_len - motif_len - start_pos + i);
 			}
 			if (j > 0)
 			{
@@ -334,7 +248,7 @@ NumericVector compute_sample_score(NumericMatrix pwm, IntegerVector sample_vec, 
 	// compute the weight = prior density / importance sampling density
 	// NOTE: must use the score based on the true start_pos to compute the weight
 	double adj_score = 0;
-	for (int s = 0; s < pwm.nrow(); s++)
+	for (int s = 0; s + pwm.nrow() - 1 < sample_vec.size(); s++)
 	{
 		adj_score += exp(theta * pwm_log_prob(pwm, sample_vec, s));
 	}
@@ -409,6 +323,94 @@ double find_percentile(NumericVector scores, double p)
 	return (heap[0]);
 }
 
+/* Generate a utility matrix delta for importance sampling.
+Dimension of delta: 4 * seq_len.
+delta(i,seq_len-1) = pwm(motif_len-1,i) ^ theta,
+delta(i, j) = [sum_i' trans_mat(i, i')*delta(i, j+1)] * pwm(j-seq_len+motif_len) ^ theta,
+when seq_len-motif_len <= j < seq_len-1;
+delta(i, j) = [sum_i' trans_mat(i, i')*delta(i, j+1)] * pwm(j-seq_len+motif_len) ^ theta,
+when 0 <= j <= seq_len-motif_len-1.
+*/
+NumericMatrix gen_utility_matrix(NumericMatrix pwm, NumericMatrix trans_mat, int seq_len, double theta)
+{
+	NumericMatrix delta(4, seq_len);
+	int motif_len = pwm.nrow();
+	double tol = 1e-10;
+	for (int i = 0; i < 4; i++)
+	{
+		delta(i, seq_len - 1) = 1;
+		if (theta < 0)
+		{
+			delta(i, seq_len - 1) = 1 / pow(pwm(motif_len - 1, i), -theta);
+		}
+		else
+		{
+			delta(i, seq_len - 1) = pow(pwm(motif_len - 1, i), theta);
+		}
+	}
+	// Formula (A.4)
+	for (int m = seq_len - 2; m >= 0; m--)
+	{
+		for (int i = 0; i < 4; i++)
+		{
+			delta(i, m) = 0;
+			for (int j = 0; j < 4; j++)
+			{
+				delta(i, m) += trans_mat(i, j) * delta(j, m + 1);
+			}
+			int pos_in_motif = m - seq_len + motif_len;
+			if (pos_in_motif >= 0)
+			{
+				if (theta < 0)
+				{
+					delta(i, m) /= pow(pwm(pos_in_motif, i), -theta);
+				}
+				else
+				{
+					delta(i, m) *= pow(pwm(pos_in_motif, i), theta);
+				}
+			}
+			if (delta(i, m) < tol)
+			{
+				delta(i, m) = tol;
+			}
+		}
+	}
+	return delta;
+}
+
+NumericVector gen_prob_start_pos(NumericMatrix delta, int motif_len, NumericVector stat_dist)
+{
+	int seq_len = delta.ncol();
+	NumericVector prob_start_pos(seq_len - motif_len + 1);
+	for (int i = 0; i <= seq_len - motif_len; i++)
+	{
+		prob_start_pos[i] = 0;
+		for (int j = 0; j < 4; j++)
+		{
+			prob_start_pos[i] += stat_dist[j] * delta(j, seq_len - motif_len - i);
+		}
+	}
+	return prob_start_pos;
+}
+
+RcppExport SEXP test_gen_utility_matrix(SEXP _pwm, SEXP _trans_mat, SEXP _seq_len, SEXP _theta)
+{
+	NumericMatrix pwm(_pwm);
+	NumericMatrix trans_mat(_trans_mat);
+	int seq_len = as<int>(_seq_len);
+	double theta = as<double>(_theta);
+	return wrap(gen_utility_matrix(pwm, trans_mat, seq_len, theta));
+}
+
+RcppExport SEXP test_gen_prob_start_pos(SEXP _delta, SEXP _motif_len, SEXP _stat_dist)
+{
+	NumericMatrix delta(_delta);
+	int motif_len = as<int>(_motif_len);
+	NumericVector stat_dist(_stat_dist);
+	return wrap(gen_prob_start_pos(delta, motif_len, stat_dist));
+}
+
 SEXP test_find_percentile(SEXP _scores, SEXP _p)
 {
 	NumericVector scores(_scores);
@@ -417,13 +419,14 @@ SEXP test_find_percentile(SEXP _scores, SEXP _p)
 	return (wrap(ret));
 }
 
-SEXP compute_p_values(
+RcppExport SEXP compute_p_values(
 	SEXP _pwm,
 	SEXP _stat_dist,
 	SEXP _trans_mat,
 	SEXP _scores,
 	SEXP _theta,
 	SEXP _n_sample,
+	SEXP _seq_len,
 	SEXP _loglik_type)
 {
 	NumericMatrix pwm(_pwm);
@@ -431,10 +434,11 @@ SEXP compute_p_values(
 	NumericMatrix trans_mat(_trans_mat);
 	NumericVector scores(_scores);
 	double theta = as<double>(_theta);
-	double n_sample = as<int>(_n_sample);
+	int n_sample = as<int>(_n_sample);
+	int seq_len = as<int>(_seq_len);
 	LoglikType loglik_type = static_cast<LoglikType>(as<int>(_loglik_type));
 
-	return p_value(pwm, stat_dist, trans_mat, scores, theta, n_sample, loglik_type);
+	return p_value(pwm, stat_dist, trans_mat, scores, theta, n_sample, seq_len, loglik_type);
 }
 
 SEXP test_find_theta(SEXP _pwm, SEXP _stat_dist, SEXP _trans_mat, SEXP _score)

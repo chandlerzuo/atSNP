@@ -9,15 +9,18 @@ scores <- as.matrix(motif_scores$motif.scores[3:4, 4:5])
 score_diff <- abs(scores[, 2] - scores[, 1])
 
 pval_a <-
-  .Call("compute_p_values",
-        test_pwm,
-        snpInfo$prior,
-        snpInfo$transition,
-        scores,
-        0.15,
-        100,
-        0,
-        package="atSNP")
+  .Call(
+    "compute_p_values",
+    test_pwm,
+    snpInfo$prior,
+    snpInfo$transition,
+    scores,
+    0.15,
+    100,
+    2 * nrow(test_pwm) - 1,
+    0,
+    package = "atSNP"
+  )
 pval_ratio <-
   abs(log(pval_a[seq(nrow(scores)), 1]) - log(pval_a[seq(nrow(scores)) + nrow(scores), 1]))
 

@@ -7,22 +7,25 @@ score_diff <- abs(scores[, 2] - scores[, 1])
 
 
 pval_a <-
-  .Call("compute_p_values",
-        test_pwm,
-        snpInfo$prior,
-        snpInfo$transition,
-        scores,
-        0.15,
-        100,
-        0,
-        package="atSNP")
+  .Call(
+    "compute_p_values",
+    test_pwm,
+    snpInfo$prior,
+    snpInfo$transition,
+    scores,
+    0.15,
+    100,
+    2 * nrow(test_pwm) - 1,
+    0,
+    package = "atSNP"
+  )
 pval_ratio <-
   abs(log(pval_a[seq(nrow(scores)), 1]) - log(pval_a[seq(nrow(scores)) + nrow(scores), 1]))
 
 test_score <- test_pwm
 for (i in seq(nrow(test_score))) {
   for (j in seq(ncol(test_score))) {
-    test_score[i, j] <- exp(mean(log(test_pwm[i, j] / test_pwm[i,-j])))
+    test_score[i, j] <- exp(mean(log(test_pwm[i, j] / test_pwm[i, -j])))
   }
 }
 
@@ -39,8 +42,8 @@ drawonesample <- function(theta) {
            replace = TRUE,
            prob = snpInfo$prior)
   delta <- adj_mat
-  delta[motif_len - id + 1,] <-
-    test_score[motif_len - id + 1,] ^ theta
+  delta[motif_len - id + 1, ] <-
+    test_score[motif_len - id + 1, ] ^ theta
   sample[id - 1 + seq(motif_len)] <-
     apply(delta, 1, function(x)
       sample(seq(4), 1, prob = x))
@@ -48,8 +51,8 @@ drawonesample <- function(theta) {
   sc <- 0
   for (s in seq(motif_len)) {
     delta <- adj_mat
-    delta[motif_len + 1 - s,] <-
-      test_score[motif_len + 1 - s,] ^ theta
+    delta[motif_len + 1 - s, ] <-
+      test_score[motif_len + 1 - s, ] ^ theta
     sc <-
       sc + prod(delta[cbind(seq(motif_len), sample[s - 1 + seq(motif_len)])]) /
       prod(snpInfo$prior[sample[s - 1 + seq(motif_len)]])

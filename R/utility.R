@@ -2,7 +2,7 @@ LOGLIK_TYPES <- c("max", "mean", "median")
 
 pval_with_less_var <- function(pval_mat) {
   if (is.matrix(pval_mat)) {
-    # In R, FALSE & NULL = NULL. 
+    # In R, FALSE & NULL = NULL.
     # We therefore need to separate two conditions.
     if (nrow(pval_mat) > 1) {
       id <- apply(pval_mat[, c(2, 4)], 1, which.min)
@@ -143,7 +143,7 @@ match_subseq_par <-
     } else {
       ids <- (par.k * (par.ncores - 1) + 1):length(par.snpids)
     }
-    motif.scores_i <- par.motif.scores[snpid %in% par.snpids[ids], ]
+    motif.scores_i <- par.motif.scores[snpid %in% par.snpids[ids],]
     setkey(motif.scores_i, motif)
     motif.scores_i <- par.motif.tbl[motif.scores_i]
     setkey(motif.scores_i, snpid, snpbase)
@@ -248,7 +248,7 @@ p_values_for_motif <-
     } else if (par.loglik.type == "mean") {
       scores <- cbind(par.motif.scores$mean_log_lik_ref[rowids],
                       par.motif.scores$mean_log_lik_snp[rowids])
-    } else if  (par.loglik.type == "median") {
+    } else if (par.loglik.type == "median") {
       scores <- cbind(par.motif.scores$median_log_lik_ref[rowids],
                       par.motif.scores$median_log_lik_snp[rowids])
     } else {
@@ -257,13 +257,13 @@ p_values_for_motif <-
     # NOTE: Regardless of the loglik type, we always use max loglik scores
     # as the basis to construct importance sampling distribution.
     scores.mle <- cbind(par.motif.scores$log_lik_ref[rowids],
-                    par.motif.scores$log_lik_snp[rowids])
+                        par.motif.scores$log_lik_snp[rowids])
     pwm <- par.motif.lib[[motif.id]]
     pwm[pwm < 1e-10] <- 1e-10
     wei.mat <- pwm
     for (i in seq(nrow(wei.mat))) {
       for (j in seq(ncol(wei.mat))) {
-        wei.mat[i, j] <- exp(mean(log(pwm[i, j] / pwm[i, -j])))
+        wei.mat[i, j] <- exp(mean(log(pwm[i, j] / pwm[i,-j])))
       }
     }
     
@@ -297,7 +297,8 @@ p_values_for_motif <-
     }
     stopifnot(length(allp) == length(score.p))
     
-    pval_a <- pval_cond <- matrix(1, nrow = nrow(scores.mle), ncol = 4)
+    pval_a <-
+      pval_cond <- matrix(1, nrow = nrow(scores.mle), ncol = 4)
     for (l in seq_along(allp)) {
       if (l == 1) {
         score.upp = max(scores.mle) + 1
@@ -311,7 +312,8 @@ p_values_for_motif <-
       } else {
         score.low = score.p[l + 1]
       }
-      compute.id <- which(scores.mle < score.upp & scores.mle >= score.low)
+      compute.id <-
+        which(scores.mle < score.upp & scores.mle >= score.low)
       if (length(compute.id) == 0) {
         next
       }
@@ -342,6 +344,7 @@ p_values_for_motif <-
             scores[compute.id],
             theta,
             n_sample,
+            2 * nrow(pwm) - 1,
             loglik_type,
             PACKAGE = "atSNP"
           )
@@ -355,6 +358,7 @@ p_values_for_motif <-
             scores[compute.id],
             theta,
             100,
+            2 * nrow(pwm) - 1,
             loglik_type,
             PACKAGE = "atSNP"
           )
@@ -418,9 +422,13 @@ p_values_for_motif <-
       ) + 1) / 10, 0.9 + seq(9) / 100)))
     if (round(quantile(scores.mle.diff, 0.1) + 1) < round(quantile(scores.mle.diff, 0.9))) {
       score.p <- c(score.p,
-                   seq(round(quantile(scores.mle.diff, 0.1) + 1),
-                       round(quantile(scores.mle.diff, 0.9)),
-                       by = 2))
+                   seq(round(quantile(
+                     scores.mle.diff, 0.1
+                   ) + 1),
+                   round(quantile(
+                     scores.mle.diff, 0.9
+                   )),
+                   by = 2))
     }
     score.p <- rev(sort(unique(score.p)))
     
@@ -438,7 +446,8 @@ p_values_for_motif <-
         score.low <- score.p[l + 1]
       }
       compute.id <-
-        which(scores.mle.diff < score.upp & scores.mle.diff >= score.low)
+        which(scores.mle.diff < score.upp &
+                scores.mle.diff >= score.low)
       if (length(compute.id) == 0) {
         next
       }
@@ -483,12 +492,12 @@ p_values_for_motif <-
       pval_diff.new <- pval_with_less_var(pval_diff.new$score)
       update.id <-
         which(pval_diff.new[, 2] < pval_diff[compute.id, 2])
-      pval_diff[compute.id[update.id], ] <-
-        pval_diff.new[update.id, ]
+      pval_diff[compute.id[update.id],] <-
+        pval_diff.new[update.id,]
       update.id <-
         which(pval_rank.new[, 2] < pval_rank[compute.id, 2])
-      pval_rank[compute.id[update.id], ] <-
-        pval_rank.new[update.id, ]
+      pval_rank[compute.id[update.id],] <-
+        pval_rank.new[update.id,]
     }
     
     ## force the monotonicity
@@ -523,7 +532,7 @@ p_values_for_motif <-
       print(
         ggplot(
           aes(x = score, y = p.value),
-          data = plotdat[plotdat$Allele == "ref", ],
+          data = plotdat[plotdat$Allele == "ref",],
           environment = localenv
         ) + geom_point() + scale_y_log10(breaks = 10 ^ seq(-8, 0)) + geom_errorbar(aes(
           ymax = p.value + sqrt(var), ymin = p.value - sqrt(var)
@@ -534,7 +543,7 @@ p_values_for_motif <-
       print(
         ggplot(
           aes(x = score, y = p.value),
-          data = plotdat[plotdat$Allele == "snp", ],
+          data = plotdat[plotdat$Allele == "snp",],
           environment = localenv
         ) + geom_point() + scale_y_log10(breaks = 10 ^ seq(-8, 0)) + geom_errorbar(aes(
           ymax = p.value + sqrt(var), ymin = p.value - sqrt(var)
