@@ -1,5 +1,17 @@
 LOGLIK_TYPES <- c("max", "mean", "median")
 
+#' @name pval_with_less_var
+#' @title Select p-value estimates with less variance.
+#' @description Importance sampling based p-values can be computed in two forms
+#'  A) \sum weight_i*X_i / N; B) \sum weight_i*X_i / \sum_weight_i.
+#'  This util function picks the better form.
+#' @param pval_mat A matrix with 4 columns.
+#' Column 1 uses form A
+#' Column 2 is the estimated variance of Column 1
+#' Column 3 uses form B
+#' Column 4 is the estimated variance of Column 3.
+#' @return A matrix of 2 columns. Column 1 is the p-value estimate. Column 2 is the estimated variance.
+#' @export
 pval_with_less_var <- function(pval_mat) {
   if (is.matrix(pval_mat)) {
     # In R, FALSE & NULL = NULL.
@@ -143,7 +155,7 @@ match_subseq_par <-
     } else {
       ids <- (par.k * (par.ncores - 1) + 1):length(par.snpids)
     }
-    motif.scores_i <- par.motif.scores[snpid %in% par.snpids[ids],]
+    motif.scores_i <- par.motif.scores[snpid %in% par.snpids[ids], ]
     setkey(motif.scores_i, motif)
     motif.scores_i <- par.motif.tbl[motif.scores_i]
     setkey(motif.scores_i, snpid, snpbase)
@@ -263,7 +275,7 @@ p_values_for_motif <-
     wei.mat <- pwm
     for (i in seq(nrow(wei.mat))) {
       for (j in seq(ncol(wei.mat))) {
-        wei.mat[i, j] <- exp(mean(log(pwm[i, j] / pwm[i,-j])))
+        wei.mat[i, j] <- exp(mean(log(pwm[i, j] / pwm[i, -j])))
       }
     }
     
@@ -319,12 +331,15 @@ p_values_for_motif <-
       }
       if (l < length(allp) + 1) {
         theta <-
-          .Call("test_find_theta",
-                pwm,
-                par.prior,
-                par.transition,
-                score.p[l],
-                PACKAGE = "atSNP")
+          .Call(
+            "test_find_theta",
+            pwm,
+            par.prior,
+            par.transition,
+            score.p[l],
+            2 * nrow(pwm) - 1,
+            PACKAGE = "atSNP"
+          )
       } else {
         theta <- 0
       }
@@ -492,12 +507,12 @@ p_values_for_motif <-
       pval_diff.new <- pval_with_less_var(pval_diff.new$score)
       update.id <-
         which(pval_diff.new[, 2] < pval_diff[compute.id, 2])
-      pval_diff[compute.id[update.id],] <-
-        pval_diff.new[update.id,]
+      pval_diff[compute.id[update.id], ] <-
+        pval_diff.new[update.id, ]
       update.id <-
         which(pval_rank.new[, 2] < pval_rank[compute.id, 2])
-      pval_rank[compute.id[update.id],] <-
-        pval_rank.new[update.id,]
+      pval_rank[compute.id[update.id], ] <-
+        pval_rank.new[update.id, ]
     }
     
     ## force the monotonicity
@@ -532,7 +547,7 @@ p_values_for_motif <-
       print(
         ggplot(
           aes(x = score, y = p.value),
-          data = plotdat[plotdat$Allele == "ref",],
+          data = plotdat[plotdat$Allele == "ref", ],
           environment = localenv
         ) + geom_point() + scale_y_log10(breaks = 10 ^ seq(-8, 0)) + geom_errorbar(aes(
           ymax = p.value + sqrt(var), ymin = p.value - sqrt(var)
@@ -543,7 +558,7 @@ p_values_for_motif <-
       print(
         ggplot(
           aes(x = score, y = p.value),
-          data = plotdat[plotdat$Allele == "snp",],
+          data = plotdat[plotdat$Allele == "snp", ],
           environment = localenv
         ) + geom_point() + scale_y_log10(breaks = 10 ^ seq(-8, 0)) + geom_errorbar(aes(
           ymax = p.value + sqrt(var), ymin = p.value - sqrt(var)

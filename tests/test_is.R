@@ -58,6 +58,7 @@ if (TRUE) {
           snpInfo$prior,
           trans_mat,
           delta,
+          2 * nrow(test_pwm) - 1,
           package = "atSNP")
   delta <- t(test_pwm ^ theta)
   delta <- cbind(matrix(
@@ -74,8 +75,7 @@ if (TRUE) {
         delta,
         snpInfo$prior,
         trans_mat,
-        test_pwm,
-        theta,
+        nrow(test_pwm),
         package = "atSNP"
       ))
     emp_freq1 <- get_freq(sample)

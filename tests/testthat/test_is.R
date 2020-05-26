@@ -61,6 +61,7 @@ test_that("Error: the scores for samples are not equivalent.", {
       snpInfo$prior,
       snpInfo$transition,
       delta,
+      2 * nrow(artifacts$pwm) - 1,
       package = "atSNP"
     )
   ## Use R code to generate a random sample
@@ -96,8 +97,7 @@ test_that("Error: the scores for samples are not equivalent.", {
         delta,
         snpInfo$prior,
         artifacts$snpInfo$transition,
-        artifacts$pwm,
-        theta,
+        nrow(artifacts$pwm),
         package = "atSNP"
       )
     start_pos <- sample_seq[sample_seq_len + 1]
@@ -135,6 +135,7 @@ test_that("Error: compute the normalizing constant.", {
       artifacts$snpInfo$prior,
       artifacts$snpInfo$transition,
       delta,
+      2 * nrow(artifacts$pwm) - 1,
       package = "atSNP"
     )
   ##
@@ -145,6 +146,7 @@ test_that("Error: compute the normalizing constant.", {
       artifacts$snpInfo$prior,
       artifacts$snpInfo$transition,
       theta,
+      2 * nrow(artifacts$pwm) - 1,
       package = "atSNP"
     )
   const.r <-
@@ -175,6 +177,7 @@ test_that("Error: the chosen pvalues should have the smaller variance.", {
         snpInfo$prior,
         artifacts$snpInfo$transition,
         quantile(c(scores), 1 - p),
+        2 * nrow(artifacts$pwm) - 1,
         package = "atSNP"
       )
     p_values <-

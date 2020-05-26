@@ -73,7 +73,7 @@ NumericMatrix p_value(
 	double wei_cond = 0, mean_wei_cond = 0, mean_wei_cond2 = 0;
 	for (int i = 0; i < n_sample; i++)
 	{
-		sample = importance_sample(delta, stat_dist, trans_mat, pwm, theta);
+		sample = importance_sample(delta, stat_dist, trans_mat, pwm.nrow());
 		for (int j = 0; j < sample.size() - 1; j++)
 		{
 			sample_vec[j] = sample[j];
@@ -143,17 +143,17 @@ NumericMatrix p_value(
 	return (p_values);
 }
 
-double func_delta(NumericMatrix pwm, NumericVector stat_dist, NumericMatrix trans_mat, double theta)
+double func_delta(NumericMatrix pwm, NumericVector stat_dist, NumericMatrix trans_mat, double theta, int seq_len)
 {
 	int motif_len = pwm.nrow();
 	double tol = 1e-10;
 
-	NumericMatrix delta = gen_utility_matrix(pwm, trans_mat, 2 * motif_len - 1, theta);
+	NumericMatrix delta = gen_utility_matrix(pwm, trans_mat, seq_len, theta);
 
 	double cst = 0;
 	for (int i = 0; i < 4; i++)
 	{
-		for (int j = 0; j < motif_len; j++)
+		for (int j = 0; j <= seq_len - motif_len; j++)
 		{
 			cst += stat_dist[i] * delta(i, j);
 		}
@@ -165,18 +165,18 @@ double func_delta(NumericMatrix pwm, NumericVector stat_dist, NumericMatrix tran
 /*
 Find the tilting paramter for the importance sampling distribution, using Equation (4.5).
 */
-double find_theta(NumericMatrix pwm, NumericVector stat_dist, NumericMatrix trans_mat, double score)
+double find_theta(NumericMatrix pwm, NumericVector stat_dist, NumericMatrix trans_mat, double score, int seq_len)
 {
 	double theta = 0;
-	double low_delta = log(func_delta(pwm, stat_dist, trans_mat, theta - 0.005));
-	double upp_delta = log(func_delta(pwm, stat_dist, trans_mat, theta + 0.005));
+	double low_delta = log(func_delta(pwm, stat_dist, trans_mat, theta - 0.005, seq_len));
+	double upp_delta = log(func_delta(pwm, stat_dist, trans_mat, theta + 0.005, seq_len));
 	if (upp_delta - low_delta < score * 0.01)
 	{
 		while (upp_delta - low_delta < score * 0.01 && theta < 1)
 		{
 			theta += 0.01;
 			low_delta = upp_delta;
-			upp_delta = log(func_delta(pwm, stat_dist, trans_mat, theta + 0.005));
+			upp_delta = log(func_delta(pwm, stat_dist, trans_mat, theta + 0.005, seq_len));
 		}
 	}
 	else
@@ -185,15 +185,14 @@ double find_theta(NumericMatrix pwm, NumericVector stat_dist, NumericMatrix tran
 		{
 			theta -= 0.01;
 			upp_delta = low_delta;
-			low_delta = log(func_delta(pwm, stat_dist, trans_mat, theta - 0.005));
+			low_delta = log(func_delta(pwm, stat_dist, trans_mat, theta - 0.005, seq_len));
 		}
 	}
 	return (theta);
 }
 
-IntegerVector importance_sample(NumericMatrix delta, NumericVector stat_dist, NumericMatrix trans_mat, NumericMatrix pwm, double theta)
+IntegerVector importance_sample(NumericMatrix delta, NumericVector stat_dist, NumericMatrix trans_mat, int motif_len)
 {
-	int motif_len = pwm.nrow();
 	int seq_len = delta.ncol();
 	// compute the sampling distribution for each coordinate
 	// sample a random vector
@@ -441,36 +440,37 @@ RcppExport SEXP compute_p_values(
 	return p_value(pwm, stat_dist, trans_mat, scores, theta, n_sample, seq_len, loglik_type);
 }
 
-SEXP test_find_theta(SEXP _pwm, SEXP _stat_dist, SEXP _trans_mat, SEXP _score)
+SEXP test_find_theta(SEXP _pwm, SEXP _stat_dist, SEXP _trans_mat, SEXP _score, SEXP _seq_len)
 {
 	NumericMatrix pwm(_pwm);
 	NumericVector stat_dist(_stat_dist);
 	NumericMatrix trans_mat(_trans_mat);
 	double score = as<double>(_score);
+	int seq_len = as<int>(_seq_len);
 
-	double ret = find_theta(pwm, stat_dist, trans_mat, score);
+	double ret = find_theta(pwm, stat_dist, trans_mat, score, seq_len);
 	return (wrap(ret));
 }
 
-SEXP test_func_delta(SEXP _pwm, SEXP _stat_dist, SEXP _trans_mat, SEXP _theta)
+SEXP test_func_delta(SEXP _pwm, SEXP _stat_dist, SEXP _trans_mat, SEXP _theta, SEXP _seq_len)
 {
 	NumericMatrix pwm(_pwm);
 	NumericVector stat_dist(_stat_dist);
 	NumericMatrix trans_mat(_trans_mat);
 	double theta = as<double>(_theta);
+	int seq_len = as<int>(_seq_len);
 
-	double ret = func_delta(pwm, stat_dist, trans_mat, theta);
+	double ret = func_delta(pwm, stat_dist, trans_mat, theta, seq_len);
 	return (wrap(ret));
 }
 
-SEXP test_importance_sample(SEXP _delta, SEXP _stat_dist, SEXP _trans_mat, SEXP _pwm, SEXP _theta)
+RcppExport SEXP test_importance_sample(SEXP _delta, SEXP _stat_dist, SEXP _trans_mat, SEXP _motif_len)
 {
 	NumericMatrix delta(_delta);
 	NumericVector stat_dist(_stat_dist);
 	NumericMatrix trans_mat(_trans_mat);
-	NumericMatrix pwm(_pwm);
-	double theta = as<double>(_theta);
-	return (wrap(importance_sample(delta, stat_dist, trans_mat, pwm, theta)));
+	int motif_len = as<int>(_motif_len);
+	return (wrap(importance_sample(delta, stat_dist, trans_mat, motif_len)));
 }
 
 SEXP test_compute_sample_score(SEXP _pwm, SEXP _sample_vec, SEXP _start_pos, SEXP _theta)

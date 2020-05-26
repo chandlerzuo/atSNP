@@ -35,7 +35,7 @@ private:
     void set_theta(double);
 };
 
-SEXP p_value_change_indel(
+RcppExport SEXP p_value_change_indel(
     SEXP,
     SEXP,
     SEXP,

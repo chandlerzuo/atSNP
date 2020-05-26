@@ -108,14 +108,17 @@ RcppExport SEXP comp_indel_motif_scores(
                 log_lik_short(indel_id, motif_id) = short_seq_scores.median_log_lik;
                 log_lik_long(indel_id, motif_id) = long_seq_scores.median_log_lik;
                 log_lik_ratio(indel_id, motif_id) = long_seq_scores.median_log_lik - short_seq_scores.median_log_lik;
+                break;
             case LoglikType::mean:
                 log_lik_short(indel_id, motif_id) = short_seq_scores.mean_log_lik;
                 log_lik_long(indel_id, motif_id) = long_seq_scores.mean_log_lik;
                 log_lik_ratio(indel_id, motif_id) = long_seq_scores.mean_log_lik - short_seq_scores.mean_log_lik;
+                break;
             default:
                 log_lik_short(indel_id, motif_id) = short_seq_scores.max_log_lik;
                 log_lik_long(indel_id, motif_id) = long_seq_scores.max_log_lik;
                 log_lik_ratio(indel_id, motif_id) = long_seq_scores.max_log_lik - short_seq_scores.max_log_lik;
+                break;
             }
         }
     }
@@ -145,7 +148,7 @@ Compute the probability that a random sequence can get a score higher than 'scor
 score contains the p-values for score differences;
 rank contains the rank p-values.
 */
-SEXP p_value_change_indel(
+RcppExport SEXP p_value_change_indel(
     SEXP _trans_mat,
     SEXP _stat_dist,
     SEXP _mat_d,
@@ -209,8 +212,7 @@ SEXP p_value_change_indel(
         weights(i, 1) = adj_weights.base;
     }
 
-    NumericMatrix pval_loglik(scores.size(), 3);
-    pval_loglik = comp_empirical_p_values(scores, weights(_, 0), score_diff);
+    NumericMatrix pval_loglik = comp_empirical_p_values(scores, weights(_, 0), score_diff);
 
     // compute the sample log ranks
     NumericMatrix pval_ratio_sam(sample_size, 1);

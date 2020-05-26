@@ -28,7 +28,7 @@ gen_mc_sequence <- function(prior, transition, sequence_len) {
           seq_len(dict_size),
           size = 1,
           replace = TRUE,
-          prob = transition[sample_seq[i - 1], ]
+          prob = transition[sample_seq[i - 1],]
         )
     }
   }
@@ -51,15 +51,28 @@ R_motif_score_max <- function(sample_seq, pwm) {
 }
 
 
+#' Find the log-lik score for the best matching subsequence to an PWM.
+R_motif_score_mean <- function(sample_seq, pwm) {
+  motif_len <- nrow(pwm)
+  return(max(c(mean(
+    vapply(seq(length(sample_seq) - motif_len + 1),
+           function(start_pos)
+             R_motif_score_subseq(sample_seq, pwm, start_pos, FALSE), 0)
+  ),
+  mean(
+    vapply(seq(length(sample_seq) - motif_len + 1),
+           function(start_pos)
+             R_motif_score_subseq(sample_seq, pwm, start_pos, TRUE), 0)
+  ))))
+}
+
 #' Find the log-lik score for a subsequence to an PWM.
 R_motif_score_subseq <-
   function(sample_seq, pwm, start_pos, reverse) {
     motif_len <- nrow(pwm)
     if (reverse) {
       ret <-
-        sum(log(pwm[cbind(seq(motif_len), (ncol(pwm) + 1 - rev(sample_seq))[
-          start_pos:(start_pos + motif_len - 1)])
-        ]))
+        sum(log(pwm[cbind(seq(motif_len), (ncol(pwm) + 1 - rev(sample_seq))[start_pos:(start_pos + motif_len - 1)])]))
       return(ret)
     }
     ret <-

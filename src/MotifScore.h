@@ -36,16 +36,16 @@ NumericMatrix p_value(
     int,
     int,
     LoglikType);
-double func_delta(NumericMatrix, NumericVector, NumericMatrix, double);
-double find_theta(NumericMatrix, NumericVector, NumericMatrix, double);
-IntegerVector importance_sample(NumericMatrix, NumericVector, NumericMatrix, NumericMatrix, double);
+double func_delta(NumericMatrix, NumericVector, NumericMatrix, double, int);
+double find_theta(NumericMatrix, NumericVector, NumericMatrix, double, int);
+IntegerVector importance_sample(NumericMatrix, NumericVector, NumericMatrix, int);
 NumericVector compute_sample_score(NumericMatrix, IntegerVector, int, double);
 double find_percentile(NumericVector, double);
 RcppExport SEXP test_find_percentile(SEXP, SEXP);
 RcppExport SEXP compute_p_values(SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP);
-RcppExport SEXP test_find_theta(SEXP, SEXP, SEXP, SEXP);
-RcppExport SEXP test_func_delta(SEXP, SEXP, SEXP, SEXP);
-RcppExport SEXP test_importance_sample(SEXP, SEXP, SEXP, SEXP, SEXP);
+RcppExport SEXP test_find_theta(SEXP, SEXP, SEXP, SEXP, SEXP);
+RcppExport SEXP test_func_delta(SEXP, SEXP, SEXP, SEXP, SEXP);
+RcppExport SEXP test_importance_sample(SEXP, SEXP, SEXP, SEXP);
 RcppExport SEXP test_compute_sample_score(SEXP, SEXP, SEXP, SEXP);
 
 Rcpp::List p_value_change(
