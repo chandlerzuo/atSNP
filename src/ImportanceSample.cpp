@@ -146,7 +146,6 @@ NumericMatrix p_value(
 double func_delta(NumericMatrix pwm, NumericVector stat_dist, NumericMatrix trans_mat, double theta, int seq_len)
 {
 	int motif_len = pwm.nrow();
-	double tol = 1e-10;
 
 	NumericMatrix delta = gen_utility_matrix(pwm, trans_mat, seq_len, theta);
 

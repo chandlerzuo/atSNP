@@ -7,7 +7,7 @@ Compute likelihood ratio scores for SNPs' effect on motif matching.
 @arg _indel_info A list object. Each element contains
 sequence: A vector for the long sequence;
 insertion_len: The interger value for the insertion length, which corresponds to the middle part of the sequence.
-@return A list of objects.
+@return A list of matrices where each row corresponds to an indel, and each column corresponds to a motif.
 */
 RcppExport SEXP comp_indel_motif_scores(
     SEXP _motif_library,
@@ -124,12 +124,11 @@ RcppExport SEXP comp_indel_motif_scores(
     }
 
     Rcpp::List ret = Rcpp::List::create(
-		Rcpp::Named("match_pos_short") = match_pos_short,
-		Rcpp::Named("match_pos_long") = match_pos_long,
-		Rcpp::Named("log_lik_ratio") = log_lik_ratio,
-		Rcpp::Named("log_lik_short") = log_lik_short,
-		Rcpp::Named("log_lik_long") = log_lik_long
-    );
+        Rcpp::Named("match_pos_short") = match_pos_short,
+        Rcpp::Named("match_pos_long") = match_pos_long,
+        Rcpp::Named("log_lik_ratio") = log_lik_ratio,
+        Rcpp::Named("log_lik_short") = log_lik_short,
+        Rcpp::Named("log_lik_long") = log_lik_long);
     return (wrap(ret));
 }
 
@@ -159,20 +158,21 @@ RcppExport SEXP p_value_change_indel(
     SEXP _pval_ratio,
     SEXP _score_percentile,
     SEXP _sample_size,
-    SEXP _loglik_type
-) {
+    SEXP _loglik_type)
+{
     NumericMatrix trans_mat(_trans_mat);
     NumericVector stat_dist(_stat_dist);
-    MarkovChainParam mc_param={stat_dist,trans_mat};
+    MarkovChainParam mc_param = {stat_dist, trans_mat};
     NumericMatrix mat_d(_mat_d);
-    int insertion_len=as<int>(_insertion_len);
+    int insertion_len = as<int>(_insertion_len);
     NumericMatrix pwm(_pwm);
     NumericMatrix adj_pwm(_adj_pwm);
     NumericVector scores(_scores);
     NumericVector pval_ratio(_pval_ratio);
-    double score_percentile=as<double>(_score_percentile);
-    int sample_size=as<int>(_sample_size);
-    LoglikType loglik_type=static_cast<LoglikType>(as<int>(_loglik_type));;
+    double score_percentile = as<double>(_score_percentile);
+    int sample_size = as<int>(_sample_size);
+    LoglikType loglik_type = static_cast<LoglikType>(as<int>(_loglik_type));
+    ;
 
     NumericMatrix p_values(scores.size(), 4);
     NumericVector sample_score(5);
@@ -212,7 +212,7 @@ RcppExport SEXP p_value_change_indel(
         weights(i, 1) = adj_weights.base;
     }
 
-    NumericMatrix pval_loglik = comp_empirical_p_values(scores, weights(_, 0), score_diff);
+    NumericMatrix pval_loglik = comp_empirical_p_values(scores, weights(_, 0), score_diff, TestType::two_sided);
 
     // compute the sample log ranks
     NumericMatrix pval_ratio_sam(sample_size, 1);
@@ -235,13 +235,9 @@ RcppExport SEXP p_value_change_indel(
             }
         }
         pval_ratio_sam(i, 0) = log(pval_sam[0]) - log(pval_sam[1]);
-        if (pval_ratio_sam(i, 0) < 0)
-        {
-            pval_ratio_sam(i, 0) = -pval_ratio_sam(i, 0);
-        }
     }
 
-    NumericMatrix pval_rank = comp_empirical_p_values(pval_ratio, weights(_, 0), pval_ratio_sam);
+    NumericMatrix pval_rank = comp_empirical_p_values(pval_ratio, weights(_, 0), pval_ratio_sam, TestType::two_sided);
 
     Rcpp::List ret = Rcpp::List::create(
         Rcpp::Named("score") = pval_loglik,

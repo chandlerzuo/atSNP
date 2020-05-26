@@ -102,7 +102,7 @@ Rcpp::List p_value_change(
 	}
 
 	NumericMatrix pval_loglik(scores.size(), 3);
-	pval_loglik = comp_empirical_p_values(scores, weights, score_diff_sam);
+	pval_loglik = comp_empirical_p_values(scores, weights, score_diff_sam, TestType::absolute);
 
 	// compute the sample log ranks
 	double pval_sam[4];
@@ -147,7 +147,7 @@ Rcpp::List p_value_change(
 	}
 
 	NumericMatrix pval_rank(scores.size(), 4);
-	pval_rank = comp_empirical_p_values(pval_ratio, weights, pval_ratio_sam);
+	pval_rank = comp_empirical_p_values(pval_ratio, weights, pval_ratio_sam, TestType::absolute);
 
 	Rcpp::List ret = Rcpp::List::create(
 		Rcpp::Named("score") = pval_loglik,

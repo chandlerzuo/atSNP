@@ -18,6 +18,6 @@ A matrix of 2 columns. Column 1 is the p-value estimate. Column 2 is the estimat
 }
 \description{
 Importance sampling based p-values can be computed in two forms
- A) \sum weight_i*X_i / N; B) \sum weight_i*X_i / \sum_weight_i.
+ A) sum_i weight_i*X_i / N; B) sum_i weight_i*X_i / sum_i weight_i.
  This util function picks the better form.
 }

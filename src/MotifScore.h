@@ -2,7 +2,6 @@
 #define __MOTIF_SCORE__
 
 #include "helper.h"
-#include "struct.h"
 
 /*
  * note : RcppExport is an alias to `extern "C"` defined by Rcpp.

@@ -3,7 +3,7 @@ LOGLIK_TYPES <- c("max", "mean", "median")
 #' @name pval_with_less_var
 #' @title Select p-value estimates with less variance.
 #' @description Importance sampling based p-values can be computed in two forms
-#'  A) \sum weight_i*X_i / N; B) \sum weight_i*X_i / \sum_weight_i.
+#'  A) sum_i weight_i*X_i / N; B) sum_i weight_i*X_i / sum_i weight_i.
 #'  This util function picks the better form.
 #' @param pval_mat A matrix with 4 columns.
 #' Column 1 uses form A

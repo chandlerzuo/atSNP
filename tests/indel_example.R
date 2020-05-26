@@ -54,14 +54,10 @@ for (indel_id in seq_along(all_indel_info)) {
         # for long sequence
         sample_seq_len <- 2 * nrow(pwm) - 2 +indel_info$insertion_len
         reference_score <-
-          max_motif_scores$log_lik_long[indel_id, motif_id]
-        reference_score <-
           motif_scores$log_lik_long[indel_id, motif_id]
       } else  if (j == 2) {
         # j=2 for short sequence
         sample_seq_len <- 2 * nrow(pwm) - 2
-        reference_score <-
-          max_motif_scores$log_lik_short[indel_id, motif_id]
         reference_score <-
           motif_scores$log_lik_long[indel_id, motif_id]
       }
@@ -80,8 +76,8 @@ for (indel_id in seq_along(all_indel_info)) {
       )
       p_value_affinity[j] <- pval_with_less_var(
         # Importance sampling based p-values can be computed in two forms
-        # A) \sum weight_i*X_i / N
-        # B) \sum weight_i*X_i / \sum_weight_i
+        # A) \sum_i weight_i*X_i / N
+        # B) \sum_i weight_i*X_i / \sum_i weight_i
         # p_val_with_less_var takes a matrix of 4 columns
         # Column 1 uses form A
         # Column 2 is the estimated variance of Column 1
@@ -118,7 +114,6 @@ for (indel_id in seq_along(all_indel_info)) {
     # 2. Compute p-value for motif score change and p-value change.
     # mat_d is the matrix to induce binding affinity change
     mat_d <- t(t(pwm) / mc_prior)
-    mat_d <- mat_d / apply(mat_d, 1, sum)
     score_diff <- c(scores[, 1] - scores[, 2])
     # reference_score is used to compute the theta parameter in importance sampling
     # Similar as before, we need to use max loglik scores here in order to
