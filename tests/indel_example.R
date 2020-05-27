@@ -20,34 +20,36 @@ for (i in seq_len(n_indels)) {
   )
 }
 
-# Compute motif scores
+# Step 1. Compute motif scores
 # This function can compute motif scores for multiple Indels and multiple pwms
+# The return value is a list of matrices
+# In each matrix, each row corresponds to an Indel, each column corresponds
+# to a motif.
 motif_scores <- .Call("comp_indel_motif_scores",
                       motif_library,
                       all_indel_info,
+                      # select the log-lik type here
                       loglik_type,
                       package = "atSNP")
 
-max_motif_scores <- .Call("comp_indel_motif_scores",
-                          motif_library,
-                          all_indel_info,
-                          0,
-                          # max loglik
-                          package = "atSNP")
-
-# p-values
+# Step 2 and 3.
 results <- list()
 result_id <- 1
 for (indel_id in seq_along(all_indel_info)) {
   for (motif_id in seq_along(motif_library)) {
+
+    # Step 2. Compute single allele p-values
     indel_info <- all_indel_info[[indel_id]]
     pwm <- motif_library[[motif_id]]
-    # Prerequisit
+    # Prerequisite
     # scores should be a matrix of 2 columns, each representing the score
     # for the long and the short sequence.
+    # Eventually, scores should be a matrix of multiple rows as well.
+    # Each row represents an Indel.
+    # These indels should have similar motif scores so that their p-values
+    # can be calculated together with shared Monte Carlo samples.
     scores <-
       t(c(motif_scores$log_lik_long[indel_id, motif_id], motif_scores$log_lik_short[indel_id, motif_id]))
-    # 1. Compute single allele p-values
     p_value_affinity <- rep(0, 2)
     for (j in seq(2)) {
       if (j == 1) {
@@ -62,14 +64,13 @@ for (indel_id in seq_along(all_indel_info)) {
           motif_scores$log_lik_long[indel_id, motif_id]
       }
       # Compute theta parameter in importance sampling distribution
-      # We have to use max loglik score to compute theta value
-      # Using mean/median loglik scores ends up with theta values being too small
-      # and importance sampling is not useful.
       theta <- .Call(
         "test_find_theta",
         pwm,
         snpInfo$prior,
         snpInfo$transition,
+        # Importance sample scores will have
+        # average value of reference score.
         reference_score,
         sample_seq_len,
         package = "atSNP"
@@ -97,10 +98,22 @@ for (indel_id in seq_along(all_indel_info)) {
           # transition matrix
           snpInfo$transition,
           # motif score
+          # This is an array, representing scores for multiple Indels.
+          # In this example, we compute for one Indel at a time.
+          # Eventually we should calculate for multiple Indels together,
+          # which (1) have similar scores as reference_score;
+          # (2) have the same insertion length.
           scores[, j],
           # theta parameter in importance sampling
           theta,
           # Monte-carlo Sample Size
+          # We should adaptively use larger sample sizes for large scores.
+          # Because those Indels have small p-values, they are more important
+          # biologically, and it is better to compute p-values more accurately for them.
+          # For small score difference, p-values will be insignificant,
+          # so it is better to use small sample size for computation speed.
+          # In atSNP, we choose between 2000 and 1e5 based on score differences.
+          # Please refer to the implementation for atSNP for details.
           200,
           # The sequence length
           sample_seq_len,
@@ -111,13 +124,12 @@ for (indel_id in seq_along(all_indel_info)) {
         # the last 4 columns are conditional p-values and are not useful here
       )[, 1]
     }
-    # 2. Compute p-value for motif score change and p-value change.
+    
+    # Step 3. Compute p-value for motif score change and p-value change.
     # mat_d is the matrix to induce binding affinity change
     mat_d <- t(t(pwm) / mc_prior)
     score_diff <- c(scores[, 1] - scores[, 2])
     # reference_score is used to compute the theta parameter in importance sampling
-    # Similar as before, we need to use max loglik scores here in order to
-    # have large enough theta.
     reference_score <-
       max_motif_scores$log_lik_long[indel_id, motif_id] - max_motif_scores$log_lik_short[indel_id, motif_id]
     p_value_change <-
@@ -136,20 +148,35 @@ for (indel_id in seq_along(all_indel_info)) {
         # Adjusted PWM
         (pwm + 0.25) / 2,
         # Motif scores, a matrix of 2 columns.
-        # Each row is a SNP, and the 1st column is the long sequence,
-        # the 2nd column is the short sequence.
-        # We should eventually compute multiple SNPs at a time.
+        # Each row is an Indel. The 1st column corresponds to the long sequence,
+        # the 2nd column corresponds to the short sequence.
+        # In this example, this matrix has only one row.
+        # Eventually, we should group Indels which
+        # (1) have score differences simmilar to reference_score;
+        # (2) have the same insertion length,
+        # and compute their p-values together.
         score_diff,
         # Difference between p_values
+        # This should be an array of the same length as score_diff.
+        # Each entry of this array corresponds to one Indel.
         c(p_value_affinity[1] - p_value_affinity[2]),
-        # Desired difference in motif scores.
         # This is used to compute the theta parameter in importance sampling.
         reference_score,
         # importance sampling sample size
+        # We should adaptively use larger sample sizes for large score difference,
+        # Because those Indels have small p-values, they are more important
+        # biologically, and it is better to compute p-values more accurately for them.
+        # For small score difference, p-values will be insignificant,
+        # so it doesn't matter much if it is not very accurate.
+        # In atSNP, we choose between 2000 and 1e5 based on score differences.
+        # Please refer to the implementation for atSNP for details.
         100,
-        # loglik type option, 1 stands for mean
+        # loglik type option
         loglik_type
       )
+    
+    # The output format is a list.
+    # This can be changed to whatever is convenient for downstream analysis.
     results[[result_id]] <- list(
       motif_scores = scores,
       p_value_change = list(
