@@ -147,13 +147,9 @@ for (indel_id in seq_along(all_indel_info)) {
         pwm,
         # Adjusted PWM
         (pwm + 0.25) / 2,
-        # Motif scores, a matrix of 2 columns.
-        # Each row is an Indel. The 1st column corresponds to the long sequence,
-        # the 2nd column corresponds to the short sequence.
-        # In this example, this matrix has only one row.
-        # Eventually, we should group Indels which
-        # (1) have score differences simmilar to reference_score;
-        # (2) have the same insertion length,
+        # An array of motif scores.
+        # Each entry corresponds to one Indel.
+        # Eventually, we should group Indels with similar scores
         # and compute their p-values together.
         score_diff,
         # Difference between p_values
