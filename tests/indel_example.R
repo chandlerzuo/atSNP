@@ -131,7 +131,7 @@ for (indel_id in seq_along(all_indel_info)) {
     score_diff <- c(scores[, 1] - scores[, 2])
     # reference_score is used to compute the theta parameter in importance sampling
     reference_score <-
-      max_motif_scores$log_lik_long[indel_id, motif_id] - max_motif_scores$log_lik_short[indel_id, motif_id]
+      motif_scores$log_lik_long[indel_id, motif_id] - motif_scores$log_lik_short[indel_id, motif_id]
     p_value_change <-
       .Call(
         "p_value_change_indel",
