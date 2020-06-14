@@ -35,7 +35,7 @@ R_comp_cond_norm_const <- function(mat_d, insertion_len, theta) {
     start_idx <- max(c(s, motif_len)) - s + 1
     end_idx <- min(c(insertion_len, s)) + motif_len - s
     cond_norm_const[s] <-
-      sum(exp(log(mat_d[start_idx:end_idx, ]) * theta))
+      prod(apply(exp(log(mat_d[start_idx:end_idx, , drop = FALSE]) * theta), 1, sum))
   }
   return(cond_norm_const)
 }
@@ -47,6 +47,29 @@ R_comp_norm_const <- function(mat_d, insertion_len, theta) {
     R_comp_cond_norm_const(mat_d, insertion_len, theta)
   return(sum(cond_norm_const))
 }
+
+
+#' Compute conditional normalization constant
+R_comp_expected_score_diff <-
+  function(mat_d, insertion_len, theta) {
+    # 1, ..., L-1, [L, ..., L+insertion_len-1], L+insert_len, ..., 2L+insertion_len-2
+    motif_len <- nrow(mat_d)
+    cond_score_diff <- rep(0, motif_len + insertion_len - 1)
+    cond_norm_const <-
+      R_comp_cond_norm_const(mat_d, insertion_len, theta)
+    # if binding start at s, the match subsequence is s, ..., s+L-1, which
+    # overlaps the insertion part max(s,L), ..., min(L+insertion_len-1, s+L-1)
+    # This corresponds to max(s,L)-s+1, ..., min(insertion_len, s)+L-s in D
+    for (s in seq_along(cond_score_diff)) {
+      start_idx <- max(c(s, motif_len)) - s + 1
+      end_idx <- min(c(insertion_len, s)) + motif_len - s
+      submat_d <- mat_d[start_idx:end_idx, , drop = FALSE]
+      cond_prob_mat <- exp(log(submat_d) * theta)
+      cond_prob_mat <- cond_prob_mat / apply(cond_prob_mat, 1, sum)
+      cond_score_diff[s] <- sum(cond_prob_mat * log(submat_d))
+    }
+    return(sum(cond_score_diff * cond_norm_const) / sum(cond_norm_const))
+  }
 
 
 #' Compute the importance sample adjustment weights
@@ -212,7 +235,7 @@ R_gen_importance_sample <- function(snpInfo,
   # inside this insertion part.
   for (i in start_pos:(start_pos + motif_len - 1)) {
     if (i >= motif_len && i <= motif_len + insertion_len - 1) {
-      sample_prob <- exp(log(mat_d[i - start_pos + 1, ]) + theta)
+      sample_prob <- exp(log(mat_d[i - start_pos + 1, ]) * theta)
     }
     else {
       sample_prob <- adj_pwm[i - start_pos + 1, ]

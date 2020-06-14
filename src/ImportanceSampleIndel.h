@@ -30,9 +30,9 @@ public:
     ScorePair comp_score_pair(NumericMatrix, IntegerVector, LoglikType);
 
 private:
-    bool check_norm_const_diff(double, double, double);
-    void comp_cond_norm_const();
+    NumericVector _comp_cond_norm_const(double);
     void set_theta(double);
+    double comp_expected_score_diff(double);
 };
 
 RcppExport SEXP p_value_change_indel(

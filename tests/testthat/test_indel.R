@@ -8,35 +8,27 @@ test_that("Error: mismatch between theta and the expected score difference.",
                                     motif_len + 1,
                                     motif_len * 2)) {
               score_percentile <- runif(n = 1, min = 0, max = 10)
+              mat_d <-
+                comp_indel_mat_d(artifacts$pwm, artifacts$snpInfo$prior, insertion_len)
               result_cpp <- test_importance_sample_indel(
                 snpInfo = artifacts$snpInfo,
                 pwm = artifacts$pwm,
                 adj_pwm = artifacts$adj_pwm,
-                mat_d = artifacts$mat_d,
+                mat_d = mat_d,
                 insertion_len = insertion_len,
                 score_percentile = score_percentile,
                 loglik_type = 0
               )
               tol <- 1e-4
-              derivative <- (log(
-                R_comp_norm_const(
-                  mat_d = artifacts$mat_d,
-                  insertion_len = insertion_len,
-                  theta = result_cpp$theta + tol / 2
-                )
-              ) - log(
-                R_comp_norm_const(
-                  mat_d = artifacts$mat_d,
-                  insertion_len = insertion_len,
-                  theta = result_cpp$theta - tol / 2
-                )
-              )) / tol
+              expected_score_diff <- R_comp_expected_score_diff(mat_d = mat_d,
+                                                                insertion_len = insertion_len,
+                                                                theta = result_cpp$theta)
               if (result_cpp$theta < 1 && result_cpp$theta > 0) {
-                expect_equal(derivative, score_percentile, tolerance = 0.03)
+                expect_equal(expected_score_diff, score_percentile, tolerance = 0.03)
               } else if (result_cpp$theta == 1) {
-                expect_gte(score_percentile, derivative)
+                expect_gte(score_percentile, expected_score_diff)
               } else {
-                expect_lte(score_percentile, derivative)
+                expect_lte(score_percentile, expected_score_diff)
               }
             }
           })
@@ -51,23 +43,23 @@ test_that("Error: normalization constant is not correct.", {
                           motif_len + 1,
                           motif_len * 2)) {
     score_percentile <- runif(n = 1, min = 0, max = 10)
+    mat_d <-
+      comp_indel_mat_d(artifacts$pwm, artifacts$snpInfo$prior, insertion_len)
     result_cpp <- test_importance_sample_indel(
       snpInfo = artifacts$snpInfo,
       pwm = artifacts$pwm,
       adj_pwm = artifacts$adj_pwm,
-      mat_d = artifacts$mat_d,
+      mat_d = mat_d,
       insertion_len = insertion_len,
       score_percentile = score_percentile,
       loglik_type = 0
     )
     cond_norm_const <-
-      R_comp_cond_norm_const(
-        mat_d = artifacts$mat_d,
-        insertion_len = insertion_len,
-        theta = result_cpp$theta
-      )
+      R_comp_cond_norm_const(mat_d = mat_d,
+                             insertion_len = insertion_len,
+                             theta = result_cpp$theta)
     expect_equal(cond_norm_const, result_cpp$cond_norm_const, tolerance = 0.01)
-    expect_equal(result_cpp$norm_const, sum(result_cpp$norm_const))
+    expect_equal(result_cpp$norm_const, sum(cond_norm_const))
   }
 })
 
@@ -81,18 +73,20 @@ test_that("Error: importance sample weights are not correct.", {
                           motif_len + 1,
                           motif_len * 2)) {
     score_percentile <- runif(n = 1, min = 0, max = 10)
+    mat_d <-
+      comp_indel_mat_d(artifacts$pwm, artifacts$snpInfo$prior, insertion_len)
     result_cpp <- test_importance_sample_indel(
       snpInfo = artifacts$snpInfo,
       pwm = artifacts$pwm,
       adj_pwm = artifacts$adj_pwm,
-      mat_d = artifacts$mat_d,
+      mat_d = mat_d,
       insertion_len = insertion_len,
       score_percentile = score_percentile,
       loglik_type = 0
     )
     result_r <- R_comp_importance_sample_weights(
       adj_pwm = artifacts$adj_pwm,
-      mat_d = artifacts$mat_d,
+      mat_d = mat_d,
       theta = result_cpp$theta,
       prior = artifacts$snpInfo$prior,
       transition = artifacts$snpInfo$transition,
@@ -116,11 +110,13 @@ test_that("Error: max likelihood scores on the sequence pair are not correct.",
                                     motif_len + 1,
                                     motif_len * 2)) {
               score_percentile <- runif(n = 1, min = 0, max = 10)
+              mat_d <-
+                comp_indel_mat_d(artifacts$pwm, artifacts$snpInfo$prior, insertion_len)
               result_cpp <- test_importance_sample_indel(
                 snpInfo = artifacts$snpInfo,
                 pwm = artifacts$pwm,
                 adj_pwm = artifacts$adj_pwm,
-                mat_d = artifacts$mat_d,
+                mat_d = mat_d,
                 insertion_len = insertion_len,
                 score_percentile = score_percentile,
                 loglik_type = 0
@@ -157,13 +153,15 @@ test_that("Error: distribution of the motif scores is not correct.",
                                     motif_len + 1,
                                     motif_len * 2)) {
               score_percentile <- runif(n = 1, min = 0, max = 10)
+              mat_d <-
+                comp_indel_mat_d(artifacts$pwm, artifacts$snpInfo$prior, insertion_len)
               score_pairs <-
                 sapply(seq_len(sample_size), function(x) {
                   result_cpp <- test_importance_sample_indel(
                     snpInfo = artifacts$snpInfo,
                     pwm = artifacts$pwm,
                     adj_pwm = artifacts$adj_pwm,
-                    mat_d = artifacts$mat_d,
+                    mat_d = mat_d,
                     insertion_len = insertion_len,
                     score_percentile = score_percentile,
                     loglik_type = 0
@@ -171,7 +169,7 @@ test_that("Error: distribution of the motif scores is not correct.",
                   R_sample_seq <- R_gen_importance_sample(
                     snpInfo = artifacts$snpInfo,
                     adj_pwm = artifacts$adj_pwm,
-                    mat_d = artifacts$mat_d,
+                    mat_d = mat_d,
                     insertion_len = insertion_len,
                     cond_norm_const = result_cpp$cond_norm_const,
                     theta = result_cpp$theta
@@ -190,12 +188,11 @@ test_that("Error: distribution of the motif scores is not correct.",
                     )
                   )
                 })
-              message("KS test for long sequence scores: ",
-                      ks.test(score_pairs[1,], score_pairs[3, ])$p.value)
-              message("KS test for short sequence scores: ",
-                      ks.test(score_pairs[2,], score_pairs[4, ])$p.value)
-              expect_gte(ks.test(score_pairs[1,], score_pairs[3, ])$p.value, 0.05)
-              expect_gte(ks.test(score_pairs[2,], score_pairs[4, ])$p.value, 0.05)
+              suppressWarnings({
+                # NOTE: ks.test warns about ties
+                expect_gte(ks.test(score_pairs[1, ], score_pairs[3,])$p.value, 0.05)
+                expect_gte(ks.test(score_pairs[2, ], score_pairs[4,])$p.value, 0.05)
+              })
             }
           })
 
@@ -207,13 +204,15 @@ test_that("Error: max log lik score is not consistent with the matching position
             n_indels <- 10
             indel_info <- list()
             for (i in seq_len(n_indels)) {
-              offset <- sample(0:3, size=1)
-              insertion_len <- sample(seq_len(10), size=1)
+              offset <- sample(0:3, size = 1)
+              insertion_len <- sample(seq_len(10), size = 1)
               indel_info[[i]] <- list(
-                inserted_sequence = sample(seq_len(4),
-                                           size = motif_len * 2 - 2 + insertion_len +
-                                             offset * 2,
-                                           replace = TRUE),
+                inserted_sequence = sample(
+                  seq_len(4),
+                  size = motif_len * 2 - 2 + insertion_len +
+                    offset * 2,
+                  replace = TRUE
+                ),
                 insertion_len = insertion_len
               )
             }
@@ -245,12 +244,14 @@ test_that("Error: max log lik score is not consistent with the matching position
               expect_equal(long_seq_score, motif_scores$log_lik_long[i], 1e-3)
               expect_equal(short_seq_score, motif_scores$log_lik_short[i], 1e-3)
               
-              long_seq_score <- R_motif_score_max(long_seq[(offset + 1):(length(long_seq) -
-                                                                           offset)],
-                                                  artifacts$pwm)
-              short_seq_score <- R_motif_score_max(short_seq[(offset + 1):(length(short_seq) -
-                                                                             offset)],
-                                                   artifacts$pwm)
+              long_seq_score <-
+                R_motif_score_max(long_seq[(offset + 1):(length(long_seq) -
+                                                           offset)],
+                                  artifacts$pwm)
+              short_seq_score <-
+                R_motif_score_max(short_seq[(offset + 1):(length(short_seq) -
+                                                            offset)],
+                                  artifacts$pwm)
               expect_equal(long_seq_score, motif_scores$log_lik_long[i], 1e-3)
               expect_equal(short_seq_score, motif_scores$log_lik_short[i], 1e-3)
             }

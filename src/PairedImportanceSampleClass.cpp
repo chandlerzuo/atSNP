@@ -1,13 +1,24 @@
 #include "PairedImportanceSampleClass.h"
 #include "helper.h"
 
-void PairedImportanceSamplingBase::comp_norm_const()
+double PairedImportanceSamplingBase::_comp_norm_const(NumericVector cond_norm_const)
 {
-    this->norm_const = 0;
+    double norm_const = 0;
     for (int i = 0; i < cond_norm_const.size(); ++i)
     {
-        this->norm_const += cond_norm_const[i];
+        norm_const += cond_norm_const[i];
     }
+    return norm_const;
+}
+
+void PairedImportanceSamplingBase::comp_norm_const()
+{
+    this->norm_const = this->_comp_norm_const(this->cond_norm_const);
+}
+
+void PairedImportanceSamplingBase::comp_cond_norm_const()
+{
+    this->cond_norm_const = this->_comp_cond_norm_const(this->theta);
 }
 
 int PairedImportanceSamplingBase::sample_start_position(double rnd)
@@ -24,9 +35,9 @@ int PairedImportanceSamplingBase::sample_start_position()
 
 void PairedImportanceSamplingBase::initialize(double score)
 {
+    this->set_theta(score);
     this->comp_cond_norm_const();
     this->comp_norm_const();
-    this->set_theta(score);
 }
 
 void PairedImportanceSamplingBase::validate()

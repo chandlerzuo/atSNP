@@ -253,72 +253,69 @@ RcppExport SEXP p_value_change_indel(
 */
 void ImportanceSampleIndel::set_theta(double score)
 {
-    double tol = 0.01;
     double lower_bound = ImportanceSampleIndel::THETA_MIN;
     double upper_bound = ImportanceSampleIndel::THETA_MAX;
     double mid_point = 0;
 
     // Outer loop: decrease tol.
     // Inner loop: bisect algorithm.
-    while (tol > 1e-4)
-    {
-        bool lower_sign = this->check_norm_const_diff(lower_bound, tol, score);
-        bool upper_sign = this->check_norm_const_diff(upper_bound, tol, score);
+    bool lower_sign = this->comp_expected_score_diff(lower_bound) > score;
+    bool upper_sign = this->comp_expected_score_diff(upper_bound) > score;
 
-        if (!lower_sign && !upper_sign)
+    if (!lower_sign && !upper_sign)
+    {
+        this->theta = upper_bound;
+        return;
+    }
+    else if (lower_sign && upper_sign)
+    {
+        this->theta = lower_bound;
+        return;
+    }
+    // Bisect. We assume that the function is increasing with theta.
+    if (lower_sign || !upper_sign)
+    {
+        throw std::range_error("Bisecting error.");
+    };
+    while (upper_bound - lower_bound > 1e-10)
+    {
+        mid_point = (lower_bound + upper_bound) * 0.5;
+        if (this->comp_expected_score_diff(mid_point) > score)
         {
-            this->theta = upper_bound;
-            return;
+            upper_bound = mid_point;
         }
-        else if (lower_sign && upper_sign)
+        else
         {
-            this->theta = lower_bound;
-            return;
+            lower_bound = mid_point;
         }
-        // Bisect. We assume that d log(comp_norm_const) / d theta is increasing with theta.
-        if (lower_sign || !upper_sign)
-        {
-            throw std::range_error("Bisecting error.");
-        };
-        while (upper_bound - lower_bound > tol)
-        {
-            mid_point = (lower_bound + upper_bound) * 0.5;
-            if (this->check_norm_const_diff(mid_point, tol, score))
-            {
-                upper_bound = mid_point;
-            }
-            else
-            {
-                lower_bound = mid_point;
-            }
-        }
-        tol /= 10;
     }
     this->theta = mid_point;
 }
 
 /* Compute the normalization constant.*/
-void ImportanceSampleIndel::comp_cond_norm_const()
+NumericVector ImportanceSampleIndel::_comp_cond_norm_const(double theta)
 {
     int motif_len = this->mat_d.nrow();
-    NumericMatrix delta(4, motif_len);
-    this->cond_norm_const = NumericVector(motif_len + this->insertion_len - 1);
+    NumericVector cond_norm_const(motif_len + this->insertion_len - 1);
 
     // Sequence: 0, ..., L-2, [ L-1, ..., L+m-2 ], L+m-1, ..., 2L+m-3
     for (int s = 0; s < motif_len + this->insertion_len - 1; ++s)
     {
-        this->cond_norm_const[s] = 0;
+        cond_norm_const[s] = 1;
         for (int c = motif_len - 1; c <= motif_len + this->insertion_len - 2; ++c)
         {
             if (c - s >= 0 && c - s < motif_len)
             {
+                double tmp = 0;
                 for (int j = 0; j < ImportanceSampleIndel::N_LETTERS; ++j)
                 {
-                    this->cond_norm_const[s] += exp(log(this->mat_d(c - s, j)) * this->theta);
+                    tmp += exp(log(this->mat_d(c - s, j)) * theta);
                 }
+                cond_norm_const[s] *= tmp;
             }
         }
     }
+    return cond_norm_const;
 }
 
 /* Generate a random vector according to the importance sampling distribution.*/
@@ -529,32 +526,36 @@ AdjWeights ImportanceSampleIndel::gen_importance_sample_weights(
     return adj_weights;
 }
 
-/* Helper function to compute the 1st order derivative of log(comp_norm_const)
-and compare to the target score
-@arg tol Perturbation amount used to compute derivative.
-@arg score The target score.
-@return true if the derivative >= the target score; false otherwise.
+/* Helper function to compute the expected score difference.
 */
-bool ImportanceSampleIndel::check_norm_const_diff(
-    double theta,
-    double tol,
-    double score)
+double ImportanceSampleIndel::comp_expected_score_diff(double theta)
 {
-    double old_theta = this->theta;
-    this->theta = theta + tol / 2;
-    this->comp_cond_norm_const();
-    this->comp_norm_const();
-    double score_1 = log(this->norm_const);
-    this->theta = theta - tol / 2;
-    this->comp_cond_norm_const();
-    this->comp_norm_const();
-    double score_0 = log(this->norm_const);
-    this->theta = old_theta;
-    if (score_1 - score_0 < score * tol)
+    int motif_len = this->mat_d.nrow();
+    NumericVector cond_norm_const = this->_comp_cond_norm_const(theta);
+    double norm_const = this->_comp_norm_const(cond_norm_const);
+
+    // Sequence: 0, ..., L-2, [ L-1, ..., L+m-2 ], L+m-1, ..., 2L+m-3
+    double expected_score_diff = 0;
+    for (int s = 0; s < motif_len + this->insertion_len - 1; ++s)
     {
-        return false;
+        double cond_score_diff = 0;
+        for (int c = motif_len - 1; c <= motif_len + this->insertion_len - 2; ++c)
+        {
+            if (c - s >= 0 && c - s < motif_len)
+            {
+                double nume = 0, denom = 0;
+                for (int j = 0; j < ImportanceSampleIndel::N_LETTERS; ++j)
+                {
+                    nume += exp(log(this->mat_d(c - s, j)) * theta) * log(this->mat_d(c - s, j));
+                    denom += exp(log(this->mat_d(c - s, j)) * theta);
+                }
+                cond_score_diff += nume / denom;
+            }
+        }
+        expected_score_diff += cond_score_diff * cond_norm_const[s];
     }
-    return true;
+    expected_score_diff /= norm_const;
+    return expected_score_diff;
 }
 
 /* Given a set of parameters,

@@ -126,17 +126,17 @@ NumericMatrix comp_empirical_p_values(
 	double grad2 = 0, var1 = 0, cov = 0;
 	for (int j = 0; j < n_scores; j++)
 	{
-		p_values(j, 0) = moments(j, 0) / 3 / sample_size;
-		p_values(j, 1) = moments(j, 1) / 3 / sample_size - p_values(j, 0) * p_values(j, 0);
+		p_values(j, 0) = moments(j, 0) / sample_score.ncol() / sample_size;
+		p_values(j, 1) = moments(j, 1) / sample_score.ncol() / sample_size - p_values(j, 0) * p_values(j, 0);
 		p_values(j, 2) = p_values(j, 0) / wei_sum;
 		grad2 = -p_values(j, 0) * grad1 * grad1;
 		var1 = p_values(j, 1);
-		cov = moments(j, 1) / 3 / sample_size - p_values(j, 0) * wei_sum;
-		p_values(j, 1) /= 3 * sample_size - 1;
+		cov = moments(j, 1) / sample_score.ncol() / sample_size - p_values(j, 0) * wei_sum;
+		p_values(j, 1) /= sample_score.ncol() * sample_size - 1;
 		if (p_values(j, 0) != wei_sum)
 		{
 			p_values(j, 3) = grad1 * grad1 * var1 + grad2 * grad2 * var2 + 2 * grad1 * grad2 * cov;
-			p_values(j, 3) /= 3 * sample_size - 1;
+			p_values(j, 3) /= sample_score.ncol() * sample_size - 1;
 		}
 		else
 		{

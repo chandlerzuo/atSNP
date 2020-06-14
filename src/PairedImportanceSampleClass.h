@@ -47,14 +47,19 @@ public:
     int sample_start_position();
     void initialize(double);
     void comp_norm_const();
+    void comp_cond_norm_const();
     virtual SampleSequence gen_importance_sample()=0;
     virtual AdjWeights gen_importance_sample_weights(IntegerVector)=0;
     virtual ScorePair comp_score_pair(NumericMatrix, IntegerVector, LoglikType)=0;
 
+protected:
+    double _comp_norm_const(NumericVector);
+    
 private:
     void validate();
-    virtual void comp_cond_norm_const()=0;
+    virtual NumericVector _comp_cond_norm_const(double)=0;
     virtual void set_theta(double)=0;
+    virtual double comp_expected_score_diff(double)=0;
 };
 
 #endif
