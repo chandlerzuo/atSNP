@@ -155,7 +155,7 @@ for (indel_id in seq_along(all_indel_info)) {
         # Difference between p_values
         # This should be an array of the same length as score_diff.
         # Each entry of this array corresponds to one Indel.
-        c(p_value_affinity[1] - p_value_affinity[2]),
+        c(log(p_value_affinity[1]) - log(p_value_affinity[2])),
         # This is used to compute the theta parameter in importance sampling.
         reference_score,
         # importance sampling sample size
@@ -166,7 +166,7 @@ for (indel_id in seq_along(all_indel_info)) {
         # so it doesn't matter much if it is not very accurate.
         # In atSNP, we choose between 2000 and 1e5 based on score differences.
         # Please refer to the implementation for atSNP for details.
-        100,
+        1000,
         # loglik type option
         loglik_type
       )

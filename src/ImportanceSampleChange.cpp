@@ -123,7 +123,7 @@ Rcpp::List p_value_change(
 			// base sequences and their weights are used.
 			for (int j = 0; j < 4; j++)
 			{
-				if (score[i1][0] >= score[i][j])
+				if (i1 != i && score[i1][0] >= score[i][j])
 				{
 					pval_sam[j] += weights[i1];
 				}

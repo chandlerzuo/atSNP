@@ -195,6 +195,7 @@ RcppExport SEXP p_value_change_indel(
     double mean_score = 0;
     NumericMatrix weights(sample_size, 2), score(sample_size, 2);
     NumericMatrix score_diff(sample_size, 1);
+    double total_weight[2] = {0, 0};
     for (int i = 0; i < sample_size; i++)
     {
         SampleSequence example = sampler.gen_importance_sample();
@@ -210,6 +211,8 @@ RcppExport SEXP p_value_change_indel(
         score_diff(i, 0) = score(i, 0) - score(i, 1);
         weights(i, 0) = adj_weights.joint;
         weights(i, 1) = adj_weights.base;
+        total_weight[0] += adj_weights.joint;
+        total_weight[1] += adj_weights.base;
     }
 
     NumericMatrix pval_loglik = comp_empirical_p_values(scores, weights(_, 0), score_diff, TestType::two_sided);
@@ -218,13 +221,12 @@ RcppExport SEXP p_value_change_indel(
     NumericMatrix pval_ratio_sam(sample_size, 1);
     for (int i = 0; i < sample_size; i++)
     {
-        double pval_sam[2];
+        double pval_sam[2] = {0, 0};
         for (int j = 0; j < 2; j++)
         {
-            pval_sam[j] = 0;
             for (int i1 = 0; i1 < sample_size; i1++)
             {
-                if (score(i1, j) >= score(i, j))
+                if (i1 != i && score(i1, j) >= score(i, j))
                 {
                     pval_sam[j] += weights(i1, j);
                 }
@@ -234,7 +236,7 @@ RcppExport SEXP p_value_change_indel(
                 pval_sam[j] = tol;
             }
         }
-        pval_ratio_sam(i, 0) = log(pval_sam[0]) - log(pval_sam[1]);
+        pval_ratio_sam(i, 0) = log(pval_sam[0]) - log(pval_sam[1]) - log(total_weight[0] - weights(i, 0)) + log(total_weight[1] - weights[i, 1]);
     }
 
     NumericMatrix pval_rank = comp_empirical_p_values(pval_ratio, weights(_, 0), pval_ratio_sam, TestType::two_sided);
