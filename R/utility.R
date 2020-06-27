@@ -25,7 +25,9 @@ pval_with_less_var <- function(pval_mat) {
   
   pval_mat <- as.vector(pval_mat)
   id <- which.min(pval_mat[c(2, 4)])
-  return(cbind(pval_mat[c(1, 3)][id],
+  pval_est <- pval_mat[c(1, 3)][id]
+  pval_est[pval_est > 1] <- 1
+  return(cbind(pval_est,
                pval_mat[c(2, 4)][id]))
 }
 
@@ -587,6 +589,14 @@ p_values_for_motif <-
     )
   }
 
+
+#' @name comp_indel_mat_d
+#' @title Compute the D matrix for indel calculation.
+#' @param pwm The Position Weight Matrix with dimension motif length x 4.
+#' @param stat_dist A vector for the stationary distribution for the Markov Chain.
+#' @param insertion_len An integer for the insertion length.
+#' @return A matrix of the same dimension as PWM.
+#' @export
 comp_indel_mat_d <- function(pwm, stat_dist, insertion_len) {
   mat_d <- pwm
   for (i in seq(nrow(pwm))) {
