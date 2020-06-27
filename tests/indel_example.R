@@ -61,7 +61,7 @@ for (indel_id in seq_along(all_indel_info)) {
         # j=2 for short sequence
         sample_seq_len <- 2 * nrow(pwm) - 2
         reference_score <-
-          motif_scores$log_lik_long[indel_id, motif_id]
+          motif_scores$log_lik_short[indel_id, motif_id]
       }
       # Compute theta parameter in importance sampling distribution
       theta <- .Call(
