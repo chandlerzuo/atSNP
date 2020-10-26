@@ -6,7 +6,9 @@
 \title{Composit logo plotting input containing motif scores, the matching
 subsequences and the augmented matching subsequences on SNP and reference
 allele}
-\format{A data.frame object.}
+\format{
+A data.frame object.
+}
 \description{
 This data.frame object loaded by 'data(example)' contains
 information about MYC_disc1 match to rs53576.

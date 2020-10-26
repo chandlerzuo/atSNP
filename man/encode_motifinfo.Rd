@@ -5,7 +5,9 @@
 \alias{encode_motifinfo}
 \title{The information for the motif library downloaded from
 http://compbio.mit.edu/encode-motifs/motifs.txt.}
-\format{A character vector.}
+\format{
+A character vector.
+}
 \description{
 This is a character vector that be loaded by
 'data(encode_library)'. The names of this vector are the same as the names

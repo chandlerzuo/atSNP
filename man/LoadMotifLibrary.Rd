@@ -4,9 +4,17 @@
 \alias{LoadMotifLibrary}
 \title{Load position weight matrices.}
 \usage{
-LoadMotifLibrary(filename = NULL, urlname = NULL, tag = "MOTIF",
-  transpose = FALSE, field = 2, sep = c("\\t", " "), skipcols = 0,
-  skiprows = 2, pseudocount = 0)
+LoadMotifLibrary(
+  filename = NULL,
+  urlname = NULL,
+  tag = "MOTIF",
+  transpose = FALSE,
+  field = 2,
+  sep = c("\\t", " "),
+  skipcols = 0,
+  skiprows = 2,
+  pseudocount = 0
+)
 }
 \arguments{
 \item{filename}{a MEME format file name.}
@@ -63,7 +71,7 @@ transpose = FALSE, field = 2, sep = "\\t".
 \examples{
 pwms <- LoadMotifLibrary(
 urlname="http://pages.stat.wisc.edu/~keles/atSNP-Data/pfm_vertebrates.txt",
-tag = ">", transpose = FALSE, field = 1, sep = c("\\t", " ", ">"),
+tag = ">", transpose = FALSE, field = 1, sep = c("\t", " ", ">"),
 skipcols = 1, skiprows = 1, pseudocount = 1)
 }
 \author{

@@ -4,7 +4,9 @@
 \name{motif_scores}
 \alias{motif_scores}
 \title{Scores for the sample snp data computed based on the motif data.}
-\format{A data.frame object.}
+\format{
+A data.frame object.
+}
 \description{
 This list object loaded by 'data(example)' contains two fields:
 \tabular{ll}{

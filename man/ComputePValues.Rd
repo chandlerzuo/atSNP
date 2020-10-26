@@ -4,8 +4,15 @@
 \alias{ComputePValues}
 \title{Compute p-values for affinity scores.}
 \usage{
-ComputePValues(motif.lib, snp.info, motif.scores, ncores = 1,
-  testing.mc = FALSE, loglik.type = "max", figdir = NULL)
+ComputePValues(
+  motif.lib,
+  snp.info,
+  motif.scores,
+  ncores = 1,
+  testing.mc = FALSE,
+  loglik.type = "max",
+  figdir = NULL
+)
 }
 \arguments{
 \item{motif.lib}{A list object with the output format of function

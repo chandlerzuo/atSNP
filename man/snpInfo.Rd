@@ -4,7 +4,9 @@
 \name{snpInfo}
 \alias{snpInfo}
 \title{A data set for SNP information.}
-\format{A list object.}
+\format{
+A list object.
+}
 \description{
 This list object loaded by 'data(example)' contains three fields
 :

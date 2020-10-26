@@ -9,7 +9,7 @@ a1: A vector for the nucleobases on the reference genome at the SNP locations.
 a2: A vector for the nucleobases after SNP.
 @return A list of objects.
 */
-extern "C" SEXP motif_score(SEXP _motif_library, SEXP _snpinfo)
+RcppExport SEXP motif_score(SEXP _motif_library, SEXP _snpinfo)
 {
 	//parse the _motif_library
 	Rcpp::List pwms(_motif_library);

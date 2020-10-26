@@ -5,10 +5,16 @@
 \title{Load the SNP information and code the genome sequences around the SNP
 locations.}
 \usage{
-LoadSNPData(filename = NULL,
+LoadSNPData(
+  filename = NULL,
   genome.lib = "BSgenome.Hsapiens.UCSC.hg38",
-  snp.lib = "SNPlocs.Hsapiens.dbSNP144.GRCh38", snpids = NULL,
-  half.window.size = 30, default.par = FALSE, mutation = FALSE, ...)
+  snp.lib = "SNPlocs.Hsapiens.dbSNP144.GRCh38",
+  snpids = NULL,
+  half.window.size = 30,
+  default.par = FALSE,
+  mutation = FALSE,
+  ...
+)
 }
 \arguments{
 \item{filename}{A table containing the SNP information. Must contain at least

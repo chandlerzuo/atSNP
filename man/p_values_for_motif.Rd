@@ -4,8 +4,16 @@
 \alias{p_values_for_motif}
 \title{Compute p-values for a single motif.}
 \usage{
-p_values_for_motif(motif.id, par.prior, par.transition, par.motif.lib,
-  par.motif.scores, par.testing.mc, par.loglik.type, par.figdir)
+p_values_for_motif(
+  motif.id,
+  par.prior,
+  par.transition,
+  par.motif.lib,
+  par.motif.scores,
+  par.testing.mc,
+  par.loglik.type,
+  par.figdir
+)
 }
 \arguments{
 \item{motif.id}{The integer index.}

@@ -5,8 +5,14 @@
 \title{Compute the augmented matching subsequence on SNP and reference allele
 s.}
 \usage{
-dtMotifMatch(snp.tbl, motif.scores, snpids = NULL, motifs = NULL,
-  motif.lib, ncores = 2)
+dtMotifMatch(
+  snp.tbl,
+  motif.scores,
+  snpids = NULL,
+  motifs = NULL,
+  motif.lib,
+  ncores = 2
+)
 }
 \arguments{
 \item{snp.tbl}{A data.frame with the following information:

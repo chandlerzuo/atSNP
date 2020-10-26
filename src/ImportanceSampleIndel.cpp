@@ -567,7 +567,7 @@ double ImportanceSampleIndel::comp_expected_score_diff(double theta)
 Return sampling parameters, random example and adjust weights. This 
 function is used for unit tests.
 */
-SEXP test_importance_sample_indel(
+RcppExport SEXP test_importance_sample_indel(
     SEXP _stat_dist,
     SEXP _trans_mat,
     SEXP _adj_pwm,

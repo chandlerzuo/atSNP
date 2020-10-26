@@ -5,7 +5,9 @@
 \alias{encode_motif}
 \title{A motif library containing 2065 motifs downloaded from
 http://compbio.mit.edu/encode-motifs/motifs.txt.}
-\format{A list object.}
+\format{
+A list object.
+}
 \description{
 This motif library can be loaded by 'data(encode_library)'.
 }

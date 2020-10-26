@@ -1,6 +1,10 @@
 #include "PairedImportanceSampleClass.h"
 #include "helper.h"
 
+const double PairedImportanceSamplingBase::THETA_MAX = 1;
+const double PairedImportanceSamplingBase::THETA_MIN = -1;
+const int PairedImportanceSamplingBase::N_LETTERS = 4;
+
 double PairedImportanceSamplingBase::_comp_norm_const(NumericVector cond_norm_const)
 {
     double norm_const = 0;

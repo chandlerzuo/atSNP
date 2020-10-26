@@ -409,7 +409,7 @@ RcppExport SEXP test_gen_prob_start_pos(SEXP _delta, SEXP _motif_len, SEXP _stat
 	return wrap(gen_prob_start_pos(delta, motif_len, stat_dist));
 }
 
-SEXP test_find_percentile(SEXP _scores, SEXP _p)
+RcppExport SEXP test_find_percentile(SEXP _scores, SEXP _p)
 {
 	NumericVector scores(_scores);
 	double p = as<double>(_p);
@@ -439,7 +439,7 @@ RcppExport SEXP compute_p_values(
 	return p_value(pwm, stat_dist, trans_mat, scores, theta, n_sample, seq_len, loglik_type);
 }
 
-SEXP test_find_theta(SEXP _pwm, SEXP _stat_dist, SEXP _trans_mat, SEXP _score, SEXP _seq_len)
+RcppExport SEXP test_find_theta(SEXP _pwm, SEXP _stat_dist, SEXP _trans_mat, SEXP _score, SEXP _seq_len)
 {
 	NumericMatrix pwm(_pwm);
 	NumericVector stat_dist(_stat_dist);
@@ -451,7 +451,7 @@ SEXP test_find_theta(SEXP _pwm, SEXP _stat_dist, SEXP _trans_mat, SEXP _score, S
 	return (wrap(ret));
 }
 
-SEXP test_func_delta(SEXP _pwm, SEXP _stat_dist, SEXP _trans_mat, SEXP _theta, SEXP _seq_len)
+RcppExport SEXP test_func_delta(SEXP _pwm, SEXP _stat_dist, SEXP _trans_mat, SEXP _theta, SEXP _seq_len)
 {
 	NumericMatrix pwm(_pwm);
 	NumericVector stat_dist(_stat_dist);
@@ -472,7 +472,7 @@ RcppExport SEXP test_importance_sample(SEXP _delta, SEXP _stat_dist, SEXP _trans
 	return (wrap(importance_sample(delta, stat_dist, trans_mat, motif_len)));
 }
 
-SEXP test_compute_sample_score(SEXP _pwm, SEXP _sample_vec, SEXP _start_pos, SEXP _theta)
+RcppExport SEXP test_compute_sample_score(SEXP _pwm, SEXP _sample_vec, SEXP _start_pos, SEXP _theta)
 {
 	NumericMatrix pwm(_pwm);
 	IntegerVector sample_vec(_sample_vec);

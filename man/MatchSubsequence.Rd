@@ -4,8 +4,14 @@
 \alias{MatchSubsequence}
 \title{Compute the matching subsequence.}
 \usage{
-MatchSubsequence(snp.tbl, motif.scores, motif.lib, snpids = NULL,
-  motifs = NULL, ncores = 1)
+MatchSubsequence(
+  snp.tbl,
+  motif.scores,
+  motif.lib,
+  snpids = NULL,
+  motifs = NULL,
+  ncores = 1
+)
 }
 \arguments{
 \item{snp.tbl}{A data.frame with the following information:

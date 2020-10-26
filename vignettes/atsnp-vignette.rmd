@@ -3,7 +3,7 @@ title: "atSNP: affinity tests for regulatory SNP detection"
 author:
 - name: Chandler Zuo
   affiliation: 
-  - Facebook
+  - University of Wisconsin - Madison
 - name: Sunyoung Shin
   affiliation: University of Texas at Dallas
   email: sunyoung.shin@utdallas.edu

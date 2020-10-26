@@ -4,7 +4,9 @@
 \name{snp_tbl}
 \alias{snp_tbl}
 \title{A data frame for SNP information.}
-\format{A data.frame object.}
+\format{
+A data.frame object.
+}
 \description{
 This data frame is loaded by 'data(example)'. It is a table
 including the following columns:

@@ -503,7 +503,7 @@ double find_percentile_change(NumericVector scores, double p)
 	return (heap[0]);
 }
 
-SEXP test_find_percentile_change(SEXP _scores, SEXP _perc)
+RcppExport SEXP test_find_percentile_change(SEXP _scores, SEXP _perc)
 {
 	NumericVector scores(_scores);
 	double perc = as<double>(_perc);
@@ -511,7 +511,7 @@ SEXP test_find_percentile_change(SEXP _scores, SEXP _perc)
 	return (wrap(ret));
 }
 
-SEXP compute_p_value_change(
+RcppExport SEXP compute_p_value_change(
 	SEXP _pwm,
 	SEXP _wei_mat,
 	SEXP _adj_mat,
@@ -548,7 +548,7 @@ SEXP compute_p_value_change(
 	return (wrap(p_values));
 }
 
-SEXP test_find_theta_change(SEXP _wei_mat, SEXP _adj_mat, SEXP _score)
+RcppExport SEXP test_find_theta_change(SEXP _wei_mat, SEXP _adj_mat, SEXP _score)
 {
 	NumericMatrix wei_mat(_wei_mat);
 	NumericMatrix adj_mat(_adj_mat);
@@ -558,7 +558,7 @@ SEXP test_find_theta_change(SEXP _wei_mat, SEXP _adj_mat, SEXP _score)
 	return (wrap(ret));
 }
 
-SEXP test_func_delta_change(SEXP _wei_mat, SEXP _adj_mat, SEXP _theta)
+RcppExport SEXP test_func_delta_change(SEXP _wei_mat, SEXP _adj_mat, SEXP _theta)
 {
 	NumericMatrix wei_mat(_wei_mat);
 	NumericMatrix adj_mat(_adj_mat);
@@ -568,7 +568,7 @@ SEXP test_func_delta_change(SEXP _wei_mat, SEXP _adj_mat, SEXP _theta)
 	return (wrap(ret));
 }
 
-SEXP test_importance_sample_change(SEXP _adj_mat, SEXP _stat_dist, SEXP _trans_mat, SEXP _wei_mat, SEXP _theta)
+RcppExport SEXP test_importance_sample_change(SEXP _adj_mat, SEXP _stat_dist, SEXP _trans_mat, SEXP _wei_mat, SEXP _theta)
 {
 	NumericMatrix adj_mat(_adj_mat);
 	NumericVector stat_dist(_stat_dist);
@@ -578,7 +578,7 @@ SEXP test_importance_sample_change(SEXP _adj_mat, SEXP _stat_dist, SEXP _trans_m
 	return (wrap(importance_sample_change(adj_mat, stat_dist, trans_mat, wei_mat, theta)));
 }
 
-SEXP test_compute_sample_score_change(
+RcppExport SEXP test_compute_sample_score_change(
 	SEXP _pwm,
 	SEXP _wei_mat,
 	SEXP _adj_mat,

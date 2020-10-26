@@ -6,7 +6,9 @@
 \title{A motif library containing 593 motifs downloaded from
 http://jaspar.genereg.net/html/DOWNLOAD/JASPAR_CORE/pfm/nonredundant/pfm_all
 .txt.}
-\format{A list object.}
+\format{
+A list object.
+}
 \description{
 This motif library can be loaded by 'data(jaspar_library)'.
 }

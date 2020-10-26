@@ -4,7 +4,9 @@
 \name{motif_library}
 \alias{motif_library}
 \title{A sample motif library.}
-\format{A list object.}
+\format{
+A list object.
+}
 \description{
 A list of the position weight matrices corresponding to motifs,
 loaded by 'data(example)'.
