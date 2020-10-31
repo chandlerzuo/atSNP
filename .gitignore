@@ -9,3 +9,4 @@ src/*.so
 atSNP-Ex.pdf
 *.timings
 .vscode
+*.DS_Store
