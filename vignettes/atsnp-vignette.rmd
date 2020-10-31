@@ -234,6 +234,8 @@ After we have computed the binding affinity scores, they can be tested using the
 
 We recommend using `pval_ref`and `pval_snp` for assessing the significance of allele specific affinity; and using `pval_rank` for assessing the significance of the SNP effect on the affinity change.
 
+In the following code chunk, we specify `testing.mc=TRUE` to speed up computation with a small Monte-Carlo sample size. In real world scenarios, we should use `testing.mc=FALSE`.
+
 ```{r eval=TRUE,echo=TRUE,results="markup"}
 atsnp.result <- ComputePValues(
   motif.lib =
